@@ -8,6 +8,7 @@
 
     <!-- СТАТИСТИКА -->
     <div class="stats-grid">
+      <!-- ... существующие карточки статистики ... -->
       <div class="stat-card">
         <div class="stat-icon">🏆</div>
         <div class="stat-info">
@@ -64,6 +65,11 @@
         <button class="action-btn" @click="navigateToCreateTournament">
           <span class="action-icon">➕</span>
           <span class="action-text">Создать турнир</span>
+        </button>
+
+        <button class="action-btn" @click="navigateToWeighing">
+          <span class="action-icon">⚖️</span>
+          <span class="action-text">Взвешивание</span>
         </button>
 
         <button class="action-btn" @click="navigateToBrackets">
@@ -151,6 +157,11 @@ const toast = ref({
 // Навигация на страницу создания турнира
 const navigateToCreateTournament = () => {
   router.push('/admin/tournament-settings')
+}
+
+// Навигация на страницу взвешивания
+const navigateToWeighing = () => {
+  router.push('/weighing')
 }
 
 // Навигация к сеткам
@@ -557,7 +568,7 @@ onMounted(() => {
   }
 
   .actions-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .tournaments-grid {

@@ -1,0 +1,786 @@
+/* Полный CSS с новыми стилями */
+.complete {
+    background: #b8860b !important;
+}
+.complete:hover:not(:disabled) {
+    background: #d4af37 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
+}
+.complete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.fight-page {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8f0f8 50%, #f5f7fa 100%);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #1a1a1a;
+    padding: 90px 2rem 4rem;
+    box-sizing: border-box;
+}
+
+.header {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+.back {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #c89b3c;
+    padding: 0.5rem;
+}
+.back:hover { color: #e0b456; }
+.header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+.meta {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.4rem;
+}
+
+.fight-card {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid #e8e8e8;
+}
+
+.athlete-section {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.white {
+    background: #f8f9fa;
+    border-right: 1px solid #e8e8e8;
+}
+
+.blue {
+    background: #f0f8ff;
+    border-left: 1px solid #e8e8e8;
+}
+
+.athlete-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.scores {
+    width: 100%;
+}
+
+.score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0.4rem 0;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
+    border-left: 3px solid #4caf50;
+}
+
+.score-row:nth-child(2) { border-left-color: #ff9800; } /* Wazaari */
+.score-row:nth-child(3) { border-left-color: #2196f3; } /* Yuko */
+.score-row:nth-child(4) { border-left-color: #ffc107; } /* Shido */
+.score-row:nth-child(5) { border-left-color: #9c27b0; } /* Osaekomi */
+
+.score-label {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.score-value {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #2196f3;
+    min-width: 50px;
+    text-align: right;
+    margin: 0 10px;
+}
+
+.btn-undo {
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-undo:hover {
+    background: #d32f2f;
+    transform: scale(1.1);
+}
+
+.osaekomi-controls {
+    display: flex;
+    gap: 5px;
+    margin-left: 10px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+    margin: 1rem 0;
+    width: 100%;
+}
+
+.btn-score, .btn-penalty, .btn-special {
+    padding: 0.7rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.9rem;
+    color: white;
+    flex: 1;
+    min-width: 120px;
+}
+
+.btn-score.ippon { background: #4caf50; }
+.btn-score.wazaari { background: #ff9800; }
+.btn-score.yuko { background: #2196f3; }
+.btn-penalty.shido { background: #ffc107; color: #333; }
+.btn-penalty.hansoku { background: #c62828 !important; color: white; }
+.btn-special.osaekomi {
+    background: #9c27b0;
+    color: white;
+    flex: 1.5;
+    min-width: 150px;
+}
+.btn-special.osaekomi.active {
+    background: #7b1fa2;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(155, 39, 176, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(155, 39, 176, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(155, 39, 176, 0); }
+}
+
+.btn-score:hover:not(:disabled), .btn-penalty:hover:not(:disabled), .btn-special:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-score:disabled, .btn-penalty:disabled, .btn-special:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* СЕКЦИЯ ТАЙМЕРА */
+.timer-section {
+    flex: 1;
+    background: #fdfdfd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 2.5rem;
+    border-left: 1px solid #e8e8e8;
+    border-right: 1px solid #e8e8e8;
+    min-width: 400px;
+}
+
+.timer-display {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #c89b3c;
+    margin-bottom: 0.5rem;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    min-width: 140px;
+}
+
+.golden-score {
+    color: #ffd700;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.timer-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    width: 100%;
+    max-width: 420px;
+}
+
+.time-controls-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.time-btn {
+    padding: 0.7rem 1.4rem;
+    border: 2px solid #2196f3;
+    background: white;
+    color: #2196f3;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    min-width: 85px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.time-btn.skip-btn {
+    background: #2196f3;
+    color: white;
+    border-color: #2196f3;
+}
+
+.quick-time-buttons {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.quick-time-btn {
+    padding: 0.7rem 1.2rem;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    min-width: 75px;
+    text-align: center;
+    flex: 1;
+    max-width: 100px;
+}
+
+.timer-main-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    width: 100%;
+}
+
+.btn-timer {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    border: none;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: center;
+}
+
+.start  { background: #43a047; }
+.pause  { background: #3949ab; }
+.reset  { background: #e53935; }
+.golden-score-btn {
+    background: #ffd700;
+    color: #333;
+}
+.undo-result {
+    background: #ff9800;
+    color: white;
+    margin-top: 10px;
+}
+
+.btn-timer:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-timer:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Osaekomi секция */
+.osaekomi-section {
+    background: #f3e5f5;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 400px;
+    border: 2px solid #9c27b0;
+}
+
+.osaekomi-section h4 {
+    margin: 0 0 0.8rem 0;
+    color: #7b1fa2;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.osaekomi-timer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.osaekomi-time {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #9c27b0;
+    font-family: 'Courier New', monospace;
+}
+
+.osaekomi-athlete {
+    font-weight: 600;
+    color: #7b1fa2;
+    font-size: 1.2rem;
+}
+
+.osaekomi-progress {
+    margin-bottom: 0.8rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #e1bee7;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9c27b0, #e91e63);
+    transition: width 1s ease;
+}
+
+.progress-text {
+    display: block;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #7b1fa2;
+    margin-top: 0.3rem;
+}
+
+.osaekomi-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-osaekomi {
+    padding: 0.7rem 1.5rem;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-osaekomi:hover {
+    background: #d32f2f;
+}
+
+.fight-status {
+    margin-top: 1.5rem;
+    font-weight: 500;
+    color: #424242;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.result-section {
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.result-section h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+.result-card {
+    background: #e8f5e9;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border-left: 6px solid #4caf50;
+    width: 100%;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.8rem 0;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.result-item:last-child {
+    border-bottom: none;
+}
+
+.result-label {
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.result-value {
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.result-undo-notice {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: #fff3cd;
+    border-radius: 6px;
+    border-left: 4px solid #ffc107;
+}
+
+.result-undo-notice p {
+    margin: 0;
+    color: #856404;
+    font-size: 0.9rem;
+}
+
+.info-grid {
+    max-width: 1200px;
+    margin: 2rem auto 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-block {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    border: 1px solid #e8e8e8;
+}
+
+.info-block h4 {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.info-item {
+    margin: 0.4rem 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.history {
+    margin: 0.4rem 0;
+    padding: 0.4rem 0.8rem;
+    border-left: 3px solid #007aff;
+    background: #f8f9fa;
+    font-size: 0.9rem;
+}
+
+.history.completed {
+    border-left-color: #34c759;
+}
+
+.scheduled   { color: #007aff; }
+.in-progress { color: #ff3b30; font-weight: 600; }
+.completed   { color: #34c759; }
+
+/* Лог событий */
+.log-entries {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.log-entry {
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.log-entry.score {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.log-entry.penalty {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.log-entry.timer {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.log-entry.fight {
+    background: #f3e5f5;
+    border-left: 4px solid #9c27b0;
+}
+
+.log-entry.error {
+    background: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.log-entry.undo {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.log-entry.osaekomi {
+    background: #f3e5f5;
+    border-left: 4px solid #9c27b0;
+}
+
+.log-time {
+    font-weight: 600;
+    color: #666;
+    min-width: 70px;
+    font-size: 0.8rem;
+}
+
+.log-message {
+    flex: 1;
+}
+
+.no-events {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* АДАПТИВНОСТЬ */
+@media (max-width: 1200px) {
+    .timer-section {
+        min-width: 380px;
+    }
+
+    .timer-controls {
+        max-width: 380px;
+    }
+}
+
+@media (max-width: 992px) {
+    .timer-section {
+        min-width: 350px;
+        padding: 2rem 1.5rem;
+    }
+
+    .timer-display {
+        font-size: 3.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .fight-page {
+        padding: 80px 1rem 2rem;
+    }
+
+    .fight-card {
+        flex-direction: column;
+    }
+
+    .white {
+        border-right: none;
+        border-bottom: 1px solid #e8e8e8;
+    }
+
+    .blue {
+        border-left: none;
+        border-top: 1px solid #e8e8e8;
+    }
+
+    .timer-section {
+        flex: 1;
+        min-width: 100%;
+        order: -1;
+        border: none;
+        border-top: 1px solid #e8e8e8;
+        border-bottom: 1px solid #e8e8e8;
+        padding: 1.5rem;
+    }
+
+    .time-controls-top {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .time-btn {
+        flex: 1;
+        min-width: 100px;
+        max-width: 150px;
+    }
+
+    .quick-time-buttons {
+        flex-wrap: wrap;
+    }
+
+    .quick-time-btn {
+        flex: 1;
+        min-width: 80px;
+        max-width: 100px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .timer-display {
+        font-size: 3rem;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .btn-score, .btn-penalty, .btn-special {
+        width: 100%;
+    }
+
+    .time-btn {
+        width: 100%;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .timer-display {
+        font-size: 2.8rem;
+    }
+
+    .time-controls-top {
+        flex-direction: column;
+    }
+
+    .time-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .quick-time-buttons {
+        flex-direction: row;
+        flex-wrap: nowrap;
+    }
+
+    .quick-time-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+        min-width: 70px;
+    }
+
+    .osaekomi-time {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .timer-display {
+        font-size: 2.5rem;
+    }
+
+    .quick-time-buttons {
+        flex-wrap: wrap;
+    }
+
+    .quick-time-btn {
+        flex: 0 0 calc(50% - 0.4rem);
+        margin-bottom: 0.5rem;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .btn-score, .btn-penalty, .btn-special {
+        min-width: 100%;
+    }
+
+    .score-row {
+        flex-wrap: wrap;
+    }
+
+    .btn-undo {
+        margin-top: 5px;
+    }
+}

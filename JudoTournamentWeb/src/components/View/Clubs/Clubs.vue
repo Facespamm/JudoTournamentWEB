@@ -128,7 +128,7 @@ const filteredClubs = computed(() => {
 // Загрузка данных
 const loadClubs = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/clubs/', {
+    const response = await fetch('http://127.0.0.1:5001/clubs/', {
       headers: { 'X-API-Key': 'mobile_app_2024' }
     })
 

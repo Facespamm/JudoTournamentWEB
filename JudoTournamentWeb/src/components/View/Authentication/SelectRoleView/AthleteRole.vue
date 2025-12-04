@@ -148,15 +148,18 @@
 
         <!-- Медицинская справка -->
         <div class="form-group checkbox-group full-width">
-          <label for="medical_check" class="checkbox-label">
+          <div class="medical-check-container">
             <input
                 v-model="athleteForm.medical_check"
                 type="checkbox"
                 id="medical_check"
                 :disabled="isLoading"
+                class="medical-checkbox"
             />
-            Медицинская справка есть *
-          </label>
+            <label for="medical_check" class="medical-check-label">
+              Медицинская справка есть *
+            </label>
+          </div>
           <span v-if="errors.medical_check" class="error">{{ errors.medical_check }}</span>
         </div>
       </div>
@@ -403,14 +406,35 @@ onMounted(() => {
   100% { transform: rotate(360deg); }
 }
 
-.checkbox-label {
+/* Стили для контейнера медицинской справки */
+.medical-check-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+/* Стили для самого чекбокса */
+.medical-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
+/* Стили для метки чекбокса */
+.medical-check-label {
+  cursor: pointer;
+  font-weight: normal;
   margin: 0;
+}
+
+/* Убедимся, что чекбокс виден */
+.checkbox-group {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
 }
 </style>

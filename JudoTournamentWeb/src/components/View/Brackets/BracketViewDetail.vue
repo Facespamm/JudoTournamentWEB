@@ -383,41 +383,68 @@ onMounted(loadBracketDetail)
   border-bottom: 1px solid #e0e0e0;
 }
 
-/* Базовые стили для соединительных линий */
-.match.connected::after {
+/* Соединительные линии между раундами */
+.round:not(:last-child) .match {
+  position: relative;
+}
+
+/* Горизонтальная линия от каждого матча */
+.round:not(:last-child) .match::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: -30px;
+  right: -60px;
   width: 30px;
   height: 2px;
   background: #c89b3c;
-  z-index: 5;
+  z-index: 1;
+  transform: translateY(-50%);
 }
 
-/* Адаптивные соединения */
-.first-round .match:nth-child(odd)::before {
+/* Вертикальная линия соединяющая пары матчей */
+.round:not(:last-child) .match:nth-child(4n+1)::before,
+.round:not(:last-child) .match:nth-child(4n+2)::before {
   content: '';
   position: absolute;
   right: -30px;
   width: 2px;
-  height: 30px;
   background: #c89b3c;
-  z-index: 5;
+  z-index: 1;
+}
+
+/* Вертикальная линия вниз от нечетного матча */
+.round:not(:last-child) .match:nth-child(4n+1)::before {
   top: 50%;
-  height: 15px;
+  height: calc(100% + 30px);
 }
 
-.first-round .match:nth-child(even)::before {
+/* Вертикальная линия вверх от четного матча */
+.round:not(:last-child) .match:nth-child(4n+2)::before {
+  bottom: 50%;
+  height: calc(100% + 30px);
+}
+
+/* Для второй пары в группе из 4 */
+.round:not(:last-child) .match:nth-child(4n+3)::before {
   content: '';
   position: absolute;
   right: -30px;
+  top: 50%;
   width: 2px;
-  height: 30px;
   background: #c89b3c;
-  z-index: 5;
+  z-index: 1;
+  height: calc(100% + 30px);
+}
+
+.round:not(:last-child) .match:nth-child(4n)::before {
+  content: '';
+  position: absolute;
+  right: -30px;
   bottom: 50%;
-  height: 15px;
+  width: 2px;
+  background: #c89b3c;
+  z-index: 1;
+  height: calc(100% + 30px);
 }
 
 .reseed-btn {

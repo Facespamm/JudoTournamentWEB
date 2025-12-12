@@ -20,6 +20,9 @@ export function RedirectToTournament() {
 export function RedirectToReferee() {
     window.location.href = "/referees";
 }
+export function RedirectToClubs() {
+    window.location.href = "/clubs";
+}
 export function RedirectToAdmin() {
     window.location.href = "/admin";
 

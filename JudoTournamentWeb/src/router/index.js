@@ -12,7 +12,7 @@ import Referees from"@/components/View/Referee/Referee.vue"
 import Fight from "@/components/View/Fight/Fight.vue";
 import Scoreboard from "@/components/View/Scoreboard/Scoreboard.vue";
 import AdminDashboard from "@/components/View/AdminDashboard/AdminDashboard.vue";
-import Clubs from "@/components/View/Clubs/Clubs.vue";
+import ClubsAdmin from "@/components/View/Clubs/ClubsAdmin.vue";
 import Users from "@/components/View/Users/Users.vue";
 import AthleteDetail from "@/components/View/AthleteDetail/AthleteDetail.vue";
 import TournamentSettings from "@/components/View/TournamentManagement/TournamentSettings.vue";
@@ -21,6 +21,9 @@ import Bracket from "@/components/View/Brackets/Bracket.vue";
 import BracketViewDetail from "@/components/View/Brackets/BracketViewDetail.vue";
 import RefereeDashboard from "@/components/View/RefereeDashboard/RefereeDashboard.vue";
 import ManageRole from "@/components/View/Authentication/SelectRoleView/ManageRole.vue";
+import Weighings from "@/components/View/Weighings/Weighings.vue";
+import RegistrationModal from "@/components/View/Tournaments/RegistrationModal.vue";
+import Clubs from "@/components/View/Clubs/Clubs.vue";
 const routes = [
     { path: '/', redirect: '/home' },
 
@@ -45,6 +48,10 @@ const routes = [
         path: '/athletes',
         name: 'athletes',
         component: Athletes
+    },{
+        path: '/registrationathlete',
+        name: 'registrationathlete',
+        component: RegistrationModal
     },
     {
         path: '/tournament',
@@ -75,6 +82,10 @@ const routes = [
         path: '/referee',
         name: 'referee',
         component: Referees,
+    }, {
+        path: '/weighing',
+        name: 'weighing',
+        component: Weighings,
     },
     {
         path: '/tatami',
@@ -90,15 +101,20 @@ const routes = [
         path: '/admin',
         name: 'admin',
         component: AdminDashboard,
-    },{
+    },
+    {
         path: '/brackets',
         name: 'bracket',
         component: Bracket,
-    },
-    {
-        path: '/admin/clubs',
+    },{
+        path: '/clubs',
         name: 'clubs',
         component: Clubs,
+    },
+    {
+        path: '/admin/clubsAdmin',
+        name: 'clubsAdmin',
+        component: ClubsAdmin,
     },
     {
         path: '/admin/users',

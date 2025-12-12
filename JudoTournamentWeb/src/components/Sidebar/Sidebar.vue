@@ -20,7 +20,13 @@
       <button type="button" name="tournament_page" @click="RedirectToTournament">
         <img :src="TrophyIcon" class="nav-icon" alt="Trophy" /> Турниры
       </button>
-      <!-- Добавленные кнопки -->
+
+      <!-- НОВАЯ КНОПКА: Клубы -->
+      <button type="button" name="clubs_page" @click="RedirectToClubs">
+        <img :src="ClubIcon" class="nav-icon" alt="Clubs" /> Клубы
+      </button>
+
+      <!-- Остальные кнопки -->
       <button type="button" name="referee_page" @click="RedirectToReferee">
         <img :src="RefereeIcon" class="nav-icon" alt="Referee" /> Рефери
       </button>
@@ -57,13 +63,13 @@
 
 <script setup>
 import { ref } from 'vue'
-import HomeIcon from '@/components/icons/Home.png';
-import UserIcon from '@/components/icons/Athletes.png';
-import TrophyIcon from '@/components/icons/CupIcon.png';
-import GlobeIcon from '@/components/icons/LanguageSwitch.png';
-// Добавленные иконки
-import RefereeIcon from '@/components/icons/Referee.png';
-import AdminIcon from '@/components/icons/Admin.png';
+import HomeIcon from '@/components/icons/Home.png'
+import UserIcon from '@/components/icons/Athletes.png'
+import TrophyIcon from '@/components/icons/CupIconAdmin.png'
+import GlobeIcon from '@/components/icons/LanguageSwitch.png'
+import RefereeIcon from '@/components/icons/Referee.png'
+import AdminIcon from '@/components/icons/Admin.png'
+import ClubIcon from '@/components/icons/ClubIcon.png'  // Убедитесь, что иконка существует!
 
 import {
   RedirectToHome,
@@ -71,13 +77,14 @@ import {
   RedirectToTournament,
   RedirectToReferee,
   RedirectToAdmin,
-} from "@/router/redirect.js";
+  RedirectToClubs,  // ← Добавьте эту функцию в redirect.js
+} from "@/router/redirect.js"
 
 // Языки
 const languages = [
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'kk', name: 'Қазақша', flag: '🇰🇿' },
-  { code: 'en', name: 'English', flag: '🇬🇧' }
+  { code: 'ru', name: 'Русский', flag: 'RU' },
+  { code: 'kk', name: 'Қазақша', flag: 'KZ' },
+  { code: 'en', name: 'English', flag: 'GB' }
 ]
 
 const currentLanguage = ref('Русский')
@@ -91,10 +98,10 @@ const selectLanguage = (lang) => {
   currentLanguage.value = lang.name
   isLanguageMenuOpen.value = false
   console.log('Выбран язык:', lang.code)
-  // Здесь можно добавить логику переключения языка через i18n или другую библиотеку
 }
 </script>
 
+<!-- Стили остаются без изменений (полностью совместимы) -->
 <style scoped>
 /* === ПЕРЕМЕННЫЕ === */
 :root {
@@ -135,7 +142,6 @@ const selectLanguage = (lang) => {
   box-shadow: var(--shadow);
 }
 
-/* Заголовок */
 .sidebar-header {
   display: flex;
   justify-content: center;
@@ -159,7 +165,6 @@ const selectLanguage = (lang) => {
   object-fit: contain;
 }
 
-/* Кнопки навигации */
 .nav-buttons {
   display: flex;
   flex-direction: column;
@@ -207,14 +212,12 @@ const selectLanguage = (lang) => {
   flex-shrink: 0;
 }
 
-/* Язык внизу */
 .footer-nav {
   margin-top: auto;
   margin-bottom: 0.5rem;
   position: relative;
 }
 
-/* Выпадающее меню языков */
 .language-menu {
   position: absolute;
   bottom: 100%;
@@ -244,43 +247,14 @@ const selectLanguage = (lang) => {
   border-bottom: 1px solid #f0f0f0;
 }
 
-.language-option:last-child {
-  border-bottom: none;
-}
+.language-option:last-child { border-bottom: none; }
+.language-option:hover { background-color: var(--hover-bg); color: var(--active-color); }
+.language-option.active { background-color: #fff8e1; color: var(--active-color); font-weight: 600; }
 
-.language-option:hover {
-  background-color: var(--hover-bg);
-  color: var(--active-color);
-}
+.lang-flag { font-size: 1.3rem; line-height: 1; }
+.lang-name { flex: 1; }
 
-.language-option.active {
-  background-color: #fff8e1;
-  color: var(--active-color);
-  font-weight: 600;
-}
-
-.lang-flag {
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.lang-name {
-  flex: 1;
-}
-
-/* Анимация выпадающего меню */
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
+.slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s ease; }
+.slide-up-enter-from { opacity: 0; transform: translateY(10px); }
+.slide-up-leave-to { opacity: 0; transform: translateY(10px); }
 </style>

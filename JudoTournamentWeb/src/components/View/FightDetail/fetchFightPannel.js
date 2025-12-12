@@ -1,6 +1,6 @@
 export const startFight = async (data,id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/fights/${id}/start
+        const response = await fetch(`http://127.0.0.1:5001/api/fights/${id}/start
 `, {
             method: 'POST',
             headers: {
@@ -25,7 +25,7 @@ export const startFight = async (data,id) => {
 
 export const endFight = async (data,id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/fights/${id}/finish`, {
+        const response = await fetch(`http://127.0.0.1:5001/api/fights/${id}/finish`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

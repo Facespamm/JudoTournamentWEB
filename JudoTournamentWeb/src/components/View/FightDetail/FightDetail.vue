@@ -151,7 +151,7 @@ import { fetchGetDetail } from '@/components/View/Fight/fetchFights.js'
 import { startFight } from "@/components/View/FightDetail/fetchFightPannel.js"
 import "./FightDetail.css"
 
-const API_BASE = 'http://127.0.0.1:5001'
+const API_BASE = 'http://127.0.0.1:5001/'
 
 async function api(method, url, data = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json', 'X-API-Key': 'mobile_app_2024' } }
@@ -295,12 +295,12 @@ export default {
     async addIppon(c) { await api('POST', `/api/scores/fight/${this.fightId}/ippon`, { athlete_color: c }); this.addEvent('score', `${c === 'WHITE' ? 'Белый' : 'Синий'}: IPPON — ПОБЕДА!`); await this.refreshScores(); await this.syncEventsOnComplete() },
     async addPenalty(c, t) { await api('POST', `/api/scores/fight/${this.fightId}/penalty`, { athlete_color: c, penalty_type: t }); this.addEvent('penalty', `${c === 'WHITE' ? 'Белый' : 'Синий'}: ${t}`); await this.refreshScores() },
     async startOsaekomi(c) { await api('POST', `/api/scores/fight/${this.fightId}/osaekomi/start`, { athlete_color: c }); this.addEvent('osaekomi', `${c === 'WHITE' ? 'Белый' : 'Синий'}: Osaekomi начат`) },
-    async stopOsaekomi() { await api('POST', `/api/scores/fight/${this.fightId}/osaekomi/stop`); this.addEvent('osaekomi', 'Osaekomi остановлен'); await this.refreshScores() },
+    async stopOsaekomi() { await api('POST', `api/scores/fight/${this.fightId}/osaekomi/stop`); this.addEvent('osaekomi', 'Osaekomi остановлен'); await this.refreshScores() },
     async toggleOsaekomi(c) { this.osaekomi.active && this.osaekomi.athlete_color === c ? this.stopOsaekomi() : this.startOsaekomi(c) },
     async undoLast() { await api('POST', `/api/scores/fight/${this.fightId}/undo`); this.addEvent('undo', 'Отменено последнее действие'); await this.refreshScores() },
     async enterGoldenScore() { await api('POST', `/api/scores/fight/${this.fightId}/golden-score`); this.addEvent('timer', 'Golden Score'); await this.refreshScores() },
     async resetScores() { if (confirm('Сбросить все очки и штрафы?')) { await api('POST', `/api/scores/fight/${this.fightId}/reset`); this.addEvent('reset', 'Очки и штрафы сброшены'); await this.refreshScores() } },
-    async resetFullMatch() { if (confirm('Сбросить весь результат матча?')) { await api('POST', `/fights/${this.fightId}/reset`, { reason: 'Переигровка' }); await this.loadFight() } },
+    async resetFullMatch() { if (confirm('Сбросить весь результат матча?')) { await api('POST', `/api/fights/${this.fightId}/reset`, { reason: 'Переигровка' }); await this.loadFight() } },
     confirmIppon(c) { if (confirm('Ippon — бой завершится!')) this.addIppon(c) },
     formatTime(s) { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${sec < 10 ? '0' : ''}${sec}` },
     setTimerTime(s) { if (this.fightStatus !== 'COMPLETED') this.timerSeconds = s },

@@ -115,7 +115,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCookies } from "vue3-cookies"
-import TrophyIcon from '@/components/icons/CupIcon.png'
+import TrophyIcon from '@/components/icons/CupIconAdmin.png'
 import BackgroundImage from '@/assets/Background.png'
 import { createUser } from "@/components/View/Authentication/Registration/fetchRegistration.js"
 import { useAuthStore } from '@/components/stores/authStore.js'

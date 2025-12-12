@@ -57,7 +57,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import TrophyIcon from '@/components/icons/CupIcon.png'
+import TrophyIcon from '@/components/icons/CupIconAdmin.png'
 import BackgroundImage from '@/assets/Background.png'
 import "./Login.css"
 

@@ -278,7 +278,7 @@ const navigateToUsers = () => {
 }
 
 const navigateToClubs = () => {
-  router.push('/admin/clubs')
+  router.push('/admin/clubsAdmin')
 }
 
 const navigateToAthletes = () => {

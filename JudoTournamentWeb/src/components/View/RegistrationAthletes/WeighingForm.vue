@@ -84,10 +84,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, defineEmits, watch } from 'vue'
-import { fetchTournaments } from '@/components/View/Tournaments/fetchTournaments.js'
-import { fetchAthletes } from '@/components/View/Athletes/fetchAthletes.js'
-import { createRecordWeight } from "@/components/View/RegistrationAthletes/fetchRegistrationAthletes.js";
+import { ref, onMounted, computed } from 'vue'
+
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  'X-API-Key': 'mobile_app_2024'
+}
 
 const emit = defineEmits(['show-toast'])
 
@@ -104,18 +106,85 @@ const tournaments = ref([])
 const athletes = ref([])
 const registrations = ref([])
 
-// Загрузка турниров
+// API функции как в первом компоненте
+const fetchTournaments = async () => {
+  try {
+    const res = await fetch('/api/tournaments?active=true', {
+      headers: API_HEADERS
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return { success: true, data: Array.isArray(data) ? data : data.tournaments || [] }
+  } catch (e) {
+    console.error(e)
+    return { success: false, data: [] }
+  }
+}
+
+const fetchAthletes = async () => {
+  try {
+    const res = await fetch('/api/athletes', {
+      headers: API_HEADERS
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return {
+      success: true,
+      athletes: data.athletes || (Array.isArray(data) ? data : [])
+    }
+  } catch (e) {
+    console.error(e)
+    return { success: false, athletes: [] }
+  }
+}
+
+const fetchRegistrations = async () => {
+  try {
+    const res = await fetch('/api/registrations', {
+      headers: API_HEADERS
+    })
+    if (!res.ok) {
+      console.warn('Регистрации недоступны, продолжаем без них')
+      return { success: false, registrations: [] }
+    }
+    const data = await res.json()
+    return {
+      success: true,
+      registrations: data.registrations || (Array.isArray(data) ? data : [])
+    }
+  } catch (e) {
+    console.warn('Не удалось загрузить регистрации:', e.message)
+    return { success: false, registrations: [] }
+  }
+}
+
+const createRecordWeight = async (payload) => {
+  try {
+    const res = await fetch('http://127.0.0.1:5001/weighing/', {
+      method: 'POST',
+      headers: API_HEADERS,
+      body: JSON.stringify(payload)
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP ${res.status}`)
+    }
+
+    const data = await res.json()
+    return { success: true, ...data }
+  } catch (e) {
+    console.error('Ошибка регистрации веса:', e)
+    return { success: false, message: e.message }
+  }
+}
+
+// Загрузка данных
 const loadTournaments = async () => {
   try {
     const result = await fetchTournaments()
     if (result.success) {
-      if (Array.isArray(result.data)) {
-        tournaments.value = result.data
-      } else if (result.data.tournaments) {
-        tournaments.value = result.data.tournaments
-      } else {
-        tournaments.value = []
-      }
+      tournaments.value = result.data
       console.log('Загружено турниров:', tournaments.value.length)
     }
   } catch (error) {
@@ -123,41 +192,28 @@ const loadTournaments = async () => {
   }
 }
 
-// Загрузка спортсменов
 const loadAthletes = async () => {
   try {
     const result = await fetchAthletes()
-    if (result.success && result.athletes) {
+    if (result.success) {
       athletes.value = result.athletes
       console.log('Загружено спортсменов:', athletes.value.length)
-    } else if (result.success && result.data && result.data.athletes) {
-      athletes.value = result.data.athletes
-      console.log('Загружено спортсменов (из data):', athletes.value.length)
-    } else {
-      athletes.value = []
     }
   } catch (error) {
     console.error('Ошибка загрузки спортсменов:', error)
   }
 }
 
-// Получаем регистрации для фильтрации доступных спортсменов
 const loadRegistrations = async () => {
   try {
-    const response = await fetch('registrations', {
-      headers: { 'X-API-Key': 'mobile_app_2024' }
-    })
-    if (!response.ok) {
-      console.warn('Регистрации недоступны, продолжаем без них')
-      registrations.value = []
-      return
+    const result = await fetchRegistrations()
+    if (result.success) {
+      registrations.value = result.registrations
+      console.log('Загружено регистраций:', registrations.value.length)
     }
-    const data = await response.json()
-    registrations.value = data.registrations || []
-    console.log('Загружено регистраций:', registrations.value.length)
   } catch (error) {
     console.warn('Не удалось загрузить регистрации:', error.message)
-    registrations.value = [] // Устанавливаем пустой массив вместо ошибки
+    registrations.value = []
   }
 }
 
@@ -181,8 +237,8 @@ const filteredAthletes = computed(() => {
 
 // Обработчик изменения турнира
 const onTournamentChange = () => {
-  weighingForm.value.athlete_id = null // Сбрасываем выбор спортсмена
-  errors.value.athlete_id = '' // Очищаем ошибку
+  weighingForm.value.athlete_id = null
+  errors.value.athlete_id = ''
 }
 
 // Валидация формы взвешивания
@@ -220,7 +276,6 @@ const weighAthlete = async () => {
 
     console.log('Отправка взвешивания:', payload)
 
-    // Используем импортированную функцию вместо прямого fetch
     const result = await createRecordWeight(payload)
 
     if (result.success) {

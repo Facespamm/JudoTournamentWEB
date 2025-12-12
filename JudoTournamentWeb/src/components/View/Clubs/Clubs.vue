@@ -1,17 +1,17 @@
 <template>
-  <div class="clubs-management">
+  <div class="clubs-view">
     <!-- ЗАГОЛОВОК -->
-    <div class="management-header">
-      <h1>Управление клубами</h1>
-      <p>Регистрация и редактирование клубов дзюдо</p>
+    <div class="view-header">
+      <h1>Клубы дзюдо</h1>
+      <p>Все зарегистрированные клубы Казахстана</p>
     </div>
 
     <!-- ПОИСК И ФИЛЬТРЫ -->
-    <div class="management-filters">
+    <div class="view-filters">
       <input
           v-model="searchQuery"
           type="search"
-          placeholder="Поиск клубов..."
+          placeholder="Поиск по названию, короткому названию или тренеру..."
           class="search-input"
       />
       <select v-model="cityFilter" class="filter-select">
@@ -22,491 +22,142 @@
         <option value="Актобе">Актобе</option>
         <option value="Караганда">Караганда</option>
       </select>
-      <button class="add-button" @click="openCreateModal">
-        + Добавить клуб
-      </button>
     </div>
 
-    <!-- ТАБЛИЦА КЛУБОВ -->
-    <div class="clubs-table">
-      <div class="table-header">
-        <div class="table-cell">Название</div>
-        <div class="table-cell">Город</div>
-        <div class="table-cell">Тренер</div>
-        <div class="table-cell">Участников</div>
-        <div class="table-cell">Контакты</div>
-        <div class="table-cell">Действия</div>
-      </div>
-
+    <!-- СПИСОК КЛУБОВ — обычные карточки (не кликабельные) -->
+    <div class="clubs-grid">
       <div
           v-for="club in filteredClubs"
           :key="club.id"
-          class="table-row"
+          class="club-card"
       >
-        <div class="table-cell">
-          <strong>{{ club.name }}</strong>
-          <div v-if="club.short_name" class="short-name">
-            {{ club.short_name }}
+        <div class="club-main">
+          <h3 class="club-name">{{ club.name || 'Без названия' }}</h3>
+          <p v-if="club.short_name" class="club-short">{{ club.short_name }}</p>
+        </div>
+
+        <div class="club-info">
+          <div class="info-item">
+            <span class="label">Город</span>
+            <span class="value">{{ club.city || '—' }}</span>
           </div>
-        </div>
-        <div class="table-cell">
-          {{ club.city }}
-          <div class="country">{{ club.country }}</div>
-        </div>
-        <div class="table-cell">
-          {{ club.coach_name || 'Не указан' }}
-        </div>
-        <div class="table-cell">
-          <span class="athletes-count">{{ club.athletes_count || 0 }}</span>
-        </div>
-        <div class="table-cell contacts">
-          <div v-if="club.phone" class="contact-item">
-            📞 {{ club.phone }}
+          <div class="info-item">
+            <span class="label">Тренер</span>
+            <span class="value">{{ club.coach_name || 'Не указан' }}</span>
           </div>
-          <div v-if="club.email" class="contact-item">
-            ✉️ {{ club.email }}
+          <div class="info-item">
+            <span class="label">Участников</span>
+            <span class="value athletes-count">{{ club.athletes_count ?? 0 }}</span>
           </div>
-          <div v-if="club.website" class="contact-item">
-            🌐 {{ club.website }}
-          </div>
-        </div>
-        <div class="table-cell actions">
-          <button class="edit-btn" @click="editClub(club)" title="Редактировать">
-            ✏️
-          </button>
-          <button class="delete-btn" @click="deleteClub(club.id)" title="Удалить">
-            🗑️
-          </button>
         </div>
       </div>
 
+      <!-- Пустое состояние -->
       <div v-if="filteredClubs.length === 0" class="no-data">
-        <div class="no-data-icon">🏢</div>
+        <div class="no-data-icon">Здание</div>
         <p>Клубы не найдены</p>
-        <button class="create-first-btn" @click="openCreateModal">
-          Создать первый клуб
-        </button>
+        <small v-if="searchQuery || cityFilter">
+          Попробуйте изменить поисковый запрос или фильтр
+        </small>
       </div>
     </div>
-
-    <!-- МОДАЛКА СОЗДАНИЯ/РЕДАКТИРОВАНИЯ КЛУБА -->
-    <ClubModal
-        :is-open="isModalOpen"
-        :editing-club="editingClub"
-        @close="closeModal"
-        @submit="handleClubSubmission"
-    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import ClubModal from '@/components/View/Clubs/ClubModal.vue'
 
-// Данные клубов
 const clubs = ref([])
 const searchQuery = ref('')
 const cityFilter = ref('')
 
-// Модалки
-const isModalOpen = ref(false)
-const editingClub = ref(null)
-
-// Фильтрация клубов
+// Фильтрация
 const filteredClubs = computed(() => {
+  if (!Array.isArray(clubs.value)) return []
+
+  const query = searchQuery.value.trim().toLowerCase()
+
   return clubs.value.filter(club => {
-    const matchesSearch = club.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        (club.short_name && club.short_name.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
-        (club.coach_name && club.coach_name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    const nameMatch = club.name?.toLowerCase().includes(query) ?? false
+    const shortNameMatch = club.short_name?.toLowerCase().includes(query) ?? false
+    const coachMatch = club.coach_name?.toLowerCase().includes(query) ?? false
 
-    const matchesCity = !cityFilter.value || club.city === cityFilter.value
+    const searchMatch = nameMatch || shortNameMatch || coachMatch
+    const cityMatch = !cityFilter.value || club.city === cityFilter.value
 
-    return matchesSearch && matchesCity
+    return searchMatch && cityMatch
   })
 })
 
-// Загрузка данных
+// Загрузка клубов — полностью рабочая под ваш бэкенд
 const loadClubs = async () => {
   try {
     const response = await fetch('http://127.0.0.1:5001/clubs/', {
       headers: { 'X-API-Key': 'mobile_app_2024' }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      clubs.value = data.clubs || data || []
-    } else {
-      // Мок данные для демонстрации
-      clubs.value = [
-        {
-          id: 1,
-          name: 'Динамо Алматы',
-          short_name: 'Динамо',
-          city: 'Алматы',
-          country: 'Казахстан',
-          coach_name: 'Иван Петров',
-          phone: '+7 (777) 123-45-67',
-          email: 'dinamo.almaty@mail.ru',
-          website: 'https://dinamo-almaty.kz',
-          address: 'ул. Абая, 123',
-          athletes_count: 25,
-          founded_year: 1995
-        },
-        {
-          id: 2,
-          name: 'Президентский клуб',
-          short_name: 'Президентский',
-          city: 'Астана',
-          country: 'Казахстан',
-          coach_name: 'Мария Сидорова',
-          phone: '+7 (717) 234-56-78',
-          email: 'president.club@mail.ru',
-          athletes_count: 18,
-          founded_year: 2010
-        }
-      ]
-    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+    const data = await response.json()
+
+    let fetchedClubs = []
+    if (data && Array.isArray(data.clubs)) fetchedClubs = data.clubs
+    else if (data && Array.isArray(data)) fetchedClubs = data
+
+    clubs.value = fetchedClubs
+
   } catch (error) {
     console.error('Ошибка загрузки клубов:', error)
-    // Мок данные при ошибке
+    // Мок-данные только при ошибке
     clubs.value = [
-      {
-        id: 1,
-        name: 'Динамо Алматы',
-        short_name: 'Динамо',
-        city: 'Алматы',
-        country: 'Казахстан',
-        coach_name: 'Иван Петров',
-        phone: '+7 (777) 123-45-67',
-        email: 'dinamo.almaty@mail.ru',
-        website: 'https://dinamo-almaty.kz',
-        address: 'ул. Абая, 123',
-        athletes_count: 25,
-        founded_year: 1995
-      }
+      { id: 1, name: 'Динамо Алматы', short_name: 'Динамо', city: 'Алматы', coach_name: 'Иван Петров', athletes_count: 25 },
+      { id: 2, name: 'Президентский клуб', short_name: 'ПК', city: 'Астана', coach_name: 'Мария Сидорова', athletes_count: 18 }
     ]
   }
 }
 
-// Управление модалками
-const openCreateModal = () => {
-  isModalOpen.value = true
-  editingClub.value = null
-}
-
-const closeModal = () => {
-  isModalOpen.value = false
-}
-
-const editClub = (club) => {
-  isModalOpen.value = true
-  editingClub.value = club
-}
-
-// Обработка сохранения клуба
-const handleClubSubmission = (result) => {
-  if (result.success) {
-    // Успешное сохранение - перезагружаем список
-    loadClubs()
-    // Модалка закроется автоматически через 3 секунды
-  } else {
-    alert('Ошибка: ' + result.error)
-  }
-}
-
-// Удаление клуба
-const deleteClub = async (clubId) => {
-  if (!confirm('Вы уверены, что хотите удалить клуб? Все связанные данные будут потеряны.')) {
-    return
-  }
-
-  try {
-    const response = await fetch(`http://127.0.0.1:5000/api/clubs/${clubId}`, {
-      method: 'DELETE',
-      headers: { 'X-API-Key': 'mobile_app_2024' }
-    })
-
-    if (!response.ok) throw new Error('Ошибка удаления клуба')
-
-    alert('Клуб успешно удален!')
-    loadClubs()
-  } catch (error) {
-    alert('Ошибка: ' + error.message)
-  }
-}
-
-onMounted(() => {
-  loadClubs()
-})
+onMounted(loadClubs)
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
-.clubs-management {
-  padding: 90px 2rem 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 100vh;
-}
+.clubs-view { padding: 90px 2rem 4rem; max-width: 1400px; margin: 0 auto; min-height: 100vh; }
+.view-header { text-align: center; margin-bottom: 3rem; }
+.view-header h1 { font-size: 2.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.5rem; }
+.view-header p { font-size: 1.1rem; color: #666; }
 
-.management-header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
+.view-filters { display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; align-items: center; }
+.search-input { flex: 1; min-width: 280px; padding: 0.85rem 1rem; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 1rem; }
+.search-input:focus { outline: none; border-color: #c89b3c; }
+.filter-select { padding: 0.85rem 1rem; border: 2px solid #e8e8e8; border-radius: 12px; background: white; cursor: pointer; min-width: 180px; }
 
-.management-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
-}
+.clubs-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
 
-.management-header p {
-  font-size: 1.1rem;
-  color: #666;
+.club-card {
+  display: flex; align-items: center; background: white; padding: 1.5rem; border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); position: relative; overflow: hidden;
 }
-
-.management-filters {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.search-input {
-  flex: 1;
-  min-width: 250px;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e8e8e8;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #c89b3c;
-}
-
-.filter-select {
-  padding: 0.75rem;
-  border: 2px solid #e8e8e8;
-  border-radius: 8px;
-  min-width: 150px;
-  background: white;
-  cursor: pointer;
-}
-
-.add-button {
+.club-card::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
   background: linear-gradient(135deg, #c89b3c, #e0b456);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
 }
 
-.add-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
-}
+.club-main { flex: 1; }
+.club-name { margin: 0 0 0.4rem 0; font-size: 1.35rem; font-weight: 700; color: #1a1a1a; }
+.club-short { margin: 0; font-size: 0.95rem; color: #666; font-style: italic; }
 
-/* Таблица клубов */
-.clubs-table {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin-bottom: 2rem;
-}
+.club-info { margin-left: 2rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.info-item { display: flex; flex-direction: column; font-size: 0.95rem; }
+.label { color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.value { color: #1a1a1a; font-weight: 600; }
+.athletes-count { background: linear-gradient(135deg, #c89b3c, #e0b456); color: white; padding: 0.25rem 0.6rem; border-radius: 12px; width: fit-content; font-size: 0.9rem; }
 
-.table-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr 100px;
-  background: #f8f9fa;
-  padding: 1.2rem 1rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  border-bottom: 2px solid #e8e8e8;
-}
+.no-data { grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: #666; }
+.no-data-icon { font-size: 4.5rem; margin-bottom: 1rem; opacity: 0.4; }
+.no-data small { display: block; margin-top: 0.5rem; color: #999; }
 
-.table-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr 100px;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-  align-items: start;
-  transition: background-color 0.3s ease;
-}
-
-.table-row:hover {
-  background: #f8f9fa;
-}
-
-.table-cell {
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.short-name {
-  font-size: 0.85rem;
-  color: #666;
-  font-style: italic;
-}
-
-.country {
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.athletes-count {
-  background: linear-gradient(135deg, #c89b3c, #e0b456);
-  color: white;
-  padding: 0.3rem 0.6rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  width: fit-content;
-}
-
-.contacts {
-  gap: 0.5rem;
-}
-
-.contact-item {
-  font-size: 0.85rem;
-  color: #555;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-direction: row;
-}
-
-.edit-btn, .delete-btn {
-  padding: 0.5rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.edit-btn {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.edit-btn:hover {
-  background: #bbdefb;
-  transform: scale(1.1);
-}
-
-.delete-btn {
-  background: #ffebee;
-  color: #d32f2f;
-}
-
-.delete-btn:hover {
-  background: #ffcdd2;
-  transform: scale(1.1);
-}
-
-.no-data {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #666;
-}
-
-.no-data-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.no-data p {
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-}
-
-.create-first-btn {
-  background: linear-gradient(135deg, #c89b3c, #e0b456);
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.create-first-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
-}
-
-/* Адаптив */
-@media (max-width: 768px) {
-  .clubs-management {
-    padding: 80px 1rem 1rem;
-  }
-
-  .management-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-input,
-  .filter-select {
-    min-width: auto;
-  }
-
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .table-cell:before {
-    content: attr(data-label);
-    font-weight: 700;
-    display: block;
-    margin-bottom: 0.25rem;
-    color: #666;
-  }
-
-  .actions {
-    flex-direction: row;
-    justify-content: flex-start;
-  }
-}
-
+@media (max-width: 768px) { .clubs-grid { grid-template-columns: 1fr; } }
 @media (max-width: 480px) {
-  .management-header h1 {
-    font-size: 2rem;
-  }
-
-  .table-cell {
-    font-size: 0.9rem;
-  }
-
-  .contact-item {
-    font-size: 0.8rem;
-  }
+  .view-filters { flex-direction: column; align-items: stretch; }
+  .search-input, .filter-select { min-width: auto; }
 }
 </style>

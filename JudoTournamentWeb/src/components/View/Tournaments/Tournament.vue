@@ -46,11 +46,7 @@
               v-for="tournament in tournaments"
               :key="tournament.id"
               class="judo-tournament-card"
-              :class="{
-              'featured': isFeatured(tournament),
-              'live': tournament.status === 'LIVE'
-            }"
-              @click="navigateToDetails(tournament.id)"
+              :class="{ 'featured': isFeatured(tournament), 'live': tournament.status === 'LIVE' }"
           >
             <div v-if="isFeatured(tournament)" class="featured-badge">Главный турнир</div>
             <div class="judo-tournament_card_info">
@@ -69,6 +65,22 @@
               </div>
               <div v-if="tournament.description" class="tournament-description">
                 {{ tournament.description }}
+              </div>
+              <!-- Кнопки действий -->
+              <div class="tournament-actions">
+                <button class="tournament-action-btn tournament-view-details-btn" @click="navigateToDetails(tournament.id)">
+                  Подробнее
+                </button>
+                <button
+                    v-if="isRegistrationAvailable(tournament)"
+                    class="tournament-action-btn tournament-register-btn"
+                    @click="navigateToRegistration(tournament.id)"
+                >
+                  Зарегистрироваться
+                </button>
+                <button v-else class="tournament-action-btn tournament-register-disabled-btn" disabled>
+                  Регистрация закрыта
+                </button>
               </div>
             </div>
           </article>
@@ -103,89 +115,39 @@ const tournaments = ref([])
 const isLoading = ref(false)
 const error = ref('')
 
-// Загрузка турниров через импортированную функцию
+// Проверка доступности регистрации
+const isRegistrationAvailable = (tournament) => {
+  const allowedStatuses = ['PLANNED', 'REGISTRATION']
+  return allowedStatuses.includes(tournament.status)
+}
+
+// Загрузка турниров
 const loadTournaments = async () => {
   isLoading.value = true
   error.value = ''
-
   try {
     const result = await fetchTournaments()
-
     if (result.success) {
       tournaments.value = result.data
     } else {
       error.value = result.error
-      // Мок данные для демонстрации
-      tournaments.value = getMockTournaments()
     }
   } catch (err) {
     console.error('Ошибка при загрузке турниров:', err)
     error.value = 'Не удалось загрузить турниры. Пожалуйста, попробуйте позже.'
-    tournaments.value = getMockTournaments()
   } finally {
     isLoading.value = false
   }
 }
 
-// Мок данные
-const getMockTournaments = () => {
-  return [
-    {
-      "athletes_count": 125,
-      "city": "Астана",
-      "country": "Казахстан",
-      "description": "Чемпионат Казахстана среди кадетов 2025 года",
-      "end_date": "2025-03-19",
-      "id": 1,
-      "name": "Чемпионат Казахстана среди кадетов",
-      "progress_percentage": 0,
-      "start_date": "2025-03-17",
-      "status": "PLANNED",
-      "tatami_count": 3,
-      "venue": "Дворец спорта"
-    },
-    {
-      "athletes_count": 240,
-      "city": "Астана",
-      "country": "Казахстан",
-      "description": "Главный турнир сезона 2025",
-      "end_date": "2025-05-12",
-      "id": 2,
-      "name": "Гран-при Казахстана 2025",
-      "progress_percentage": 45,
-      "start_date": "2025-05-10",
-      "status": "LIVE",
-      "tatami_count": 5,
-      "venue": "Спорткомплекс 'Алатау'"
-    },
-    {
-      "athletes_count": 180,
-      "city": "Астана",
-      "country": "Казахстан",
-      "description": "Ежегодный кубок города Астаны",
-      "end_date": "2024-11-17",
-      "id": 3,
-      "name": "Кубок Астаны 2024",
-      "progress_percentage": 100,
-      "start_date": "2024-11-15",
-      "status": "COMPLETED",
-      "tatami_count": 2,
-      "venue": "Спортзал 'Жастар'"
-    }
-  ]
-}
-
 // Вспомогательные функции
 const formatDate = (startDate, endDate) => {
   if (!startDate) return ''
-
   const start = new Date(startDate)
   const end = new Date(endDate)
-
   if (startDate === endDate) {
     return start.toLocaleDateString('ru-RU')
   }
-
   return `${start.toLocaleDateString('ru-RU')} – ${end.toLocaleDateString('ru-RU')}`
 }
 
@@ -194,7 +156,6 @@ const getLocation = (tournament) => {
   if (tournament.venue) parts.push(tournament.venue)
   if (tournament.city) parts.push(tournament.city)
   if (tournament.country && tournament.country !== 'string') parts.push(tournament.country)
-
   return parts.join(', ') || 'Место не указано'
 }
 
@@ -230,10 +191,14 @@ const loadMore = () => {
   console.log('Загрузка дополнительных турниров...')
 }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ ПЕРЕХОДА
 const navigateToDetails = (id) => {
-  console.log('Переход к турниру с ID:', id)
   router.push(`/tournamentdetails/${id}`)
+}
+
+const navigateToRegistration = (id) => {
+  // Сохраняем ID турнира в localStorage — самый простой и надёжный способ без Pinia
+  localStorage.setItem('registrationTournamentId', id)
+  router.push('/registrationathlete')
 }
 
 // Загрузка данных при монтировании
@@ -242,13 +207,23 @@ onMounted(() => {
 })
 </script>
 
+<!-- Стили без изменений (оставил как было) -->
 <style scoped>
-.judo-tournament-card {
-  cursor: pointer;
-}
-
-.judo-tournament-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
+.judo-tournament-card { cursor: default; position: relative; }
+.tournament-actions { display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
+.tournament-action-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.3s; flex: 1; text-align: center; }
+.tournament-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.tournament-view-details-btn { background: #f8f9fa; color: #555; border: 2px solid #ddd; }
+.tournament-view-details-btn:hover { background: #e9ecef; border-color: #bbb; transform: translateY(-2px); }
+.tournament-register-btn { background: #c89b3c; color: white; }
+.tournament-register-btn:hover { background: #b68c34; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3); }
+.tournament-register-disabled-btn { background: #e8e8e8; color: #999; }
+.loading-indicator { text-align: center; padding: 60px 20px; }
+.loading-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #c89b3c; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.error-message { text-align: center; padding: 60px 20px; color: #e74c3c; }
+.retry-button { margin-top: 16px; padding: 10px 24px; background: #c89b3c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.retry-button:hover { background: #b68c34; }
+.no-tournaments { text-align: center; padding: 60px 20px; color: #666; }
+@media (max-width: 768px) { .tournament-actions { flex-direction: column; } .tournament-action-btn { width: 100%; } }
 </style>

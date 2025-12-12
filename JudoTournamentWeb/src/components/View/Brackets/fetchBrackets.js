@@ -1,44 +1,49 @@
-export const createBracket = async (categoryData) => {
+
+export const createBracket = async (bracketData,tournament_id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/brackets/`, {
+        const response = await fetch(`http://127.0.0.1:5001/api/brackets/${tournament_id}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
             },
-            body: JSON.stringify(categoryData)
+            body: JSON.stringify(bracketData)
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Ошибка при создании категории');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Ошибка при создании сетки');
         }
 
-        const result = await response.json();
-        return { success: true, data: result };
+        return { success: true, data: await response.json() };
     } catch (error) {
-        console.error('Ошибка при создании категории:', error);
+        console.error('Ошибка при создании сетки:', error);
         return { success: false, error: error.message };
     }
 };
 
-export const fetchBrackets = async () => {
+export const fetchBrackets = async (tournament_id, category_id) => {
+    // ЭТО САМОЕ ГЛАВНОЕ — URL с реальными id
+    const url = `http://127.0.0.1:5001/api/brackets/?tournament_id=${tournament_id}&category_id=${category_id}`;
+
     try {
-        const response = await fetch('http://127.0.0.1:5001/api/brackets/')
+        const response = await fetch(url, {
+            headers: { 'X-API-Key': 'mobile_app_2024' }
+        });
 
-        if (!response.ok) {
-            const err = await response.json()
-            throw new Error(err.message || `HTTP ${response.status}`)
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const data = await response.json()
-        return { success: true, brackets: data.brackets || [], total: data.total || 0 }
+        const data = await response.json();
+        return {
+            success: true,
+            brackets: data.brackets || [],
+            total: data.total || 0
+        };
     } catch (error) {
-        console.error('Ошибка загрузки спортсменов:', error)
-        return { success: false, error: error.message || 'Неизвестная ошибка' }
+        console.error('Ошибка загрузки сеток:', error);
+        return { success: false, error: error.message };
     }
-}
-
+};
 
 export const fetchBracketDetail = async (id) => {
     try {

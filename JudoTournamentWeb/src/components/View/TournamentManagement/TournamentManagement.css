@@ -1,0 +1,594 @@
+.bracket-setup {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.create-bracket-btn {
+    background: #c89b3c;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.create-bracket-btn:hover {
+    background: #e0b456;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.setup-group {
+    margin-bottom: 1.5rem;
+}
+
+.setup-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.setup-group select,
+.setup-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.setup-group select:focus,
+.setup-group textarea:focus {
+    outline: none;
+    border-color: #c89b3c;
+}
+
+.setup-group textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.action-button {
+    width: 100%;
+    background: #c89b3c;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    background: #e0b456;
+}
+
+.tournament-settings-page {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #fefefe, #f8f9fa);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: #1a1a1a;
+    padding: 90px 0 2rem 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.settings-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.settings-navigation {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+}
+
+.settings-navigation h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+    text-align: center;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nav-tab {
+    background: #f5f5f5;
+    border: 2px solid #e8e8e8;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #666;
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+}
+
+.nav-tab:hover {
+    border-color: #c89b3c;
+    color: #1a1a1a;
+}
+
+.nav-tab.active {
+    background: linear-gradient(135deg, #c89b3c, #e0b456);
+    color: white;
+    border-color: #c89b3c;
+}
+
+.settings-content {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 768px) {
+    .tournament-settings-page {
+        padding-top: 80px;
+    }
+
+    .settings-container {
+        padding: 0 1rem;
+    }
+
+    .settings-navigation,
+    .settings-content {
+        padding: 1.5rem;
+    }
+
+    .nav-tabs {
+        flex-direction: column;
+    }
+
+    .nav-tab {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .tournament-settings-page {
+        padding-top: 75px;
+    }
+
+    .settings-navigation,
+    .settings-content {
+        padding: 1rem;
+    }
+
+    .settings-navigation h2 {
+        font-size: 1.5rem;
+    }
+}
+
+.manage-categories {
+    position: relative;
+}
+
+.manage-categories h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    z-index: 10;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #c89b3c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
+    padding: 0.75rem;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+    font-family: inherit;
+    width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #c89b3c;
+}
+
+.form-group input:disabled,
+.form-group select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.error {
+    color: #ff4444;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.submit-button {
+    background: linear-gradient(135deg, #c89b3c, #e0b456);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+}
+
+.submit-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
+}
+
+.submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.categories-list {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.categories-list h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1a1a1a;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.category-card {
+    background: #f8f9fa;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.category-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1a1a1a;
+    font-size: 1rem;
+}
+
+.category-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.category-gender {
+    background: #c89b3c;
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    align-self: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.category-tournament {
+    font-weight: 500;
+    color: #c89b3c;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .form-actions {
+        justify-content: stretch;
+    }
+
+    .submit-button {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.create-tournament h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    z-index: 10;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #c89b3c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ПОЛНОЙ ШИРИНЫ */
+.form-group.full-width {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+/* ОСОБЫЕ СТИЛИ ДЛЯ ОПИСАНИЯ И ОРГАНИЗАТОРА */
+.form-group:has(#description),
+.form-group:has(#organizer) {
+    grid-column: span 1;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #c89b3c;
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Гарантируем одинаковую ширину для всех полей */
+.form-grid > .form-group {
+    min-width: 0; /* Предотвращает растягивание */
+}
+
+.form-grid > .form-group:not(.full-width) {
+    flex: 1;
+}
+
+.error {
+    color: #ff4444;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.submit-button {
+    background: linear-gradient(135deg, #c89b3c, #e0b456);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+}
+
+.submit-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
+}
+
+.submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    /* На мобильных все поля занимают полную ширину */
+    .form-group:has(#description),
+    .form-group:has(#organizer) {
+        grid-column: 1 / -1;
+    }
+
+    .form-actions {
+        justify-content: stretch;
+    }
+
+    .submit-button {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-group input,
+    .form-group textarea {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+
+    .form-group textarea {
+        min-height: 70px;
+    }
+}

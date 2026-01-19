@@ -66,7 +66,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-
+import "./Clubs.css"
 const clubs = ref([])
 const searchQuery = ref('')
 const cityFilter = ref('')
@@ -120,44 +120,4 @@ onMounted(loadClubs)
 </script>
 
 <style scoped>
-.clubs-view { padding: 90px 2rem 4rem; max-width: 1400px; margin: 0 auto; min-height: 100vh; }
-.view-header { text-align: center; margin-bottom: 3rem; }
-.view-header h1 { font-size: 2.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.5rem; }
-.view-header p { font-size: 1.1rem; color: #666; }
-
-.view-filters { display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; align-items: center; }
-.search-input { flex: 1; min-width: 280px; padding: 0.85rem 1rem; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 1rem; }
-.search-input:focus { outline: none; border-color: #c89b3c; }
-.filter-select { padding: 0.85rem 1rem; border: 2px solid #e8e8e8; border-radius: 12px; background: white; cursor: pointer; min-width: 180px; }
-
-.clubs-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-
-.club-card {
-  display: flex; align-items: center; background: white; padding: 1.5rem; border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); position: relative; overflow: hidden;
-}
-.club-card::after {
-  content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
-  background: linear-gradient(135deg, #c89b3c, #e0b456);
-}
-
-.club-main { flex: 1; }
-.club-name { margin: 0 0 0.4rem 0; font-size: 1.35rem; font-weight: 700; color: #1a1a1a; }
-.club-short { margin: 0; font-size: 0.95rem; color: #666; font-style: italic; }
-
-.club-info { margin-left: 2rem; display: flex; flex-direction: column; gap: 0.6rem; }
-.info-item { display: flex; flex-direction: column; font-size: 0.95rem; }
-.label { color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
-.value { color: #1a1a1a; font-weight: 600; }
-.athletes-count { background: linear-gradient(135deg, #c89b3c, #e0b456); color: white; padding: 0.25rem 0.6rem; border-radius: 12px; width: fit-content; font-size: 0.9rem; }
-
-.no-data { grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: #666; }
-.no-data-icon { font-size: 4.5rem; margin-bottom: 1rem; opacity: 0.4; }
-.no-data small { display: block; margin-top: 0.5rem; color: #999; }
-
-@media (max-width: 768px) { .clubs-grid { grid-template-columns: 1fr; } }
-@media (max-width: 480px) {
-  .view-filters { flex-direction: column; align-items: stretch; }
-  .search-input, .filter-select { min-width: auto; }
-}
 </style>

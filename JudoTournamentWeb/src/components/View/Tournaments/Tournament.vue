@@ -209,21 +209,4 @@ onMounted(() => {
 
 <!-- Стили без изменений (оставил как было) -->
 <style scoped>
-.judo-tournament-card { cursor: default; position: relative; }
-.tournament-actions { display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
-.tournament-action-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.3s; flex: 1; text-align: center; }
-.tournament-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.tournament-view-details-btn { background: #f8f9fa; color: #555; border: 2px solid #ddd; }
-.tournament-view-details-btn:hover { background: #e9ecef; border-color: #bbb; transform: translateY(-2px); }
-.tournament-register-btn { background: #c89b3c; color: white; }
-.tournament-register-btn:hover { background: #b68c34; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3); }
-.tournament-register-disabled-btn { background: #e8e8e8; color: #999; }
-.loading-indicator { text-align: center; padding: 60px 20px; }
-.loading-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #c89b3c; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.error-message { text-align: center; padding: 60px 20px; color: #e74c3c; }
-.retry-button { margin-top: 16px; padding: 10px 24px; background: #c89b3c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-.retry-button:hover { background: #b68c34; }
-.no-tournaments { text-align: center; padding: 60px 20px; color: #666; }
-@media (max-width: 768px) { .tournament-actions { flex-direction: column; } .tournament-action-btn { width: 100%; } }
 </style>

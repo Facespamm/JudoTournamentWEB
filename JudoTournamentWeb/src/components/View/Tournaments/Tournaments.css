@@ -499,3 +499,598 @@
 @media (max-width: 480px) {
     .modal-content { width: 100%; border-radius: 0; max-height: 100vh; padding: 1rem; }
 }
+
+.judo-tournament-card { cursor: default; position: relative; }
+.tournament-actions { display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
+.tournament-action-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.3s; flex: 1; text-align: center; }
+.tournament-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.tournament-view-details-btn { background: #f8f9fa; color: #555; border: 2px solid #ddd; }
+.tournament-view-details-btn:hover { background: #e9ecef; border-color: #bbb; transform: translateY(-2px); }
+.tournament-register-btn { background: #c89b3c; color: white; }
+.tournament-register-btn:hover { background: #b68c34; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3); }
+.tournament-register-disabled-btn { background: #e8e8e8; color: #999; }
+.loading-indicator { text-align: center; padding: 60px 20px; }
+.loading-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #c89b3c; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.error-message { text-align: center; padding: 60px 20px; color: #e74c3c; }
+.retry-button { margin-top: 16px; padding: 10px 24px; background: #c89b3c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.retry-button:hover { background: #b68c34; }
+.no-tournaments { text-align: center; padding: 60px 20px; color: #666; }
+@media (max-width: 768px) { .tournament-actions { flex-direction: column; } .tournament-action-btn { width: 100%; } }
+
+.tournament-view {
+
+    max-width: 1240px;
+
+    margin: 0 auto;
+
+    padding: 4rem 1rem 2rem 1rem;
+
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    line-height: 1.6;
+
+    color: #333;
+
+}
+
+.tournament-view {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 4rem 1rem 2rem 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.status-tag {
+    padding: 0.5rem 1.25rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-registration { background: #d1e7dd; color: #0f5132; }
+.status-live { background: #f8d7da; color: #58151c; animation: pulse 2s infinite; }
+.status-completed { background: #e2e3e5; color: #41464b; }
+.status-planned { background: #d1d5ea; color: #1e2a78; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.info-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.info-card strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-card span {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #eee;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem 0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.description-text {
+    font-size: 1.1rem;
+    color: #444;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.search-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    color: #1a1a1a;
+}
+
+.filter-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.select-input, .text-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.select-input:focus, .text-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+}
+
+.search-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.search-actions {
+    display: flex;
+    gap: 0.75rem;
+    grid-column: 1 / -1;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.mt-1 {
+    margin-top: 0.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.counter {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.athletes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.athletes-table th {
+    background: #1a1a1a;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.athletes-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.athletes-table tbody tr:hover {
+    background: #f5f8ff;
+}
+
+.athlete-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.athlete-name span {
+    color: #666;
+    font-weight: normal;
+}
+
+.contact {
+    font-family: 'Courier New', monospace;
+    color: #444;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #777;
+}
+
+.empty-state p {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+}
+
+.error { color: #d32f2f; }
+
+.text-error { color: #d32f2f; }
+
+.text-muted { color: #6c757d; font-style: italic; }
+
+.text-success { color: #28a745; }
+
+@media (max-width: 992px) {
+    .filters-grid { grid-template-columns: 1fr; }
+    .search-inputs { grid-template-columns: 1fr; }
+    .search-actions { grid-column: auto; }
+}
+
+@media (max-width: 600px) {
+    .title { font-size: 2rem; }
+    .header { flex-direction: column; align-items: stretch; }
+    .section { padding: 1.5rem; }
+}
+.tournament-view {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 4rem 1rem 2rem 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.status-tag {
+    padding: 0.5rem 1.25rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-registration { background: #d1e7dd; color: #0f5132; }
+.status-live { background: #f8d7da; color: #58151c; animation: pulse 2s infinite; }
+.status-completed { background: #e2e3e5; color: #41464b; }
+.status-planned { background: #d1d5ea; color: #1e2a78; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.info-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.info-card strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-card span {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #eee;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem 0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.description-text {
+    font-size: 1.1rem;
+    color: #444;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.search-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    color: #1a1a1a;
+}
+
+.filter-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.select-input, .text-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.select-input:focus, .text-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+}
+
+.search-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.search-actions {
+    display: flex;
+    gap: 0.75rem;
+    grid-column: 1 / -1;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.mt-1 {
+    margin-top: 0.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.counter {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.athletes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.athletes-table th {
+    background: #1a1a1a;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.athletes-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.athletes-table tbody tr:hover {
+    background: #f5f8ff;
+}
+
+.athlete-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.athlete-name span {
+    color: #666;
+    font-weight: normal;
+}
+
+.contact {
+    font-family: 'Courier New', monospace;
+    color: #444;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #777;
+}
+
+.empty-state p {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+}
+
+.error { color: #d32f2f; }
+
+.text-error { color: #d32f2f; }
+
+.text-muted { color: #6c757d; font-style: italic; }
+
+.text-success { color: #28a745; }
+
+@media (max-width: 992px) {
+    .filters-grid { grid-template-columns: 1fr; }
+    .search-inputs { grid-template-columns: 1fr; }
+    .search-actions { grid-column: auto; }
+}
+
+@media (max-width: 600px) {
+    .title { font-size: 2rem; }
+    .header { flex-direction: column; align-items: stretch; }
+    .section { padding: 1.5rem; }
+}
+
+.text-success { color: #28a745; font-weight: 600; }
+
+.mt-1 { margin-top: 0.5rem; }

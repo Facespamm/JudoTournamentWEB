@@ -103,7 +103,7 @@
 import { ref, onMounted, computed } from 'vue'
 import ClubModal from '@/components/View/Clubs/ClubModal.vue'
 import "./Clubs.css"
-// Данные клубов
+
 const clubs = ref([])
 const searchQuery = ref('')
 const cityFilter = ref('')
@@ -125,7 +125,7 @@ const filteredClubs = computed(() => {
   })
 })
 
-// Загрузка данных
+// Загрузка данных с сервера
 const loadClubs = async () => {
   try {
     const response = await fetch('http://127.0.0.1:5001/clubs/', {
@@ -136,55 +136,12 @@ const loadClubs = async () => {
       const data = await response.json()
       clubs.value = data.clubs || data || []
     } else {
-      // Мок данные для демонстрации
-      clubs.value = [
-        {
-          id: 1,
-          name: 'Динамо Алматы',
-          short_name: 'Динамо',
-          city: 'Алматы',
-          country: 'Казахстан',
-          coach_name: 'Иван Петров',
-          phone: '+7 (777) 123-45-67',
-          email: 'dinamo.almaty@mail.ru',
-          website: 'https://dinamo-almaty.kz',
-          address: 'ул. Абая, 123',
-          athletes_count: 25,
-          founded_year: 1995
-        },
-        {
-          id: 2,
-          name: 'Президентский клуб',
-          short_name: 'Президентский',
-          city: 'Астана',
-          country: 'Казахстан',
-          coach_name: 'Мария Сидорова',
-          phone: '+7 (717) 234-56-78',
-          email: 'president.club@mail.ru',
-          athletes_count: 18,
-          founded_year: 2010
-        }
-      ]
+      console.error('Ошибка загрузки клубов:', response.status, response.statusText)
+      clubs.value = [] // Очищаем список при ошибке
     }
   } catch (error) {
     console.error('Ошибка загрузки клубов:', error)
-    // Мок данные при ошибке
-    clubs.value = [
-      {
-        id: 1,
-        name: 'Динамо Алматы',
-        short_name: 'Динамо',
-        city: 'Алматы',
-        country: 'Казахстан',
-        coach_name: 'Иван Петров',
-        phone: '+7 (777) 123-45-67',
-        email: 'dinamo.almaty@mail.ru',
-        website: 'https://dinamo-almaty.kz',
-        address: 'ул. Абая, 123',
-        athletes_count: 25,
-        founded_year: 1995
-      }
-    ]
+    clubs.value = [] // Очищаем список при любой ошибке
   }
 }
 
@@ -200,17 +157,16 @@ const closeModal = () => {
 
 const editClub = (club) => {
   isModalOpen.value = true
-  editingClub.value = club
+  editingClub.value = { ...club } // создаём копию, чтобы не менять оригинал
 }
 
 // Обработка сохранения клуба
 const handleClubSubmission = (result) => {
   if (result.success) {
-    // Успешное сохранение - перезагружаем список
+    // Успешное сохранение — перезагружаем список
     loadClubs()
-    // Модалка закроется автоматически через 3 секунды
   } else {
-    alert('Ошибка: ' + result.error)
+    alert('Ошибка: ' + (result.error || 'Не удалось сохранить клуб'))
   }
 }
 
@@ -226,12 +182,14 @@ const deleteClub = async (clubId) => {
       headers: { 'X-API-Key': 'mobile_app_2024' }
     })
 
-    if (!response.ok) throw new Error('Ошибка удаления клуба')
+    if (!response.ok) {
+      throw new Error('Ошибка удаления клуба')
+    }
 
-    alert('Клуб успешно удален!')
+    alert('Клуб успешно удалён!')
     loadClubs()
   } catch (error) {
-    alert('Ошибка: ' + error.message)
+    alert('Ошибка удаления: ' + error.message)
   }
 }
 

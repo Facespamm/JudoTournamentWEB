@@ -1,4 +1,3 @@
-
 export const GetRefereeStatistics = async () => {
     try {
         const response = await fetch('http://localhost:5001/statistics/live-overview')
@@ -9,15 +8,15 @@ export const GetRefereeStatistics = async () => {
         }
 
         const data = await response.json()
-        return { success: true, athletes: data.athletes || [], total: data.total || 0 }
+        return data // Возвращаем весь ответ как есть
     } catch (error) {
-        console.error('Ошибка загрузки спортсменов:', error)
+        console.error('Ошибка загрузки статистики:', error)
         return { success: false, error: error.message || 'Неизвестная ошибка' }
     }
 }
 
 
-export const GetLiveTournament = async () => {
+export const GetLiveTournamentReferee = async () => {
     try {
         const response = await fetch('http://localhost:5001/statistics/active-tournaments')
 
@@ -27,11 +26,9 @@ export const GetLiveTournament = async () => {
         }
 
         const data = await response.json()
-        return { success: true, athletes: data.athletes || [], total: data.total || 0 }
+        return data // Возвращаем весь ответ как есть
     } catch (error) {
-        console.error('Ошибка загрузки спортсменов:', error)
+        console.error('Ошибка загрузки турниров:', error)
         return { success: false, error: error.message || 'Неизвестная ошибка' }
     }
 }
-
-

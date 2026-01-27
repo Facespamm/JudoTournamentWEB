@@ -19,7 +19,7 @@
       <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-info">
-          <div class="stat-number">{{ stats.total_athletes || 0 }}</div>
+          <div class="stat-number">{{ stats.unique_athletes || 0 }}</div>
           <div class="stat-label">Участников</div>
         </div>
       </div>
@@ -70,10 +70,11 @@
             <span class="tournament-date">{{ formatDate(tournament.start_date) }}</span>
           </div>
           <h3 class="tournament-name">{{ tournament.name }}</h3>
-          <p class="tournament-location">{{ tournament.venue }}, {{ tournament.city }}</p>
+          <p class="tournament-location">{{ tournament.city }}, {{ tournament.country }}</p>
           <div class="tournament-stats">
             <span class="stat">{{ tournament.athletes_count || 0 }} участников</span>
-            <span class="stat">{{ tournament.progress_percentage || 0 }}% завершено</span>
+            <span class="stat">{{ tournament.live_fights_count || 0 }} live-схваток</span>
+            <span class="stat">{{ tournament.tatami_count || 0 }} татами</span>
           </div>
           <button class="manage-btn" @click="navigateToTournament(tournament.id)">Управлять</button>
         </div>
@@ -84,7 +85,7 @@
       </div>
     </div>
 
-    <!-- TOAST УВЕДОМЛЕНИЕ (встроенное) -->
+    <!-- TOAST УВЕДОМЛЕНИЕ -->
     <transition name="fade">
       <div v-if="toast.visible" class="toast-notification" :class="toast.type">
         <div class="toast-content">
@@ -100,35 +101,20 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import "./RefereeDashboard.css"
+import { GetRefereeStatistics, GetLiveTournamentReferee } from "@/components/View/RefereeDashboard/fetchRefereeDashboard.js"
+
 const router = useRouter()
 
 const stats = ref({})
 const activeTournaments = ref([])
 
-// Toast состояние
 const toast = ref({
   visible: false,
   message: '',
   type: 'success' // success | error
 })
 
-// Навигация к сеткам
-const navigateToBrackets = () => {
-  router.push('/brackets')
-}
-
-// Навигация к татами
-const navigateToTatami = () => {
-  router.push('/tatami')
-}
-
-// Навигация к турнирам
-const navigateToTournaments = () => {
-  router.push('/tournament')
-}
-
-// Универсальная функция показа toast
-const showToast = (message, type = 'success', duration = type === 'success' ? 3000 : 4000) => {
+const showToast = (message, type = 'success', duration = type === 'success' ? 3000 : 5000) => {
   toast.value = { visible: true, message, type }
   setTimeout(() => {
     toast.value.visible = false
@@ -137,61 +123,41 @@ const showToast = (message, type = 'success', duration = type === 'success' ? 30
 
 const loadDashboardData = async () => {
   try {
-    // Загрузка статистики
-    const statsResponse = await fetch('/admin/api/quick_stats', {
-      headers: { 'X-API-Key': 'mobile_app_2024' }
-    })
-    if (statsResponse.ok) {
-      const data = await statsResponse.json()
-      // Берем только нужные поля для судьи
-      stats.value = {
-        active_tournaments: data.active_tournaments || 0,
-        total_athletes: data.total_athletes || 0,
-        live_fights: data.live_fights || 0
-      }
+    // 1. Статистика
+    const statsData = await GetRefereeStatistics()
+    console.log('GetRefereeStatistics → полный ответ:', statsData)
+
+    if (statsData?.success && statsData?.data) {
+      stats.value = statsData.data
+      console.log('Статистика успешно загружена:', stats.value)
+    } else {
+      console.warn('Некорректный формат статистики')
+      showToast('Не удалось загрузить статистику', 'error')
+      stats.value = {}
     }
 
-    // Загрузка активных турниров
-    const tournamentsResponse = await fetch('/api/tournament?status=LIVE', {
-      headers: { 'X-API-Key': 'mobile_app_2024' }
-    })
-    if (tournamentsResponse.ok) {
-      const data = await tournamentsResponse.json()
-      activeTournaments.value = data.tournaments || []
+    // 2. Активные турниры — исправлено под реальную структуру ответа
+    const tournamentsData = await GetLiveTournamentReferee()
+    console.log('GetLiveTournamentReferee → полный ответ:', tournamentsData)
+
+    if (tournamentsData?.success) {
+      // Турниры приходят напрямую в поле data как массив объектов
+      activeTournaments.value = Array.isArray(tournamentsData.data)
+          ? tournamentsData.data
+          : tournamentsData.data?.tournaments || tournamentsData.data?.active_tournaments || []
+
+      console.log('Активные турниры загружены:', activeTournaments.value)
+    } else {
+      console.warn('Не удалось загрузить активные турниры')
+      showToast('Не удалось загрузить список турниров', 'error')
+      activeTournaments.value = []
     }
 
   } catch (error) {
-    console.error('Ошибка загрузки данных:', error)
-
-    // Мок данные для демонстрации
-    stats.value = {
-      active_tournaments: 3,
-      total_athletes: 245,
-      live_fights: 2
-    }
-
-    activeTournaments.value = [
-      {
-        id: 1,
-        name: 'Чемпионат Казахстана среди кадетов',
-        status: 'LIVE',
-        start_date: '2025-03-17',
-        venue: 'Дворец спорта',
-        city: 'Астана',
-        athletes_count: 125,
-        progress_percentage: 45
-      },
-      {
-        id: 2,
-        name: 'Гран-при Казахстана 2025',
-        status: 'BRACKETS',
-        start_date: '2025-05-10',
-        venue: 'Спорткомплекс "Алатау"',
-        city: 'Алматы',
-        athletes_count: 240,
-        progress_percentage: 20
-      }
-    ]
+    console.error('Ошибка загрузки данных панели судьи:', error)
+    showToast('Не удалось загрузить данные панели. Попробуйте позже.', 'error')
+    stats.value = {}
+    activeTournaments.value = []
   }
 }
 
@@ -222,10 +188,11 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('ru-RU')
 }
 
-// Навигация к конкретному турниру
-const navigateToTournament = (tournamentId) => {
-  router.push(`/tournament/${tournamentId}`)
-}
+// Навигация
+const navigateToBrackets = () => router.push('/brackets')
+const navigateToTatami = () => router.push('/tatami')
+const navigateToTournaments = () => router.push('/tournament')
+const navigateToTournament = (id) => router.push(`/tournament/${id}`)
 
 onMounted(() => {
   loadDashboardData()
@@ -233,4 +200,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ваши стили */
 </style>

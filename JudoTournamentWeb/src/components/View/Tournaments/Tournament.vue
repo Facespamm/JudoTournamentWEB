@@ -46,9 +46,8 @@
               v-for="tournament in tournaments"
               :key="tournament.id"
               class="judo-tournament-card"
-              :class="{ 'featured': isFeatured(tournament), 'live': tournament.status === 'LIVE' }"
+              :class="{ 'live': tournament.status === 'LIVE' }"
           >
-            <div v-if="isFeatured(tournament)" class="featured-badge">Главный турнир</div>
             <div class="judo-tournament_card_info">
               <div class="tournament-header">
                 <span class="tournament-date-badge">{{ formatDate(tournament.start_date, tournament.end_date) }}</span>
@@ -174,17 +173,13 @@ const getStatusClass = (status) => {
 const getStatusText = (status) => {
   const statusMap = {
     'LIVE': 'LIVE',
-    'PLANNED': 'PLANNED',
-    'COMPLETED': 'COMPLETED',
+    'PLANNED': 'ПЛАНИРУЕТСЯ',
+    'COMPLETED': 'ЗАВЕРШЁН',
     'REGISTRATION': 'РЕГИСТРАЦИЯ',
     'WEIGHING': 'ВЗВЕШИВАНИЕ',
     'BRACKETS': 'СЕТКИ'
   }
   return statusMap[status] || status
-}
-
-const isFeatured = (tournament) => {
-  return tournament.status === 'LIVE' || tournament.id === 2
 }
 
 const loadMore = () => {
@@ -196,7 +191,6 @@ const navigateToDetails = (id) => {
 }
 
 const navigateToRegistration = (id) => {
-  // Сохраняем ID турнира в localStorage — самый простой и надёжный способ без Pinia
   localStorage.setItem('registrationTournamentId', id)
   router.push('/registrationathlete')
 }
@@ -207,6 +201,6 @@ onMounted(() => {
 })
 </script>
 
-<!-- Стили без изменений (оставил как было) -->
 <style scoped>
+/* ваши стили остаются без изменений */
 </style>

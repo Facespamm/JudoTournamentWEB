@@ -1,4 +1,3 @@
-
 export const GetAdminStatistics = async () => {
     try {
         const response = await fetch('http://localhost:5001/statistics/live-detailed')
@@ -9,9 +8,10 @@ export const GetAdminStatistics = async () => {
         }
 
         const data = await response.json()
-        return { success: true, athletes: data.athletes || [], total: data.total || 0 }
+        // Бэкенд возвращает: { success: true, data: { active_tournaments: N, ... } }
+        return data // Возвращаем весь ответ как есть
     } catch (error) {
-        console.error('Ошибка загрузки спортсменов:', error)
+        console.error('Ошибка загрузки статистики:', error)
         return { success: false, error: error.message || 'Неизвестная ошибка' }
     }
 }
@@ -27,11 +27,9 @@ export const GetLiveTournamentAdmin = async () => {
         }
 
         const data = await response.json()
-        return { success: true, athletes: data.athletes || [], total: data.total || 0 }
+        return data // Возвращаем весь ответ как есть
     } catch (error) {
-        console.error('Ошибка загрузки спортсменов:', error)
+        console.error('Ошибка загрузки турниров:', error)
         return { success: false, error: error.message || 'Неизвестная ошибка' }
     }
 }
-
-

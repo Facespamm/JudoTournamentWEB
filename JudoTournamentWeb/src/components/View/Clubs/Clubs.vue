@@ -24,7 +24,7 @@
       </select>
     </div>
 
-    <!-- СПИСОК КЛУБОВ — обычные карточки (не кликабельные) -->
+    <!-- СПИСОК КЛУБОВ -->
     <div class="clubs-grid">
       <div
           v-for="club in filteredClubs"
@@ -54,10 +54,16 @@
 
       <!-- Пустое состояние -->
       <div v-if="filteredClubs.length === 0" class="no-data">
-        <div class="no-data-icon">Здание</div>
+        <div class="no-data-icon">🥋</div>
         <p>Клубы не найдены</p>
         <small v-if="searchQuery || cityFilter">
           Попробуйте изменить поисковый запрос или фильтр
+        </small>
+        <small v-else-if="loading">
+          Загрузка клубов...
+        </small>
+        <small v-else-if="error">
+          Не удалось загрузить список клубов. Попробуйте позже.
         </small>
       </div>
     </div>
@@ -67,9 +73,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import "./Clubs.css"
+
 const clubs = ref([])
 const searchQuery = ref('')
 const cityFilter = ref('')
+const loading = ref(false)
+const error = ref(null)
 
 // Фильтрация
 const filteredClubs = computed(() => {
@@ -78,9 +87,9 @@ const filteredClubs = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
   return clubs.value.filter(club => {
-    const nameMatch = club.name?.toLowerCase().includes(query) ?? false
+    const nameMatch    = club.name?.toLowerCase().includes(query)      ?? false
     const shortNameMatch = club.short_name?.toLowerCase().includes(query) ?? false
-    const coachMatch = club.coach_name?.toLowerCase().includes(query) ?? false
+    const coachMatch   = club.coach_name?.toLowerCase().includes(query) ?? false
 
     const searchMatch = nameMatch || shortNameMatch || coachMatch
     const cityMatch = !cityFilter.value || club.city === cityFilter.value
@@ -89,30 +98,37 @@ const filteredClubs = computed(() => {
   })
 })
 
-// Загрузка клубов — полностью рабочая под ваш бэкенд
+// Загрузка клубов
 const loadClubs = async () => {
+  loading.value = true
+  error.value = null
+
   try {
     const response = await fetch('http://127.0.0.1:5001/clubs/', {
       headers: { 'X-API-Key': 'mobile_app_2024' }
     })
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
 
     const data = await response.json()
 
     let fetchedClubs = []
-    if (data && Array.isArray(data.clubs)) fetchedClubs = data.clubs
-    else if (data && Array.isArray(data)) fetchedClubs = data
+    if (data && Array.isArray(data.clubs)) {
+      fetchedClubs = data.clubs
+    } else if (data && Array.isArray(data)) {
+      fetchedClubs = data
+    }
 
     clubs.value = fetchedClubs
 
-  } catch (error) {
-    console.error('Ошибка загрузки клубов:', error)
-    // Мок-данные только при ошибке
-    clubs.value = [
-      { id: 1, name: 'Динамо Алматы', short_name: 'Динамо', city: 'Алматы', coach_name: 'Иван Петров', athletes_count: 25 },
-      { id: 2, name: 'Президентский клуб', short_name: 'ПК', city: 'Астана', coach_name: 'Мария Сидорова', athletes_count: 18 }
-    ]
+  } catch (err) {
+    console.error('Ошибка загрузки клубов:', err)
+    error.value = err.message
+    clubs.value = []
+  } finally {
+    loading.value = false
   }
 }
 
@@ -120,4 +136,5 @@ onMounted(loadClubs)
 </script>
 
 <style scoped>
+/* Ваш стиль остаётся без изменений */
 </style>

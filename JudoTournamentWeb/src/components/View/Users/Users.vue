@@ -1,6 +1,5 @@
 <template>
   <div class="admin-users-management">
-    <!-- ХЕДЕР СТРАНИЦЫ -->
     <div class="page-header">
       <h1 class="page-title">Управление пользователями</h1>
     </div>
@@ -91,6 +90,24 @@
     <div class="users-table-card">
       <div class="table-header">
         <h3>Список пользователей</h3>
+        <div class="table-actions">
+          <button
+              class="btn-edit"
+              :disabled="!selectedUserId"
+              @click="editSelectedUser"
+              title="Редактировать выбранного"
+          >
+            Редактировать
+          </button>
+          <button
+              class="btn-delete"
+              :disabled="!selectedUserId"
+              @click="confirmDeleteSelected"
+              title="Удалить выбранного"
+          >
+            Удалить
+          </button>
+        </div>
       </div>
 
       <div class="table-container">
@@ -101,15 +118,28 @@
         <table v-else-if="users.length > 0" class="users-table">
           <thead>
           <tr>
+            <th class="col-select"></th>
             <th class="col-user">Пользователь</th>
             <th class="col-contact">Контакт</th>
             <th class="col-role">Роль</th>
             <th class="col-status">Статус</th>
-            <th class="col-actions">Действия</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="user in users" :key="user.id" class="user-row">
+          <tr
+              v-for="user in users"
+              :key="user.id"
+              class="user-row"
+              :class="{ 'selected-row': selectedUserId === user.id }"
+              @click="selectUser(user.id)"
+          >
+            <td class="col-select">
+              <input
+                  type="radio"
+                  :checked="selectedUserId === user.id"
+                  @click.stop="selectUser(user.id)"
+              />
+            </td>
             <td class="user-info">
               <div class="user-avatar">{{ getUserInitials(user) }}</div>
               <div class="user-details">
@@ -138,24 +168,6 @@
                 {{ formatDate(user.last_login) }}
               </div>
             </td>
-            <td class="actions-info">
-              <div class="action-buttons">
-                <button class="btn-edit" @click="editUser(user)" title="Редактировать">
-                  Ред.
-                </button>
-                <button
-                    v-if="currentUser.id !== user.id"
-                    class="btn-delete"
-                    @click="confirmDelete(user)"
-                    title="Удалить"
-                >
-                  Удалить
-                </button>
-                <button class="btn-reset" @click="resetPassword(user)" title="Сбросить пароль">
-                  Сброс
-                </button>
-              </div>
-            </td>
           </tr>
           </tbody>
         </table>
@@ -169,23 +181,9 @@
       </div>
 
       <div v-if="users.length > 0 && !loading" class="pagination">
-        <button
-            class="pagination-btn"
-            :disabled="pagination.page === 1"
-            @click="prevPage"
-        >
-          ←
-        </button>
-        <span class="pagination-info">
-          Страница {{ pagination.page }} из {{ pagination.totalPages }}
-        </span>
-        <button
-            class="pagination-btn"
-            :disabled="pagination.page === pagination.totalPages"
-            @click="nextPage"
-        >
-          →
-        </button>
+        <button class="pagination-btn" :disabled="pagination.page === 1" @click="prevPage">←</button>
+        <span class="pagination-info">Страница {{ pagination.page }} из {{ pagination.totalPages }}</span>
+        <button class="pagination-btn" :disabled="pagination.page === pagination.totalPages" @click="nextPage">→</button>
       </div>
     </div>
 
@@ -213,9 +211,9 @@
 </template>
 
 <script>
-import { GetCountRolesUsers, GetAllUsersInformation } from "@/components/View/Users/fetchUsers.js"
-import UserEditModal from '@/components/View/Users/UserEditModal.vue'
-import './Users.css'
+import { GetCountRolesUsers, GetAllUsersInformation, DeleteUser } from "@/components/View/Users/fetchUsers.js";
+import UserEditModal from '@/components/View/Users/UserEditModal.vue';
+import './Users.css';
 
 export default {
   name: 'AdminUsersManagement',
@@ -227,7 +225,6 @@ export default {
   data() {
     return {
       users: [],
-      currentUser: { id: 1 }, // ← заменить на реальный текущий пользователь
       filters: { search: '', role: '', status: '' },
       stats: {
         adminCount: 0,
@@ -240,251 +237,261 @@ export default {
       loading: false,
       editingUser: null,
       deletingUser: null,
+      selectedUserId: null,
       userForm: {
+        id: null,
         username: '',
         first_name: '',
         last_name: '',
         middle_name: '',
         email: '',
         phone: '',
-        role: 'VIEWER',
-        password: '',
-        referee_level: ''
+        is_active: true
       }
-    }
+    };
   },
 
   mounted() {
-    this.loadStats()
-    this.loadUsers()
+    this.loadStats();
+    this.loadUsers();
   },
 
   methods: {
-    // Получение роли пользователя (из массива roles)
     getUserRole(user) {
-      if (!user || !Array.isArray(user.roles) || user.roles.length === 0) {
-        return null
-      }
-      return user.roles[0] // берём первую роль
+      return user?.roles?.[0]?.name || user?.roles?.[0] || null;
     },
 
-    // Полное ФИО
     getFullName(user) {
-      if (!user) return '—'
-      const parts = []
-      if (user.last_name) parts.push(user.last_name)
-      if (user.first_name) parts.push(user.first_name)
-      if (user.middle_name) parts.push(user.middle_name)
-      return parts.join(' ') || '—'
+      if (!user) return '—';
+      const parts = [];
+      if (user.last_name) parts.push(user.last_name);
+      if (user.first_name) parts.push(user.first_name);
+      if (user.middle_name) parts.push(user.middle_name);
+      return parts.join(' ') || user.username || '—';
     },
 
-    // Инициалы
     getUserInitials(user) {
-      if (!user) return '??'
-      const fullName = this.getFullName(user)
-      if (!fullName || fullName === '—') return '??'
-      return fullName
-          .trim()
-          .split(/\s+/)
-          .map(word => word[0].toUpperCase())
-          .join('')
-          .slice(0, 2)
+      const name = this.getFullName(user);
+      if (name === '—') return '??';
+      return name.trim().split(/\s+/).map(w => w[0].toUpperCase()).join('').slice(0, 2) || '??';
     },
 
     async loadStats() {
       try {
-        const res = await GetCountRolesUsers()
-        if (!res?.success || !res?.data) return
+        const res = await GetCountRolesUsers();
+        if (!res?.success || !res?.data) return;
 
-        const { total_active_users, users_by_role } = res.data
+        const { total_active_users, users_by_role } = res.data;
+        this.stats.totalCount = total_active_users || 0;
 
-        this.stats.totalCount = total_active_users || 0
+        const getCount = (role) => users_by_role.find(r => r.normalized_name === role)?.count || 0;
 
-        this.stats.adminCount = 0
-        this.stats.refereeCount = 0
-        this.stats.scoreboardCount = 0
-        this.stats.participantCount = 0
-
-        users_by_role.forEach(item => {
-          const name = (item.role_name || item.normalized_name || '').toLowerCase()
-          const count = Number(item.count) || 0
-
-          if (name.includes('админ') || name.includes('admin')) {
-            this.stats.adminCount = count
-          } else if (name.includes('судья') || name.includes('referee')) {
-            this.stats.refereeCount = count
-          } else if (name.includes('табло') || name.includes('scoreboard')) {
-            this.stats.scoreboardCount = count
-          } else if (name.includes('участник') || name.includes('participant')) {
-            this.stats.participantCount = count
-          }
-        })
+        this.stats.adminCount      = getCount('ADMIN');
+        this.stats.refereeCount    = getCount('REFEREE');
+        this.stats.scoreboardCount = getCount('SCOREBOARD');
+        this.stats.participantCount = getCount('PARTICIPANT');
       } catch (err) {
-        console.error('Ошибка загрузки статистики:', err)
+        console.error('Ошибка загрузки статистики:', err);
       }
     },
 
     async loadUsers() {
-      this.loading = true
+      this.loading = true;
       try {
         const params = {
           page: this.pagination.page,
           per_page: this.pagination.perPage
-        }
-
-        if (this.filters.search) params.search = this.filters.search
-        if (this.filters.role) params.role = this.filters.role
+        };
+        if (this.filters.search) params.search = this.filters.search;
+        if (this.filters.role)    params.role = this.filters.role;
         if (this.filters.status !== '') {
-          params.is_active = this.filters.status === 'true'
+          params.is_active = this.filters.status === 'true';
         }
 
-        const res = await GetAllUsersInformation(params)
+        const res = await GetAllUsersInformation(params);
 
         if (res?.success && Array.isArray(res.data)) {
-          this.users = res.data
-          this.pagination.totalPages =
-              res.total_pages ||
-              Math.ceil((res.total || res.total_count || 0) / this.pagination.perPage) ||
-              1
+          this.users = res.data.filter(u => u?.id != null);
+          this.pagination.totalPages = res.total_pages ||
+              Math.ceil((res.total || res.data.length) / this.pagination.perPage) || 1;
         } else {
-          this.users = []
-          this.pagination.totalPages = 1
+          this.users = [];
+          this.pagination.totalPages = 1;
         }
       } catch (err) {
-        console.error('Ошибка загрузки пользователей:', err)
-        this.users = []
+        console.error('Ошибка загрузки пользователей:', err);
+        this.users = [];
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
+    selectUser(id) {
+      this.selectedUserId = this.selectedUserId === id ? null : id;
+    },
+
+    editSelectedUser() {
+      if (!this.selectedUserId) return;
+      const user = this.users.find(u => u.id === this.selectedUserId);
+      if (user) this.editUser(user);
+    },
+
+    confirmDeleteSelected() {
+      if (!this.selectedUserId) return;
+      const user = this.users.find(u => u.id === this.selectedUserId);
+      if (user) this.confirmDelete(user);
+    },
+
     editUser(user) {
-      this.editingUser = user
+      this.editingUser = true;
       this.userForm = {
+        id: user.id,
         username: user.username || '',
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         middle_name: user.middle_name || '',
         email: user.email || '',
         phone: user.phone || '',
-        role: this.getUserRole(user) || 'VIEWER',
-        password: '',
-        referee_level: user.referee_level || ''
-      }
+        is_active: user.is_active ?? true
+      };
     },
 
-    async handleSaveUser(updatedForm) {
-      // Здесь можно отправить PATCH-запрос на сервер
-      console.log('Обновляем пользователя:', updatedForm)
-      this.closeModal()
-      await this.loadUsers()
-      await this.loadStats()
-    },
-
-    async deleteUser() {
-      // TODO: реальный DELETE-запрос
-      console.log('Удаляем пользователя:', this.deletingUser)
-      this.deletingUser = null
-      await this.loadUsers()
-      await this.loadStats()
-    },
-
-    resetPassword(user) {
-      // TODO: реальный запрос на сброс пароля
-      console.log('Сброс пароля для:', user)
-      alert(`Пароль для ${this.getFullName(user)} сброшен`)
+    async handleSaveUser() {
+      this.editingUser = false;
+      this.userForm = { id: null, username: '', first_name: '', last_name: '', middle_name: '', email: '', phone: '', is_active: true };
+      await this.loadUsers();
+      await this.loadStats();
+      this.selectedUserId = null;
     },
 
     confirmDelete(user) {
-      this.deletingUser = user
+      this.deletingUser = user;
     },
 
     cancelDelete() {
-      this.deletingUser = null
+      this.deletingUser = null;
+    },
+
+    async deleteUser() {
+      if (!this.deletingUser?.id) return;
+
+      const userId = this.deletingUser.id;
+      const userName = this.getFullName(this.deletingUser);
+
+      try {
+        const result = await DeleteUser(userId);
+
+        if (result.success) {
+          this.$toast?.success?.(`Пользователь ${userName} удалён`) ||
+          alert(`Пользователь ${userName} успешно удалён`);
+
+          this.deletingUser = null;
+          this.selectedUserId = null;
+          await this.loadUsers();
+          await this.loadStats();
+        } else {
+          this.$toast?.error?.(result.message || 'Не удалось удалить пользователя') ||
+          alert(`Ошибка: ${result.message || 'Неизвестная ошибка'}`);
+        }
+      } catch (err) {
+        console.error('Ошибка удаления пользователя:', err);
+        alert('Произошла ошибка при попытке удаления');
+      }
     },
 
     closeModal() {
-      this.editingUser = null
+      this.editingUser = false;
       this.userForm = {
+        id: null,
         username: '',
         first_name: '',
         last_name: '',
         middle_name: '',
         email: '',
         phone: '',
-        role: 'VIEWER',
-        password: '',
-        referee_level: ''
-      }
+        is_active: true
+      };
     },
 
     resetFilters() {
-      this.filters = { search: '', role: '', status: '' }
-      this.pagination.page = 1
-      this.loadUsers()
+      this.filters = { search: '', role: '', status: '' };
+      this.pagination.page = 1;
+      this.loadUsers();
     },
 
     prevPage() {
       if (this.pagination.page > 1) {
-        this.pagination.page--
-        this.loadUsers()
+        this.pagination.page--;
+        this.loadUsers();
       }
     },
 
     nextPage() {
       if (this.pagination.page < this.pagination.totalPages) {
-        this.pagination.page++
-        this.loadUsers()
+        this.pagination.page++;
+        this.loadUsers();
       }
     },
 
     getRoleClass(role) {
       const map = {
-        'Администратор': 'role-admin',
-        'Судья': 'role-referee',
-        'Оператор табло': 'role-scoreboard',
-        'Участник': 'role-participant',
-        'Зритель': 'role-viewer',
-        ADMIN: 'role-admin',
-        REFEREE: 'role-referee',
-        SCOREBOARD: 'role-scoreboard',
-        PARTICIPANT: 'role-participant',
-        VIEWER: 'role-viewer'
-      }
-      return map[role] || 'role-viewer'
+        'ADMIN': 'role-admin',
+        'REFEREE': 'role-referee',
+        'SCOREBOARD': 'role-scoreboard',
+        'PARTICIPANT': 'role-participant',
+        'VIEWER': 'role-viewer'
+      };
+      return map[role] || 'role-viewer';
     },
 
     getRoleDisplay(role) {
       const map = {
-        'Администратор': 'Администратор',
-        'Судья': 'Судья',
-        'Оператор табло': 'Оператор табло',
-        'Участник': 'Участник',
-        'Зритель': 'Зритель',
-        ADMIN: 'Администратор',
-        REFEREE: 'Судья',
-        SCOREBOARD: 'Оператор табло',
-        PARTICIPANT: 'Участник',
-        VIEWER: 'Зритель'
-      }
-      return map[role] || role || '—'
+        'ADMIN': 'Администратор',
+        'REFEREE': 'Судья',
+        'SCOREBOARD': 'Оператор табло',
+        'PARTICIPANT': 'Участник',
+        'VIEWER': 'Зритель'
+      };
+      return map[role] || role || '—';
     },
 
     formatDate(date) {
-      if (!date) return '—'
+      if (!date) return '—';
       try {
         return new Date(date).toLocaleDateString('ru-RU', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
-        })
+        });
       } catch {
-        return '—'
+        return '—';
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>
+.table-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.table-actions button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.user-row {
+  cursor: pointer;
+}
+
+.selected-row {
+  background: #e3f2fd !important;
+}
+
+.col-select {
+  width: 40px;
+  text-align: center;
+}
 </style>

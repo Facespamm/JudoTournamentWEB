@@ -1,4 +1,3 @@
-<!-- src/components/UserEditModal.vue -->
 <template>
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
@@ -48,7 +47,9 @@
         </div>
         <div class="form-actions">
           <button type="button" class="btn-cancel" @click="$emit('close')">Отмена</button>
-          <button type="submit" class="btn-save" :disabled="saving">Сохранить</button>
+          <button type="submit" class="btn-save" :disabled="saving">
+            {{ saving ? 'Сохранение...' : 'Сохранить' }}
+          </button>
         </div>
       </form>
     </div>
@@ -56,7 +57,7 @@
 </template>
 
 <script>
-import { UpdateUser } from "@/components/View/Users/fetchUsers.js";
+import { UpdateUser } from "@/components/View/Users/fetchUsers.js"
 
 export default {
   name: 'UserEditModal',
@@ -70,7 +71,17 @@ export default {
 
   data() {
     return {
-      localForm: { ...this.user, password: '' },
+      localForm: {
+        id: null,
+        username: '',
+        first_name: '',
+        last_name: '',
+        middle_name: '',
+        email: '',
+        phone: '',
+        is_active: true,
+        password: ''
+      },
       saving: false
     }
   },
@@ -78,41 +89,67 @@ export default {
   watch: {
     user: {
       immediate: true,
+      deep: true,
       handler(newUser) {
-        this.localForm = { ...newUser, password: '' }
+        if (newUser) {
+          this.localForm = {
+            id: newUser.id || null,
+            username: newUser.username || '',
+            first_name: newUser.first_name || '',
+            last_name: newUser.last_name || '',
+            middle_name: newUser.middle_name || '',
+            email: newUser.email || '',
+            phone: newUser.phone || '',
+            is_active: newUser.is_active ?? true,
+            password: ''
+          }
+        }
       }
     }
   },
 
   methods: {
     async handleSave() {
+      if (!this.localForm?.id) {
+        console.error('Нет id пользователя при сохранении')
+        alert('Ошибка: идентификатор пользователя не найден')
+        return
+      }
+
       this.saving = true
 
-      // Формируем данные в формате, который ожидает сервер
+      // Формируем тело запроса в том формате, который ожидает сервер
       const payload = {
-        username: this.localForm.username,
-        name: `${this.localForm.last_name || ''} ${this.localForm.first_name || ''} ${this.localForm.middle_name || ''}`.trim(),
-        email: this.localForm.email || null,
-        phone: this.localForm.phone || null,
+        username: this.localForm.username.trim(),
+        first_name: this.localForm.first_name.trim(),
+        last_name: this.localForm.last_name.trim(),
+        middle_name: this.localForm.middle_name?.trim() || '',
+        email: this.localForm.email?.trim() || null,
+        phone: this.localForm.phone?.trim() || null,
         is_active: this.localForm.is_active
       }
 
-      // Если пользователь ввёл новый пароль — добавляем его
+      // Если введён пароль — добавляем
       if (this.localForm.password?.trim()) {
         payload.password = this.localForm.password.trim()
       }
 
+      console.log('Отправляем на сервер (ID:', this.localForm.id, '):', payload)
+
       try {
         const response = await UpdateUser(this.localForm.id, payload)
+
         if (response?.success) {
-          this.$emit('save', payload)
+          console.log('Успешно обновлено:', response)
+          alert('Пользователь успешно обновлён')
+          this.$emit('save', { ...this.localForm, ...payload })
           this.$emit('close')
         } else {
-          alert('Ошибка при сохранении: ' + (response?.message || 'Неизвестная ошибка'))
+          alert('Ошибка сохранения: ' + (response?.message || 'Неизвестная ошибка'))
         }
       } catch (err) {
-        console.error('Ошибка обновления пользователя:', err)
-        alert('Произошла ошибка при сохранении данных')
+        console.error('Ошибка при обновлении:', err)
+        alert('Не удалось сохранить изменения')
       } finally {
         this.saving = false
       }

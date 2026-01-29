@@ -12,7 +12,7 @@ import Referees from"@/components/View/Referee/Referee.vue"
 import Fight from "@/components/View/Fight/Fight.vue";
 import Scoreboard from "@/components/View/Scoreboard/Scoreboard.vue";
 import AdminDashboard from "@/components/View/AdminDashboard/AdminDashboard.vue";
-import ClubsAdmin from "@/components/View/Clubs/ClubsAdmin.vue";
+import ClubsAdmin from "@/components/View/ClubAdmin/ClubsAdmin.vue";
 import Users from "@/components/View/Users/Users.vue";
 import AthleteDetail from "@/components/View/AthleteDetail/AthleteDetail.vue";
 import TournamentSettings from "@/components/View/TournamentManagement/TournamentSettings.vue";

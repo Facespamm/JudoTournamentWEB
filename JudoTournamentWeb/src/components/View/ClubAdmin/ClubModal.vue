@@ -1,7 +1,7 @@
 <template>
   <div v-if="isOpen" class="modal-overlay" @click.self="close">
     <div class="modal-content">
-      <!-- Успешное создание/редактирование -->
+      <!-- Успешное сохранение -->
       <div v-if="isSuccess" class="success-overlay">
         <div class="success-icon">✅</div>
         <h3 class="success-title">{{ successTitle }}</h3>
@@ -9,14 +9,13 @@
         <button class="success-button" @click="close">Продолжить</button>
       </div>
 
-      <!-- Форма клуба -->
+      <!-- Форма -->
       <template v-else>
-        <h2>{{ editingClub ? 'Редактирование клуба' : 'Создание клуба' }}</h2>
+        <h2>{{ editingClub?.id ? 'Редактирование клуба' : 'Создание клуба' }}</h2>
 
-        <!-- Индикатор загрузки -->
         <div v-if="isLoading" class="loading-overlay">
           <div class="loading-spinner"></div>
-          <p>{{ editingClub ? 'Сохранение...' : 'Создание...' }}</p>
+          <p>{{ editingClub?.id ? 'Сохранение...' : 'Создание...' }}</p>
         </div>
 
         <form @submit.prevent="submit">
@@ -141,11 +140,28 @@
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="modal-button cancel" @click="close" :disabled="isLoading">
+            <button
+                type="button"
+                class="modal-button cancel"
+                @click="close"
+                :disabled="isLoading"
+            >
               Отмена
             </button>
-            <button type="submit" class="modal-button submit" :disabled="isLoading">
-              {{ isLoading ? (editingClub ? 'Сохранение...' : 'Создание...') : (editingClub ? 'Сохранить' : 'Создать') }}
+            <button
+                type="submit"
+                class="modal-button submit"
+                :disabled="isLoading"
+            >
+              {{
+                isLoading
+                    ? editingClub?.id
+                        ? 'Сохранение...'
+                        : 'Создание...'
+                    : editingClub?.id
+                        ? 'Сохранить'
+                        : 'Создать'
+              }}
             </button>
           </div>
         </form>
@@ -156,17 +172,12 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { createClub, updateClub } from '@/components/View/Clubs/fetchClubs.js'
-import "./Clubs.css"
+import { createClub, UpdateClubs } from '@/components/View/ClubAdmin/fetchClubAdmin.js'
+import "./ClubsAdmin.css"
+
 const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
-  },
-  editingClub: {
-    type: Object,
-    default: null
-  }
+  isOpen: { type: Boolean, default: false },
+  editingClub: { type: Object, default: null }
 })
 
 const emit = defineEmits(['close', 'submit'])
@@ -188,32 +199,36 @@ const isLoading = ref(false)
 const isSuccess = ref(false)
 const successTitle = ref('')
 const successMessage = ref('')
+
 let successTimer = null
 
-// Вычисляемые свойства для текста успеха
 const successTexts = computed(() => {
-  if (props.editingClub) {
+  if (props.editingClub?.id) {
     return {
-      title: 'Клуб успешно обновлен!',
-      message: `Данные клуба "${formData.value.name}" были успешно сохранены.`
+      title: 'Клуб успешно обновлён!',
+      message: `Данные клуба "${formData.value.name || '—'}" были успешно сохранены.`
     }
-  } else {
-    return {
-      title: 'Клуб успешно создан!',
-      message: `Клуб "${formData.value.name}" был успешно создан и добавлен в систему.`
-    }
+  }
+  return {
+    title: 'Клуб успешно создан!',
+    message: `Клуб "${formData.value.name || '—'}" был успешно создан и добавлен в систему.`
   }
 })
 
-// Сбрасываем форму при открытии модалки
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
-    resetForm()
-    if (props.editingClub) {
-      formData.value = { ...props.editingClub }
+watch(
+    () => props.isOpen,
+    (newVal) => {
+      if (newVal) {
+        resetForm()
+        if (props.editingClub?.id) {
+          console.log('[MODAL] Открыто редактирование клуба ID:', props.editingClub.id)
+          Object.assign(formData.value, props.editingClub)
+        } else {
+          console.log('[MODAL] Открыто создание нового клуба')
+        }
+      }
     }
-  }
-})
+)
 
 const resetForm = () => {
   formData.value = {
@@ -230,11 +245,7 @@ const resetForm = () => {
   }
   isLoading.value = false
   isSuccess.value = false
-
-  if (successTimer) {
-    clearTimeout(successTimer)
-    successTimer = null
-  }
+  if (successTimer) clearTimeout(successTimer)
 }
 
 const showSuccessAndClose = () => {
@@ -242,7 +253,6 @@ const showSuccessAndClose = () => {
   successMessage.value = successTexts.value.message
   isSuccess.value = true
 
-  // Автоматическое закрытие через 3 секунды
   successTimer = setTimeout(() => {
     emit('close')
   }, 3000)
@@ -255,6 +265,9 @@ const close = () => {
 }
 
 const submit = async () => {
+  console.log('[MODAL] Нажата кнопка "Сохранить/Создать". Текущие данные:', formData.value)
+  console.log('[MODAL] editingClub получен:', props.editingClub)
+
   isLoading.value = true
 
   try {
@@ -271,29 +284,30 @@ const submit = async () => {
       founded_year: formData.value.founded_year || undefined
     }
 
+    console.log('[MODAL] Готов payload для отправки:', payload)
+
     let result
 
-    if (props.editingClub) {
-      // Редактирование клуба
-      result = await updateClub(props.editingClub.id, payload)
+    if (props.editingClub?.id) {
+      console.log(`[MODAL] Запуск UpdateClubs для ID: ${props.editingClub.id}`)
+      result = await UpdateClubs(props.editingClub.id, payload)
     } else {
-      // Создание клуба
+      console.log('[MODAL] Запуск createClub')
       result = await createClub(payload)
     }
 
-    // Показываем успех и запускаем таймер закрытия
+    console.log('[MODAL] Успешно получен ответ:', result)
+
     showSuccessAndClose()
-
-    // Эмитим событие с данными
-    emit('submit', { success: true, data: result, isEdit: !!props.editingClub })
-
+    emit('submit', { success: true, data: result, isEdit: !!props.editingClub?.id })
   } catch (error) {
-    console.error('Ошибка при сохранении клуба:', error)
-    // Эмитим событие с ошибкой
+    console.error('[MODAL] Ошибка сохранения:', error)
+    alert('Ошибка: ' + (error.message || 'Не удалось сохранить клуб'))
+
     emit('submit', {
       success: false,
       error: error.message || 'Произошла неизвестная ошибка',
-      isEdit: !!props.editingClub
+      isEdit: !!props.editingClub?.id
     })
   } finally {
     isLoading.value = false
@@ -302,4 +316,5 @@ const submit = async () => {
 </script>
 
 <style scoped>
+/* ваши стили */
 </style>

@@ -173,7 +173,7 @@ const preview = () => {
   if (validateForm()) previewData.value = { ...formData.value }
 }
 
-// ГЛАВНОЕ — передаём tournament_id как второй параметр
+// ГЛАВНОЕ — теперь передаём bracketData (без category_id), tournament_id, categoryId
 const submit = async () => {
   if (!validateForm()) return
 
@@ -182,19 +182,22 @@ const submit = async () => {
   try {
     const payload = {
       name: formData.value.name.trim(),
-      category_id: Number(formData.value.category_id),
       bracket_type: formData.value.bracket_type,
       has_consolation: formData.value.has_consolation
     }
 
-    // ВАЖНО: tournament_id идёт вторым аргументом!
-    const result = await createBracket(payload, formData.value.tournament_id)
+    const tournamentId = Number(formData.value.tournament_id)
+    const categoryId = Number(formData.value.category_id)
+
+    // Передаём: payload, tournament_id, categoryId
+    const result = await createBracket(payload, tournamentId, categoryId)
 
     if (result.success) {
       emit('bracket-created', {
         ...payload,
+        category_id: categoryId,
         id: result.data.id,
-        tournament_id: formData.value.tournament_id,
+        tournament_id: tournamentId,
         status: 'GENERATED',
         progress_percentage: 0
       })

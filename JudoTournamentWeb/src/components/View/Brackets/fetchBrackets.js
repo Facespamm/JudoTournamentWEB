@@ -1,7 +1,7 @@
 
-export const createBracket = async (bracketData,tournament_id) => {
+export const createBracket = async (bracketData,tournament_id,categoryId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/brackets/${tournament_id}`, {
+        const response = await fetch(`http://127.0.0.1:5001/api/brackets/${tournament_id}?category=${categoryId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

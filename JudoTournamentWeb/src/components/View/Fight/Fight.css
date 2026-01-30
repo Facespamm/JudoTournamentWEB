@@ -1,3 +1,4 @@
+/*
 .fights-overview { min-height: 100vh; background: #f9f9fb; padding: 90px 2rem 4rem; font-family: 'SF Pro Display', -apple-system, sans-serif; color: #1a1a1a; }
 
 .fights-header h1 { font-size: 2.8rem; font-weight: 900; background: linear-gradient(90deg, #1a1a1a, #333); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
@@ -19,13 +20,13 @@
 }
 .fight-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.16); }
 
-/* Цветная полоса слева */
+!* Цветная полоса слева *!
 .status-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 10px; }
 .status-in_progress .status-bar { background: linear-gradient(#ff3b30, #ff6b6b); }
 .status-scheduled   .status-bar { background: linear-gradient(#007aff, #5ac8fa); }
 .status-completed   .status-bar { background: linear-gradient(#34c759, #7ed957); }
 
-/* Статус в правом верхнем углу — как на скриншоте */
+!* Статус в правом верхнем углу — как на скриншоте *!
 .status-corner {
     position: absolute;
     top: 16px;
@@ -102,3 +103,4 @@
     .tatami-name { font-size: 1.9rem; }
     .timer-big { font-size: 2.2rem; }
 }
+*/

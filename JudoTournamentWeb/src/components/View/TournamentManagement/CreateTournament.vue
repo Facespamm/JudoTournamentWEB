@@ -2,137 +2,125 @@
   <div class="create-tournament">
     <h3>Создать новый турнир</h3>
 
-    <!-- Индикатор загрузки -->
     <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner"></div>
+      <div class="loading-spinner计算机"></div>
       <p>Создание турнира...</p>
     </div>
 
     <form @submit.prevent="submit">
       <div class="form-grid">
+        <!-- Основные поля -->
         <div class="form-group">
-          <label for="name">Название турнира *</label>
-          <input
-              v-model="formData.name"
-              type="text"
-              id="name"
-              placeholder="Введите название"
-              :disabled="isLoading"
-              required
-          />
+          <label>Название турнира *</label>
+          <input v-model="formData.name" required />
           <span v-if="errors.name" class="error">{{ errors.name }}</span>
         </div>
 
         <div class="form-group">
-          <label for="organizer">Организатор</label>
-          <input
-              v-model="formData.organizer"
-              type="text"
-              id="organizer"
-              placeholder="Введите организатора"
-              :disabled="isLoading"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="tatami_count">Количество татами *</label>
-          <input
-              v-model.number="formData.tatami_count"
-              type="number"
-              id="tatami_count"
-              min="1"
-              :disabled="isLoading"
-              required
-          />
-          <span v-if="errors.tatami_count" class="error">{{ errors.tatami_count }}</span>
-        </div>
-
-        <div class="form-group">
-          <label for="fight_duration">Длительность схватки (сек)</label>
-          <input
-              v-model.number="formData.fight_duration"
-              type="number"
-              id="fight_duration"
-              min="60"
-              :disabled="isLoading"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="start_date">Дата начала *</label>
-          <input
-              v-model="formData.start_date"
-              type="date"
-              id="start_date"
-              :disabled="isLoading"
-              required
-          />
+          <label>Дата начала *</label>
+          <input type="date" v-model="formData.start_date" />
           <span v-if="errors.start_date" class="error">{{ errors.start_date }}</span>
         </div>
 
         <div class="form-group">
-          <label for="end_date">Дата окончания *</label>
-          <input
-              v-model="formData.end_date"
-              type="date"
-              id="end_date"
-              :disabled="isLoading"
-              required
-          />
+          <label>Дата окончания *</label>
+          <input type="date" v-model="formData.end_date" />
           <span v-if="errors.end_date" class="error">{{ errors.end_date }}</span>
         </div>
 
         <div class="form-group">
-          <label for="venue">Место проведения *</label>
-          <input
-              v-model="formData.venue"
-              type="text"
-              id="venue"
-              placeholder="Введите место"
-              :disabled="isLoading"
-              required
-          />
+          <label>Место проведения *</label>
+          <input v-model="formData.venue" />
           <span v-if="errors.venue" class="error">{{ errors.venue }}</span>
         </div>
 
         <div class="form-group">
-          <label for="city">Город</label>
-          <input
-              v-model="formData.city"
-              type="text"
-              id="city"
-              placeholder="Введите город"
-              :disabled="isLoading"
-          />
+          <label>Город</label>
+          <input v-model="formData.city" />
         </div>
 
         <div class="form-group">
-          <label for="country">Страна</label>
-          <input
-              v-model="formData.country"
-              type="text"
-              id="country"
-              :disabled="isLoading"
-          />
+          <label>Страна</label>
+          <input v-model="formData.country" placeholder="Казахстан" />
         </div>
 
+        <div class="form-group">
+          <label>Количество татами</label>
+          <input type="number" v-model.number="formData.tatami_count" min="0" />
+        </div>
+
+        <!-- Выбор категорий -->
+        <div class="form-group full-width">
+          <label>Категории турнира *</label>
+
+          <div v-if="isCategoriesLoading">Загрузка категорий...</div>
+          <div v-else-if="categories.length === 0">Категории не найдены</div>
+          <select
+              v-else
+              v-model="formData.list_category"
+              multiple
+              size="10"
+              class="multi-select"
+              :disabled="isLoading || isCategoriesLoading"
+          >
+            <option
+                v-for="cat in categories"
+                :key="cat.id"
+                :value="cat.id"
+            >
+              {{ cat.name }}
+            </option>
+          </select>
+
+          <small>Выберите одну или несколько категорий (Ctrl/Cmd + клик)</small>
+          <span v-if="errors.list_category" class="error">{{ errors.list_category }}</span>
+        </div>
+
+        <!-- Таблица выбранных категорий -->
+        <div class="form-group full-width" v-if="formData.list_category.length > 0">
+          <label>Выбранные категории</label>
+          <div class="table-wrapper">
+            <table class="selected-categories-table">
+              <thead>
+              <tr>
+                <th>#</th>
+                <th>Название категории</th>
+                <th>Действие</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr
+                  v-for="(catId, index) in formData.list_category"
+                  :key="catId"
+              >
+                <td>{{ index + 1 }}</td>
+                <td>{{ getCategoryName(catId) }}</td>
+                <td>
+                  <button
+                      type="button"
+                      class="remove-btn"
+                      @click="removeCategory(catId)"
+                      title="Удалить"
+                  >×</button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <small>Всего выбрано: {{ formData.list_category.length }}</small>
+        </div>
+
+        <!-- Описание -->
         <div class="form-group full-width">
           <label for="description">Описание турнира</label>
-          <textarea
-              v-model="formData.description"
-              id="description"
-              placeholder="Введите описание турнира"
-              :disabled="isLoading"
-              rows="3"
-          ></textarea>
+          <textarea v-model="formData.description"></textarea>
         </div>
       </div>
 
       <div class="form-actions">
         <button
             type="submit"
-            class="submit-button"
-            :disabled="isLoading"
+            :disabled="isLoading || isCategoriesLoading || formData.list_category.length === 0"
         >
           {{ isLoading ? 'Создание...' : 'Создать турнир' }}
         </button>
@@ -142,12 +130,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { createTournament } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
-import "./TournamentManagement.css"
+import { ref, onMounted } from 'vue'
+import { createTournament, fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
+
 const emit = defineEmits(['tournament-created'])
 
 const isLoading = ref(false)
+const isCategoriesLoading = ref(false)
 
 const formData = ref({
   name: '',
@@ -157,40 +146,75 @@ const formData = ref({
   venue: '',
   city: '',
   country: 'Казахстан',
-  tatami_count: 1,
-  status: 'PLANNED',
-  fight_duration: 300,
-  organizer: ''
+  tatami_count: 0,
+  list_category: [] // массив ID: [1, 2, 3, ...]
 })
 
+const categories = ref([])
+
 const errors = ref({})
+
+const loadCategories = async () => {
+  isCategoriesLoading.value = true
+  try {
+    const result = await fetchCategories()
+    if (result.success) {
+      categories.value = result.data.categories.map(c => ({
+        id: Number(c.id),
+        name: c.name
+      }))
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isCategoriesLoading.value = false
+  }
+}
+
+onMounted(loadCategories)
+
+const getCategoryName = (id) => {
+  const cat = categories.value.find(c => c.id === id)
+  return cat ? cat.name : `Категория #${id}`
+}
+
+const removeCategory = (id) => {
+  formData.value.list_category = formData.value.list_category.filter(cid => cid !== id)
+}
 
 const validateForm = () => {
   errors.value = {}
   let isValid = true
 
-  if (!formData.value.name.trim()) {
+  const nameTrimmed = formData.value.name?.trim() ?? ''
+  if (!nameTrimmed) {
     errors.value.name = 'Название обязательно'
     isValid = false
   }
+
   if (!formData.value.start_date) {
     errors.value.start_date = 'Дата начала обязательна'
     isValid = false
   }
+
   if (!formData.value.end_date) {
     errors.value.end_date = 'Дата окончания обязательна'
     isValid = false
   }
+
   if (formData.value.start_date && formData.value.end_date && formData.value.start_date > formData.value.end_date) {
     errors.value.end_date = 'Дата окончания не может быть раньше начала'
     isValid = false
   }
-  if (!formData.value.venue.trim()) {
+
+  const venueTrimmed = formData.value.venue?.trim() ?? ''
+  if (!venueTrimmed) {
     errors.value.venue = 'Место проведения обязательно'
     isValid = false
   }
-  if (formData.value.tatami_count < 1) {
-    errors.value.tatami_count = 'Минимум 1 татами'
+
+  if (formData.value.list_category.length === 0) {
+    errors.value.list_category = 'Выберите хотя бы одну категорию'
     isValid = false
   }
 
@@ -204,25 +228,24 @@ const submit = async () => {
 
   try {
     const payload = {
-      name: formData.value.name,
-      description: formData.value.description || '',
+      name: formData.value.name.trim(),
+      description: formData.value.description.trim() || '',
       start_date: formData.value.start_date,
       end_date: formData.value.end_date,
-      venue: formData.value.venue,
-      city: formData.value.city || '',
-      country: formData.value.country || 'Казахстан',
-      tatami_count: formData.value.tatami_count || 1,
-      status: formData.value.status || 'PLANNED',
-      fight_duration: formData.value.fight_duration || 300,
-      organizer: formData.value.organizer || ''
+      venue: formData.value.venue.trim(),
+      city: formData.value.city.trim() || '',
+      country: formData.value.country.trim() || 'Казахстан',
+      tatami_count: Number(formData.value.tatami_count) || 0,
+      status: 'PLANNED',
+      list_category: formData.value.list_category
     }
 
     const result = await createTournament(payload)
 
     if (result.success) {
-      emit('tournament-created', result.data.id)
+      emit('tournament-created', result.data?.id)
 
-      // Сбрасываем форму
+      // Сброс формы
       formData.value = {
         name: '',
         description: '',
@@ -231,17 +254,15 @@ const submit = async () => {
         venue: '',
         city: '',
         country: 'Казахстан',
-        tatami_count: 1,
-        status: 'PLANNED',
-        fight_duration: 300,
-        organizer: ''
+        tatami_count: 0,
+        list_category: []
       }
     } else {
-      throw new Error(result.error)
+      throw new Error(result.error || 'Ошибка создания')
     }
-
   } catch (error) {
-    console.error('Ошибка при создании турнира:', error)
+    console.error('Ошибка создания турнира:', error)
+    alert('Не удалось создать турнир: ' + (error.message || 'неизвестная ошибка'))
   } finally {
     isLoading.value = false
   }
@@ -249,4 +270,83 @@ const submit = async () => {
 </script>
 
 <style scoped>
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.multi-select {
+  width: 100%;
+  padding: 8px;
+}
+
+.table-wrapper {
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+.selected-categories-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.selected-categories-table th,
+.selected-categories-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.selected-categories-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.selected-categories-table tr:hover {
+  background: #f9f9f9;
+}
+
+.selected-categories-table td:last-child {
+  text-align: center;
+}
+
+.remove-btn {
+  background: #e53935;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.remove-btn:hover {
+  background: #c62828;
+}
+
+.error {
+  color: #e53935;
+  font-size: 0.85rem;
+}
+
+.form-actions {
+  margin-top: 24px;
+  text-align: right;
+}
+
+.form-actions button {
+  padding: 10px 20px;
+  font-size: 1rem;
+}
 </style>

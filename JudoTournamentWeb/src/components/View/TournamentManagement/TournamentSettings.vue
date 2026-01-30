@@ -16,14 +16,7 @@
               :class="{ active: activeTab === 'categories' }"
               @click="activeTab = 'categories'"
           >
-            Управление категориями
-          </button>
-          <button
-              class="nav-tab"
-              :class="{ active: activeTab === 'registration' }"
-              @click="activeTab = 'registration'"
-          >
-            Регистрация на турнир
+            Создать категорию
           </button>
         </nav>
       </section>

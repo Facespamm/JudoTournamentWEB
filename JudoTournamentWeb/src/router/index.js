@@ -25,7 +25,7 @@ import Weighings from "@/components/View/Weighings/Weighings.vue";
 import RegistrationModal from "@/components/View/Tournaments/RegistrationModal.vue";
 import Clubs from "@/components/View/Clubs/Clubs.vue";
 const routes = [
-    { path: '/', redirect: '/home' },
+    { path: '/', redirect: '/login' },
 
     {
         path: '/login',

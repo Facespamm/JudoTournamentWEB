@@ -1,41 +1,37 @@
 // src/services/tournamentService.js
 
-export const createTournament = async (tournamentData) => {
+export const createTournament = async (data) => {
     try {
-        const payload = {
-            name: tournamentData.name,
-            description: tournamentData.description || "",
-            start_date: tournamentData.start_date,
-            end_date: tournamentData.end_date,
-            venue: tournamentData.venue,
-            city: tournamentData.city || "",
-            country: tournamentData.country || "Казахстан",
-            status: tournamentData.status || "PLANNED",
-            tatami_count: tournamentData.tatami_count || 1
-        }
-
-        const response = await fetch('http://127.0.0.1:5001/tournaments/', {
+        const response = await fetch(`http://127.0.0.1:5001/tournaments/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // 'Authorization': 'Bearer ' + token // раскомментируй когда будет авторизация
+                'X-API-Key': 'mobile_app_2024'
             },
-            body: JSON.stringify(payload)
-        })
+            body: JSON.stringify(data)
+        });
 
         if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Ошибка при регистрации');
         }
 
-        const result = await response.json()
-        return { success: true, data: result }
-
+        const result = await response.json();
+        return {
+            success: true,
+            message: result.message,
+            token: result.token,
+            role: result.role
+        };
     } catch (error) {
-        console.error('Ошибка при создании турнира:', error)
-        return { success: false, error: error.message || 'Произошла неизвестная ошибка' }
+        console.error('Ошибка при регистрации:', error);
+        return {
+            success: false,
+            error: error.message
+        };
     }
-}
+};
+
 
 export const createCategory = async (categoryData) => {
     try {
@@ -61,9 +57,9 @@ export const createCategory = async (categoryData) => {
     }
 };
 
-export const fetchCategories = async (tournamentId) => {
+export const fetchCategories = async () => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/categories/?tournament_id=${tournamentId}`, {
+        const response = await fetch(`http://127.0.0.1:5001/categories/?tournament_id`, {
             headers: {
                 'X-API-Key': 'mobile_app_2024'
             }

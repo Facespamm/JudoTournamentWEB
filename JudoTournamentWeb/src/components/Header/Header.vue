@@ -1,8 +1,8 @@
 <template>
   <header class="simple-header">
-    <!-- Кнопка с иконкой → переход на логин -->
-    <button class="header-btn" @click="RedirectToLogin">
-      <img :src="UserIcon" alt="User" class="btn-icon" />
+    <!-- Кнопка выхода с иконкой -->
+    <button class="header-btn" @click="handleLogout">
+      <img :src="UserIcon" alt="Выход" class="btn-icon" />
     </button>
   </header>
 </template>
@@ -13,8 +13,18 @@ import UserIcon from '@/components/icons/Open.png' // ← ПОПРАВЬ ПУТ�
 
 const router = useRouter()
 
-const RedirectToLogin = () => {
-  router.push({ name: 'login' })
+const handleLogout = () => {
+  // Подтверждение выхода
+  const confirmLogout = window.confirm('Вы действительно хотите выйти?')
+
+  if (confirmLogout) {
+    // Удаляем JWT-токен из кук
+    document.cookie = 'jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;'
+    // Дополнительно можно очистить другие куки, если нужно (например, другие токены)
+
+    // Переход на страницу логина
+    router.push({ name: 'login' })
+  }
 }
 </script>
 
@@ -56,7 +66,7 @@ const RedirectToLogin = () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.header webmaster:active {
+.header-btn:active {
   transform: translateY(0);
 }
 

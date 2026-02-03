@@ -24,7 +24,7 @@ export const fetchGetFights = async () => {
     }
 }
 
-export const fetchGetDetail = async (id) => {
+export const fetchGetDetailFight = async (id) => {
     try {
         const response = await fetch(`http://127.0.0.1:5001/api/fights/${id}`);
 

@@ -106,6 +106,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchTournaments } from '@/components/View/Tournaments/fetchTournaments.js'
 import "./Tournaments.css"
+import {fetchCategories} from "@/components/View/TournamentManagement/fetchTournamentManagement.js";
 
 const router = useRouter()
 

@@ -3,21 +3,24 @@
     <div class="header">
       <button class="back" @click="$router.back()">Назад</button>
       <div class="header-content">
-        <h1>Судейская панель: Схватка #{{ fight?.fight_number }}</h1>
+        <h1>Судейская панель: Схватка #{{ fight?.fight_number || fightId }}</h1>
         <div class="meta">
-          Татами {{ fight?.tatami }} • Раунд {{ fight?.round_number }} • <span :class="statusClass">{{ statusText }}</span>
+          Татами {{ fight?.tatami || '—' }} • Раунд {{ fight?.round_number || '—' }} • <span :class="statusClass">{{ statusText }}</span>
         </div>
       </div>
     </div>
 
-    <div class="fight-card">
+    <div v-if="loading" class="loading-state">
+      <p>Загрузка данных схватки...</p>
+    </div>
+
+    <div v-else class="fight-card">
       <!-- Белый -->
       <div class="athlete-section white">
         <h2 class="athlete-name">{{ getAthleteName(fight?.white_athlete) }} (Белый)</h2>
         <div class="scores">
           <div class="score-row"><span class="score-label">Ippon:</span><span class="score-value">{{ scores.white.ippon || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Waza-ari:</span><span class="score-value">{{ scores.white.wazaari || 0 }}</span></div>
-          <div class="score-row"><span class="score-label">Yuko:</span><span class="score-value">{{ scores.white.yuko || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Shido:</span><span class="score-value">{{ scores.white.penalty_count || 0 }}</span></div>
           <div class="score-row" v-if="osaekomi.active && osaekomi.athlete_color === 'WHITE'">
             <span class="score-label">Osaekomi:</span><span class="score-value">{{ osaekomi.time }}с</span>
@@ -26,7 +29,6 @@
         <div class="actions">
           <button class="btn-action ippon" @click="confirmIppon('WHITE')" :disabled="fightStatus === 'COMPLETED'">Ippon</button>
           <button class="btn-action wazaari" @click="addWazaari('WHITE')" :disabled="fightStatus === 'COMPLETED'">Waza-ari</button>
-          <button class="btn-action yuko" @click="addYuko('WHITE')" :disabled="fightStatus === 'COMPLETED'">Yuko</button>
           <button class="btn-action shido" @click="addPenalty('WHITE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">Shido</button>
           <button class="btn-action hansoku" @click="addPenalty('WHITE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku-make</button>
           <button class="btn-action osaekomi" @click="toggleOsaekomi('WHITE')"
@@ -39,9 +41,10 @@
 
       <!-- Таймер -->
       <div class="timer-section">
-        <h3 class="timer-display">{{ formatTime(timerSeconds) }}</h3>
-        <p v-if="isGoldenScore" class="golden-score">Golden Score</p>
-
+        <h3 class="timer-display">
+          {{ isGoldenScore ? formatTime(gsSeconds) : formatTime(timerSeconds) }}
+        </h3>
+        <p v-if="isGoldenScore" class="golden-score">Golden Score (прошедшее время)</p>
         <div class="timer-controls">
           <div class="time-controls-top">
             <button class="time-btn minus" @click="adjustTimer(-10)" :disabled="fightStatus === 'COMPLETED'">-10s</button>
@@ -53,7 +56,6 @@
             </div>
             <button class="time-btn plus" @click="adjustTimer(10)" :disabled="fightStatus === 'COMPLETED'">+10s</button>
           </div>
-
           <div class="timer-main-controls">
             <button v-if="!isRunning && fightStatus !== 'COMPLETED'" class="btn-timer start" @click="startTimer">
               {{ fightStatus === 'SCHEDULED' ? 'Hajime (Старт)' : 'Продолжить' }}
@@ -62,9 +64,14 @@
             <button class="btn-timer golden-score-btn" @click="enterGoldenScore" :disabled="fightStatus === 'COMPLETED'">
               {{ isGoldenScore ? 'Обычное время' : 'Golden Score' }}
             </button>
-            <button class="btn-timer undo" @click="undoLast" :disabled="fightStatus === 'COMPLETED'">Отменить</button>
             <button class="btn-timer reset-scores" @click="resetScores" :disabled="fightStatus === 'COMPLETED'">Сбросить очки</button>
-            <button v-if="fightStatus === 'COMPLETED'" class="btn-timer reset-full" @click="resetFullMatch">Сбросить матч</button>
+            <button class="btn-timer complete-btn" @click="openCompleteDialog"
+                    :disabled="fightStatus !== 'IN_PROGRESS'">
+              Завершить матч
+            </button>
+            <button v-if="fightStatus === 'COMPLETED'" class="btn-timer reset-full" @click="resetFullMatch">
+              Сбросить матч
+            </button>
           </div>
         </div>
 
@@ -94,7 +101,6 @@
         <div class="scores">
           <div class="score-row"><span class="score-label">Ippon:</span><span class="score-value">{{ scores.blue.ippon || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Waza-ari:</span><span class="score-value">{{ scores.blue.wazaari || 0 }}</span></div>
-          <div class="score-row"><span class="score-label">Yuko:</span><span class="score-value">{{ scores.blue.yuko || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Shido:</span><span class="score-value">{{ scores.blue.penalty_count || 0 }}</span></div>
           <div class="score-row" v-if="osaekomi.active && osaekomi.athlete_color === 'BLUE'">
             <span class="score-label">Osaekomi:</span><span class="score-value">{{ osaekomi.time }}с</span>
@@ -103,10 +109,7 @@
         <div class="actions">
           <button class="btn-action ippon" @click="confirmIppon('BLUE')" :disabled="fightStatus === 'COMPLETED'">Ippon</button>
           <button class="btn-action wazaari" @click="addWazaari('BLUE')" :disabled="fightStatus === 'COMPLETED'">Waza-ari</button>
-          <button class="btn-action yuko" @click="addYuko('BLUE')" :disabled="fightStatus === 'COMPLETED'">Yuko</button>
-          <button class="btn-action shido" @click="addPenalty('BLUE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">
-
-            Shido</button>
+          <button class="btn-action shido" @click="addPenalty('BLUE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">Shido</button>
           <button class="btn-action hansoku" @click="addPenalty('BLUE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku-make</button>
           <button class="btn-action osaekomi" @click="toggleOsaekomi('BLUE')"
                   :disabled="fightStatus === 'COMPLETED' || (osaekomi.active && osaekomi.athlete_color !== 'BLUE')"
@@ -117,7 +120,7 @@
       </div>
     </div>
 
-    <div v-if="fightStatus === 'COMPLETED'" class="result-section">
+    <div v-if="fightStatus === 'COMPLETED' && !loading" class="result-section">
       <h3>Схватка завершена</h3>
       <div class="result-card">
         <div class="result-item"><span class="result-label">Победитель:</span><span class="result-value">{{ getWinnerName() }}</span></div>
@@ -148,46 +151,26 @@
 </template>
 
 <script>
-import { fetchGetDetail } from '@/components/View/Fight/fetchFights.js'
-import { startFight } from "@/components/View/FightDetail/fetchFightPannel.js"
+import { endFight } from "@/components/View/FightDetail/fetchFightPannel.js"
+import { fetchGetDetailFight } from "@/components/View/Fight/fetchFights.js"
 import "./FightDetail.css"
-
-const API_BASE = 'http://127.0.0.1:5001/'
-
-async function api(method, url, data = null) {
-  const opts = { method, headers: { 'Content-Type': 'application/json', 'X-API-Key': 'mobile_app_2024' } }
-  if (data) opts.body = JSON.stringify(data)
-  const res = await fetch(`${API_BASE}${url}`, opts)
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'API error')
-  return res.json()
-}
-
-const getFightTimeline = async (fightId) => {
-  try {
-    const res = await fetch(`${API_BASE}/api/scores/fight/${fightId}/timeline`, { headers: { 'X-API-Key': 'mobile_app_2024' } })
-    if (!res.ok) return null
-    return await res.json()
-  } catch { return null }
-}
-
-const saveEventsBatch = async (fightId, events) => {
-  const res = await fetch(`${API_BASE}/api/scores/fight/${fightId}/events/batch`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': 'mobile_app_2024' },
-    body: JSON.stringify({ events })
-  })
-  if (!res.ok) throw new Error('Ошибка сохранения')
-  return await res.json()
-}
 
 export default {
   name: 'RefereePanel',
+
   data() {
     return {
+      fightId: null,
       fight: null,
-      scores: { white: {}, blue: {} },
+      loading: true,
+      scores: {
+        white: { ippon: 0, wazaari: 0, penalty_count: 0 },
+        blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
+      },
       osaekomi: { active: false, athlete_color: null, time: 0 },
-      timerSeconds: 300,
+      osaekomiInterval: null,
+      timerSeconds: 240,
+      gsSeconds: 0,
       isRunning: false,
       timerInterval: null,
       fightStatus: 'SCHEDULED',
@@ -195,13 +178,13 @@ export default {
       victoryType: null,
       winnerColor: null,
       eventLog: [],
-      fightDurationPreset: 300,
-      pollInterval: null
+      fightDurationPreset: 240
     }
   },
+
   computed: {
-    fightId() { return this.$route.params.id },
     statusText() {
+      if (this.loading || !this.fight) return 'Загрузка...'
       return { SCHEDULED: 'Запланировано', IN_PROGRESS: 'LIVE', COMPLETED: 'Завершено' }[this.fightStatus] || this.fightStatus
     },
     statusClass() {
@@ -215,141 +198,318 @@ export default {
         IPPON: 'Иппон',
         WAZAARI_AWASETE_IPPON: 'Ваза-ари авасетэ иппон',
         SHIDO: 'По штрафам (3 шидо)',
-        HANSOKU_MAKE: 'Хансоку-маке',
-        OSAEKOMI: 'Осаекоми (20 сек)'
+        HANSOKU_MAKE: 'Хансоку-макэ',
+        OSAEKOMI: 'Осаэкоми (20 сек)',
+        POINTS: 'По очкам',
+        DECISION: 'Решение судей'
       }
-      return map[this.victoryType] || '—'
+      return map[this.victoryType] || this.victoryType || '—'
     }
   },
-  async created() {
-    await this.loadFight()
-    this.startPolling()
-    await this.loadTimelineFromServer()
+
+  async mounted() {
+    let rawId = this.$route.params.id
+    if (typeof rawId === 'object' && rawId !== null) {
+      rawId = rawId.id || rawId.fight_number || '???'
+    }
+    this.fightId = Number(rawId) || rawId || '???'
+    this.loading = true
+
+    try {
+      const res = await fetchGetDetailFight(this.fightId)
+
+      if (res && (res.id || res.fight_number)) {
+        this.fight = res
+        this.fightStatus = res.status || 'SCHEDULED'
+        this.fightDurationPreset = res.timer_seconds || 240
+        this.timerSeconds = this.fightDurationPreset
+
+        console.log('Загруженный fight:', this.fight)
+        if (!this.fight.white_athlete?.id || !this.fight.blue_athlete?.id) {
+          this.addEvent('warning', 'Внимание: ID атлетов отсутствуют в данных! Победитель будет отправлен как null.')
+        }
+      } else {
+        throw new Error('Нет данных или неверный формат ответа')
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки деталей боя:', err)
+      alert('Не удалось загрузить данные схватки')
+
+      this.fight = {
+        fight_number: this.fightId,
+        tatami: '—',
+        round_number: '—',
+        white_athlete: { first_name: 'Белый', last_name: 'атлет' },
+        blue_athlete: { first_name: 'Синий', last_name: 'атлет' }
+      }
+    } finally {
+      this.loading = false
+    }
   },
+
   beforeUnmount() {
     clearInterval(this.timerInterval)
-    clearInterval(this.pollInterval)
+    clearInterval(this.osaekomiInterval)
   },
+
   methods: {
     getAthleteName(a) {
-      return a ? (a.name || `${a.first_name || ''} ${a.last_name || ''}`.trim() || 'Неизвестный') : 'TBD'
+      if (!a) return 'TBD'
+      const surname = a.middle_name || ''
+      const name = a.first_name || ''
+      const patronymic = a.last_name || ''
+      return `${surname} ${name} ${patronymic}`.trim() || 'Неизвестный'
     },
+
     getWinnerName() {
-      if (!this.winnerColor) return 'Решение судей'
+      if (!this.winnerColor || !this.fight) return 'Решение судей'
       const a = this.winnerColor === 'WHITE' ? this.fight.white_athlete : this.fight.blue_athlete
       return `${this.getAthleteName(a)} (${this.winnerColor === 'WHITE' ? 'Белый' : 'Синий'})`
     },
-    async loadFight() {
-      this.fight = await fetchGetDetail(this.fightId)
-      this.fightStatus = this.fight.status
-      this.timerSeconds = this.fightDurationPreset = this.fight.timer_seconds || 300
-      this.isGoldenScore = this.fight.is_golden_score || false
-      await this.refreshScores()
-    },
-    async refreshScores() {
-      try {
-        const data = await api('GET', `/api/scores/fight/${this.fightId}/current`)
-        this.scores = { white: data.white || {}, blue: data.blue || {} }
-        this.osaekomi = data.osaekomi || { active: false, time: 0, athlete_color: null }
-        this.victoryType = data.victory_type
-        this.winnerColor = data.winner_id ? (data.winner_id === this.fight.white_athlete?.id ? 'WHITE' : 'BLUE') : null
-        if (data.fight_status && data.fight_status !== this.fightStatus) {
-          this.fightStatus = data.fight_status
-          if (this.fightStatus === 'COMPLETED') {
-            this.isRunning = false
-            clearInterval(this.timerInterval)
-            await this.syncEventsOnComplete()
-          }
-        }
-      } catch (e) {
-        this.addEvent('error', `Ошибка: ${e.message}`)
-      }
-    },
-    startPolling() {
-      this.pollInterval = setInterval(() => this.refreshScores(), 1000)
-    },
+
     addEvent(type, msg) {
       const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       this.eventLog.unshift({ time, type, message: msg })
       if (this.eventLog.length > 100) this.eventLog.pop()
     },
-    async loadTimelineFromServer() {
-      const timeline = await getFightTimeline(this.fightId)
-      if (timeline?.events?.length) {
-        this.eventLog = timeline.events.map(e => ({
-          time: new Date(e.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          type: e.type.toLowerCase(),
-          message: e.description
-        })).reverse()
-        this.addEvent('system', 'Журнал загружен с сервера')
+
+    addWazaari(color) {
+      const side = color.toLowerCase()
+      this.scores[side].wazaari += 1
+      this.addEvent('score', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari`)
+      if (this.scores[side].wazaari >= 2) {
+        this.completeFight(color, 'WAZAARI_AWASETE_IPPON')
       }
     },
-    async syncEventsOnComplete() {
-      if (!this.eventLog.length) return
+
+    confirmIppon(color) {
+      if (confirm('Ippon — бой завершится!')) {
+        this.completeFight(color, 'IPPON')
+      }
+    },
+
+    addPenalty(color, type) {
+      const side = color.toLowerCase()
+      if (type === 'SHIDO') {
+        this.scores[side].penalty_count += 1
+        this.addEvent('penalty', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Shido`)
+        if (this.scores[side].penalty_count >= 3) {
+          const opposite = color === 'WHITE' ? 'BLUE' : 'WHITE'
+          this.completeFight(opposite, 'HANSOKU_MAKE')
+        }
+      } else if (type === 'HANSOKU_MAKE') {
+        const opposite = color === 'WHITE' ? 'BLUE' : 'WHITE'
+        this.completeFight(opposite, 'HANSOKU_MAKE')
+      }
+    },
+
+    toggleOsaekomi(color) {
+      if (this.osaekomi.active && this.osaekomi.athlete_color === color) {
+        this.stopOsaekomi()
+      } else {
+        this.startOsaekomi(color)
+      }
+    },
+
+    startOsaekomi(color) {
+      this.osaekomi.active = true
+      this.osaekomi.athlete_color = color
+      this.osaekomi.time = 0
+      clearInterval(this.osaekomiInterval)
+      this.osaekomiInterval = setInterval(() => {
+        this.osaekomi.time += 1
+        if (this.osaekomi.time === 10) {
+          this.addWazaari(color)
+          this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari (10 сек осаэкоми)`)
+        }
+        if (this.osaekomi.time === 20) {
+          clearInterval(this.osaekomiInterval)
+          this.osaekomi.active = false
+          this.osaekomi.time = 0
+          this.osaekomi.athlete_color = null
+          this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Ippon (20 сек осаэкоми)`)
+          this.completeFight(color, 'OSAEKOMI')
+        }
+      }, 1000)
+      this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Osaekomi начат`)
+    },
+
+    stopOsaekomi() {
+      clearInterval(this.osaekomiInterval)
+      const time = this.osaekomi.time
+      const color = this.osaekomi.athlete_color
+      this.osaekomi.active = false
+      this.osaekomi.time = 0
+      this.osaekomi.athlete_color = null
+      if (time >= 10 && time < 20) {
+        this.addWazaari(color)
+        this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari (${time} сек осаэкоми)`)
+      }
+      this.addEvent('osaekomi', 'Токета')
+    },
+
+    completeFight(color, localVictoryType) {
+      this.winnerColor = color
+      this.victoryType = localVictoryType
+      this.scores[color.toLowerCase()].ippon = 1
+      this.fightStatus = 'COMPLETED'
+      this.isRunning = false
+      clearInterval(this.timerInterval)
+      this.addEvent('system', `Победа ${color === 'WHITE' ? 'Белый' : 'Синий'} — ${this.victoryTypeText}`)
+
+      let serverVictoryType = localVictoryType
+      if (['IPPON', 'WAZAARI_AWASETE_IPPON', 'OSAEKOMI'].includes(localVictoryType)) {
+        serverVictoryType = 'IPPON'
+      }
+
+      const winnerId = color === 'WHITE' ? this.fight?.white_athlete?.id : this.fight?.blue_athlete?.id
+
+      console.log('winner ID:', winnerId)
+      if (!winnerId) {
+        this.addEvent('warning', 'ID победителя не найден — отправляем winner_athlete_id: null')
+      }
+
+      const elapsedSeconds = this.fightDurationPreset - this.timerSeconds + this.gsSeconds
+      const minutes = Math.floor(elapsedSeconds / 60)
+      const seconds = elapsedSeconds % 60
+      const endTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
+
+      const payload = {
+        start_time: '0:00',
+        end_time: endTime,
+        victory_type: serverVictoryType,
+        winner_athlete_id: winnerId ?? null
+      }
+
+      endFight(payload, this.fightId)
+          .then(() => {
+            this.addEvent('system', 'Результат успешно отправлен на сервер')
+          })
+          .catch(e => {
+            this.addEvent('error', `Ошибка отправки результата: ${e.message || e}`)
+          })
+    },
+
+    async openCompleteDialog() {
+      if (!confirm('Завершить схватку вручную?')) return
+
+      const winnerChoice = prompt('Победитель:\n"white" — белый, "blue" — синий, пусто — решение судей', '')
+      const winnerColor = winnerChoice === 'white' ? 'WHITE' : winnerChoice === 'blue' ? 'BLUE' : null
+      const winnerId = winnerChoice === 'white' ? this.fight?.white_athlete?.id :
+          winnerChoice === 'blue' ? this.fight?.blue_athlete?.id : null
+
+      if (winnerColor && !winnerId) {
+        this.addEvent('warning', 'ID выбранного победителя не найден — отправляем null')
+      }
+
+      const victoryType = prompt('Тип победы (IPPON, POINTS, DECISION, HANSOKU_MAKE и т.д.)', 'POINTS').toUpperCase()
+
+      const elapsedSeconds = this.fightDurationPreset - this.timerSeconds + this.gsSeconds
+      const minutes = Math.floor(elapsedSeconds / 60)
+      const seconds = elapsedSeconds % 60
+      const endTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
+
+      const payload = {
+        start_time: '0:00',
+        end_time: endTime,
+        victory_type: victoryType,
+        winner_athlete_id: winnerId ?? null
+      }
+
+      this.winnerColor = winnerColor
+      this.victoryType = victoryType
+      this.fightStatus = 'COMPLETED'
+      this.isRunning = false
+      clearInterval(this.timerInterval)
+      this.addEvent('system', `Матч завершён вручную: ${victoryType}, время ${endTime}`)
+
       try {
-        const eventsToSend = this.eventLog.map(e => {
-          const msg = e.message.toLowerCase()
-          let type = 'CUSTOM', subtype = 'ACTION', athlete_color = null
-          if (msg.includes('ippon')) { type = 'SCORE'; subtype = 'IPPON'; athlete_color = msg.includes('белый') ? 'WHITE' : 'BLUE' }
-          else if (msg.includes('waza-ari')) { type = 'SCORE'; subtype = 'WAZAARI'; athlete_color = msg.includes('белый') ? 'WHITE' : 'BLUE' }
-          else if (msg.includes('yuko')) { type = 'SCORE'; subtype = 'YUKO'; athlete_color = msg.includes('белый') ? 'WHITE' : 'BLUE' }
-          else if (msg.includes('shido') || msg.includes('hansoku')) { type = 'PENALTY'; subtype = msg.includes('hansoku') ? 'HANSOKU_MAKE' : 'SHIDO'; athlete_color = msg.includes('белый') ? 'WHITE' : 'BLUE' }
-          else if (msg.includes('osaekomi')) { type = 'OSAEKOMI'; subtype = msg.includes('начат') ? 'START' : 'STOP'; athlete_color = msg.includes('белый') ? 'WHITE' : 'BLUE' }
-          else if (msg.includes('hajime')) type = subtype = 'FIGHT_START'
-          else if (msg.includes('сброшен')) type = subtype = 'RESET'
-          return { type, subtype, description: e.message, athlete_color, match_time: this.formatTime(this.timerSeconds), timestamp: new Date().toISOString(), details: { source: 'referee_panel', local_time: e.time } }
-        }).reverse()
-        await saveEventsBatch(this.fightId, eventsToSend)
-        this.addEvent('system', 'Журнал сохранён на сервер')
-      } catch {
-        this.addEvent('error', 'Не удалось сохранить журнал')
+        await endFight(payload, this.fightId)
+        this.addEvent('system', 'Результат успешно отправлен на сервер')
+      } catch (e) {
+        this.addEvent('error', `Ошибка отправки результата: ${e.message || e}`)
       }
     },
-    async addYuko(c) { await api('POST', `/api/scores/fight/${this.fightId}/yuko`, { athlete_color: c }); this.addEvent('score', `${c === 'WHITE' ? 'Белый' : 'Синий'}: Yuko`); await this.refreshScores() },
-    async addWazaari(c) { await api('POST', `/api/scores/fight/${this.fightId}/wazaari`, { athlete_color: c }); this.addEvent('score', `${c === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari`); await this.refreshScores() },
-    async addIppon(c) { await api('POST', `/api/scores/fight/${this.fightId}/ippon`, { athlete_color: c }); this.addEvent('score', `${c === 'WHITE' ? 'Белый' : 'Синий'}: IPPON — ПОБЕДА!`); await this.refreshScores(); await this.syncEventsOnComplete() },
-    async addPenalty(c, t) { await api('POST', `/api/scores/fight/${this.fightId}/penalty`, { athlete_color: c, penalty_type: t }); this.addEvent('penalty', `${c === 'WHITE' ? 'Белый' : 'Синий'}: ${t}`); await this.refreshScores() },
-    async startOsaekomi(c) { await api('POST', `/api/scores/fight/${this.fightId}/osaekomi/start`, { athlete_color: c }); this.addEvent('osaekomi', `${c === 'WHITE' ? 'Белый' : 'Синий'}: Osaekomi начат`) },
-    async stopOsaekomi() { await api('POST', `/api/scores/fight/${this.fightId}/osaekomi/stop`); this.addEvent('osaekomi', 'Osaekomi остановлен'); await this.refreshScores() },
-    async toggleOsaekomi(c) { this.osaekomi.active && this.osaekomi.athlete_color === c ? this.stopOsaekomi() : this.startOsaekomi(c) },
-    async undoLast() { await api('POST', `/api/scores/fight/${this.fightId}/undo`); this.addEvent('undo', 'Отменено последнее действие'); await this.refreshScores() },
-    async enterGoldenScore() { await api('POST', `/api/scores/fight/${this.fightId}/golden-score`); this.addEvent('timer', 'Golden Score'); await this.refreshScores() },
-    async resetScores() { if (confirm('Сбросить все очки и штрафы?')) { await api('POST', `/api/scores/fight/${this.fightId}/reset`); this.addEvent('reset', 'Очки и штрафы сброшены'); await this.refreshScores() } },
-    async resetFullMatch() { if (confirm('Сбросить весь результат матча?')) { await api('POST', `/api/fights/${this.fightId}/reset`, { reason: 'Переигровка' }); await this.loadFight() } },
-    confirmIppon(c) { if (confirm('Ippon — бой завершится!')) this.addIppon(c) },
+
+    enterGoldenScore() {
+      this.isGoldenScore = !this.isGoldenScore
+      if (this.isGoldenScore) this.gsSeconds = 0
+      this.addEvent('timer', this.isGoldenScore ? 'Переход в Golden Score' : 'Возврат к обычному времени')
+    },
+
     formatTime(s) {
-      const m = Math.floor(s / 60)
-      const sec = s % 60
+      const m = Math.floor(Math.max(0, s) / 60)
+      const sec = Math.max(0, s) % 60
       return `${m}:${sec < 10 ? '0' : ''}${sec}`
     },
-    setTimerTime(s) { if (this.fightStatus !== 'COMPLETED') this.timerSeconds = s },
-    skipToTime(s) { this.setTimerTime(s) },
-    adjustTimer(d) { if (this.fightStatus !== 'COMPLETED') this.timerSeconds = Math.max(0, this.timerSeconds + d) },
-    async startTimer() {
-      if (this.fightStatus === 'COMPLETED') return
-      if (!this.isRunning) {
-        if (this.fightStatus === 'SCHEDULED') {
-          await startFight({ status: 'IN_PROGRESS', started_at: new Date().toISOString() }, this.fightId)
-          this.fightStatus = 'IN_PROGRESS'
-          this.addEvent('fight', 'Hajime!')
-        }
-        this.isRunning = true
-        this.timerInterval = setInterval(() => {
-          if (this.timerSeconds > 0) {
-            this.timerSeconds--
-            if (this.timerSeconds === 0 && !this.isGoldenScore) this.enterGoldenScore()
-          } else {
-            clearInterval(this.timerInterval)
-            this.isRunning = false
-          }
-        }, 1000)
-      }
+
+    setTimerTime(s) {
+      if (this.fightStatus !== 'COMPLETED') this.timerSeconds = s
     },
+
+    skipToTime(s) {
+      this.setTimerTime(s)
+    },
+
+    adjustTimer(d) {
+      if (this.fightStatus !== 'COMPLETED') this.timerSeconds = Math.max(0, this.timerSeconds + d)
+    },
+
+    startTimer() {
+      if (this.fightStatus === 'COMPLETED') return
+      if (this.fightStatus === 'SCHEDULED') {
+        this.fightStatus = 'IN_PROGRESS'
+        this.addEvent('fight', 'Hajime!')
+      }
+      this.isRunning = true
+      clearInterval(this.timerInterval)
+      this.timerInterval = setInterval(() => {
+        if (this.isGoldenScore) {
+          this.gsSeconds += 1
+        } else if (this.timerSeconds > 0) {
+          this.timerSeconds -= 1
+          if (this.timerSeconds === 0) {
+            this.enterGoldenScore()
+          }
+        }
+      }, 1000)
+    },
+
     pauseTimer() {
       if (this.isRunning) {
         this.isRunning = false
         clearInterval(this.timerInterval)
         this.addEvent('timer', 'Matte')
+      }
+    },
+
+    resetScores() {
+      if (confirm('Сбросить все очки и штрафы?')) {
+        this.scores = {
+          white: { ippon: 0, wazaari: 0, penalty_count: 0 },
+          blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
+        }
+        this.addEvent('reset', 'Очки и штрафы сброшены')
+      }
+    },
+
+    resetFullMatch() {
+      if (confirm('Сбросить весь матч полностью?')) {
+        this.scores = {
+          white: { ippon: 0, wazaari: 0, penalty_count: 0 },
+          blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
+        }
+        this.osaekomi = { active: false, athlete_color: null, time: 0 }
+        this.timerSeconds = this.fightDurationPreset
+        this.gsSeconds = 0
+        this.isGoldenScore = false
+        this.fightStatus = 'IN_PROGRESS'
+        this.victoryType = null
+        this.winnerColor = null
+        this.isRunning = false
+        clearInterval(this.timerInterval)
+        clearInterval(this.osaekomiInterval)
+        this.addEvent('system', 'Матч полностью сброшен')
       }
     }
   }
@@ -367,7 +527,6 @@ export default {
   box-sizing: border-box;
 }
 
-/* Header — кнопка слева, текст строго по центру */
 .header {
   max-width: 1200px;
   margin: 0 auto 2rem;
@@ -396,7 +555,7 @@ export default {
 .header-content {
   flex: 1;
   text-align: center;
-  padding: 0 100px; /* увеличил отступы, чтобы текст был точно по центру */
+  padding: 0 100px;
 }
 
 .header h1 {

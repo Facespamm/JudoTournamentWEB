@@ -4,26 +4,34 @@
       <h1>Схватки и поединки</h1>
       <p class="subtitle">Управление всеми боями турнира</p>
     </div>
-
     <div class="filters-section">
       <div class="filter-group">
-        <label>Татами:</label>
-        <select v-model="selectedTatami" @change="filterFights">
-          <option value="all">Все татами</option>
-          <option v-for="t in availableTatamis" :key="t" :value="t">Татами {{ t }}</option>
+        <label>Турнир:</label>
+        <select v-model="selectedTournament" @change="onTournamentChange" :disabled="tournamentsLoading">
+          <option :value="null">
+            {{ tournamentsLoading ? 'Загрузка турниров...' : 'Выберите турнир' }}
+          </option>
+          <option v-for="t in tournaments" :key="t.id" :value="t.id">
+            {{ t.name }}
+          </option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Статус:</label>
-        <select v-model="selectedStatus" @change="filterFights">
-          <option value="all">Все статусы</option>
-          <option value="SCHEDULED">Запланированы</option>
-          <option value="IN_PROGRESS">LIVE</option>
-          <option value="COMPLETED">Завершены</option>
+        <label>Категория:</label>
+        <select
+            v-model="selectedCategory"
+            :disabled="!selectedTournament || categoriesLoading || tournamentsLoading"
+            @change="loadFights"
+        >
+          <option :value="null">
+            {{ categoriesLoading ? 'Загрузка категорий...' : 'Выберите категорию' }}
+          </option>
+          <option v-for="c in categories" :key="c.id" :value="c.id">
+            {{ c.name }} ({{ c.gender === 'MALE' ? 'М' : 'Ж' }})
+          </option>
         </select>
       </div>
     </div>
-
     <div class="tatami-sections">
       <div
           v-for="tatami in availableTatamis"
@@ -31,10 +39,9 @@
           class="tatami-section"
       >
         <div class="tatami-header">
-          <div class="tatami-number">{{ tatami }}</div>
-          <h2 class="tatami-title">Татами {{ tatami }}</h2>
+          <div class="tatami-number">{{ tatami > 0 ? tatami : '—' }}</div>
+          <h2 class="tatami-title">{{ tatami > 0 ? `Татами ${tatami}` : 'Не назначено' }}</h2>
         </div>
-
         <div class="fights-rows">
           <div
               v-for="fight in groupedFights[tatami]"
@@ -43,50 +50,49 @@
               @click="viewFightDetail(fight.id)"
           >
             <div class="status-bar"></div>
-
             <div class="status-corner">
               <span v-if="fight.status === 'IN_PROGRESS'" class="dot"></span>
               {{ statusText(fight.status) }}
             </div>
-
             <div class="row-content">
               <div class="category-weight">
                 {{ fight.category || '—' }}
               </div>
-
               <div class="fighters-matchup">
                 <div class="fighter left">
                   <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
                   <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
                 </div>
-
                 <div class="fighter right">
                   <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
                   <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
                 </div>
               </div>
-
               <div class="round-or-timer" :class="{ 'live-timer': fight.status === 'IN_PROGRESS' }">
-                {{ fight.status === 'IN_PROGRESS'
-                  ? formatTimer(fight.timer_seconds || 0)
-                  : (fight.round_info || '—') }}
+                {{ fight.round_info || '—' }}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <div v-if="availableTatamis.length === 0" class="empty-state">
+      <div v-if="availableTatamis.length === 0 && !tournamentsLoading" class="empty-state">
         <div class="empty-icon">Gi</div>
-        <h3>Схватки не найдены</h3>
-        <button class="reset-filters-btn" @click="resetFilters">Сбросить фильтры</button>
+        <h3>
+          {{ selectedCategory === null ? 'Выберите категорию для просмотра схваток' : 'Схватки не найдены' }}
+        </h3>
+        <button v-if="selectedTournament || selectedCategory !== null" class="reset-filters-btn" @click="resetFilters">
+          Сбросить фильтры
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { fetchGetFights } from '@/components/View/Fight/fetchFights.js'
+import { fetchTournaments } from "@/components/View/Tournaments/fetchTournaments.js"
+import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
+import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"  // Используется для загрузки боёв по категории
+import {fetchGetDetailFight} from "@/components/View/Fight/fetchFights.js";
 import "./Fight.css"
 
 export default {
@@ -94,20 +100,25 @@ export default {
   data() {
     return {
       fights: [],
-      selectedTatami: 'all',
-      selectedStatus: 'all',
-      refreshInterval: null
+      selectedTournament: null,
+      selectedCategory: null,
+      tournaments: [],
+      tournamentsLoading: false,
+      categories: [],
+      categoriesLoading: false,
+      currentCategoryName: ''
     }
   },
   computed: {
     filteredFights() {
-      let list = this.fights
-      if (this.selectedTatami !== 'all') list = list.filter(f => f.tatami === +this.selectedTatami)
-      if (this.selectedStatus !== 'all') list = list.filter(f => f.status === this.selectedStatus)
-      return list
+      return this.fights
     },
     availableTatamis() {
-      return [...new Set(this.filteredFights.map(f => f.tatami))].sort((a, b) => a - b)
+      const tatamis = [...new Set(this.filteredFights.map(f => f.tatami))].sort((a, b) => a - b)
+      // Татами с номером > 0 сначала (по возрастанию), 0 ("Не назначено") в конец
+      const positive = tatamis.filter(t => t > 0)
+      const zero = tatamis.includes(0) ? [0] : []
+      return positive.concat(zero)
     },
     groupedFights() {
       const grouped = {}
@@ -116,226 +127,407 @@ export default {
         if (!grouped[key]) grouped[key] = []
         grouped[key].push(f)
       })
+      // Сортировка боёв внутри каждого татами: сначала по раунду (ascending), потом по id
+      Object.keys(grouped).forEach(key => {
+        grouped[key].sort((a, b) => {
+          if (a.round !== b.round) return (a.round || 999) - (b.round || 999)
+          return a.id - b.id
+        })
+      })
       return grouped
     }
   },
   async mounted() {
-    this.fights = this.getMockFights()
-    console.log('Установлены мок-данные')
-    await this.loadFights()
-  },
-  beforeUnmount() {
-    if (this.refreshInterval) clearInterval(this.refreshInterval)
+    await this.loadTournaments()
   },
   methods: {
-    getMockFights() {
-      return [
-        { id: 1, tatami: 1, fight_number: 33, status: 'SCHEDULED', category: '-63 kg', fighter1: { club: 'ALO', name: 'KOZHAKHMETOVA Adina' }, fighter2: { club: 'ZHM', name: 'KOSHKINBEK Aziza' }, round_info: '(Round two #33)' },
-        { id: 2, tatami: 1, fight_number: 36, status: 'IN_PROGRESS', timer_seconds: 150, category: '-63 kg', fighter1: { club: 'AST', name: 'GABITOVA Sara' }, fighter2: { club: 'ZSU', name: 'NURFAZYLOVA Zhanel' }, round_info: '(Round two #36)' },
-        { id: 3, tatami: 1, fight_number: 29, status: 'SCHEDULED', category: '-63 kg', fighter1: { club: 'ABO', name: 'MURATBEKOVA Dariya' }, fighter2: { club: 'BKO', name: 'ORYNGALI Saya' }, round_info: '(Round one #29)' },
-        { id: 4, tatami: 2, fight_number: 30, status: 'SCHEDULED', category: '-66 kg', fighter1: { club: 'ULY', name: 'ABDIKHAMIT Bakarys' }, fighter2: { club: 'ALM', name: 'ADILKHAN Anuar' }, round_info: '(Round one #30)' },
-        { id: 5, tatami: 2, fight_number: 31, status: 'IN_PROGRESS', timer_seconds: 90, category: '66 kg', fighter1: { club: 'ZSU', name: 'OMIRZAK Birzhan' }, fighter2: { club: 'SHK', name: 'TILEUBERDY Dimukhammad' }, round_info: '(Round one #31)' },
-        { id: 6, tatami: 3, fight_number: 73, status: 'COMPLETED', category: '+73 kg', fighter1: { club: 'ZSU', name: 'GALIBEKOV Madi' }, fighter2: { club: 'KST', name: 'YERBOL Madiyar' }, round_info: '(Round two #73)' },
-        { id: 7, tatami: 3, fight_number: 74, status: 'SCHEDULED', category: '+73 kg', fighter1: { club: 'ZSU', name: 'BORAN Madiyar' }, fighter2: { club: 'ALM', name: 'ARIPZHANOV Adnan' }, round_info: '(Round two #74)' },
-        { id: 8, tatami: 4, fight_number: 79, status: 'IN_PROGRESS', timer_seconds: 200, category: '-73 kg', fighter1: { club: 'MAN', name: 'KAKHAN Kumisbek' }, fighter2: { club: 'ALM', name: 'KOBTSEV Semen' }, round_info: '(Round two #79)' },
-        { id: 9, tatami: 5, fight_number: 87, status: 'SCHEDULED', category: '-57 kg', fighter1: { club: 'ALO', name: 'BEKBOLATKYZY Ayazhan' }, fighter2: { club: 'ABO', name: 'JAKSYBAYEVA Tomiris' }, round_info: '(Round one #87)' },
-        { id: 10, tatami: 5, fight_number: 88, status: 'COMPLETED', category: '-57 kg', fighter1: { club: 'ZHM', name: 'NAZHMIDDINOVA Aizere' }, fighter2: { club: 'ZSU', name: 'MEDETHANKYZY Ademi' }, round_info: '(Round one #88)' }
-      ]
+    formatAthlete(athlete) {
+      if (!athlete) {
+        return { name: 'Ожидает победителя', club: '' }
+      }
+      const name = [athlete.last_name, athlete.first_name, athlete.middle_name]
+          .filter(Boolean)
+          .join(' ')
+      return { name, club: '' }
+    },
+    async loadTournaments() {
+      this.tournamentsLoading = true
+      try {
+        const res = await fetchTournaments()
+        if (res?.success) {
+          this.tournaments = Array.isArray(res.data) ? res.data : []
+        } else {
+          this.tournaments = []
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки турниров:', err)
+        this.tournaments = []
+      } finally {
+        this.tournamentsLoading = false
+      }
+    },
+    async onTournamentChange() {
+      this.selectedCategory = null
+      this.categories = []
+      this.fights = []
+      this.currentCategoryName = ''
+
+      if (!this.selectedTournament) {
+        return
+      }
+
+      this.categoriesLoading = true
+      try {
+        const res = await fetchCategories(this.selectedTournament)
+        if (res.success) {
+          this.categories = res.categories || res.data?.categories || []
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки категорий:', err)
+        this.categories = []
+      } finally {
+        this.categoriesLoading = false
+      }
     },
     async loadFights() {
+      this.fights = []
+      this.currentCategoryName = ''
+
+      if (!this.selectedTournament || this.selectedCategory === null) {
+        return
+      }
+
       try {
-        console.log('Загрузка списка боев...')
-        const res = await fetchGetFights()
-        if (res?.success && res.data?.fights?.length) {
-          this.fights = res.data.fights
-          console.log('Реальные бои загружены:', this.fights.length)
+        console.log('Загрузка боёв для турнира:', this.selectedTournament, 'категория:', this.selectedCategory)
+        const res = await fetchBrackets(this.selectedTournament, this.selectedCategory)
+
+        if (res?.success && res.fights?.length) {
+          this.currentCategoryName = res.category?.weight_range || res.category?.name || '—'
+
+          this.fights = res.fights.map(fight => ({
+            id: fight.id,
+            tatami: fight.tatami_number ?? 0,
+            status: fight.status_fight || 'SCHEDULED',
+            category: this.currentCategoryName,
+            fighter1: this.formatAthlete(fight.white_athlete),
+            fighter2: this.formatAthlete(fight.blue_athlete),
+            round: fight.round || null,
+            round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
+          }))
+          console.log('Загружено боев:', this.fights.length)
+        } else {
+          this.fights = []
         }
       } catch (err) {
         console.error('Ошибка загрузки боев:', err)
+        this.fights = []
       }
     },
-    filterFights() {},
     resetFilters() {
-      this.selectedTatami = 'all'
-      this.selectedStatus = 'all'
+      this.selectedTournament = null
+      this.selectedCategory = null
+      this.categories = []
+      this.fights = []
+      this.currentCategoryName = ''
     },
     statusText(s) {
-      return s === 'IN_PROGRESS' ? 'LIVE' : s === 'SCHEDULED' ? 'Запланировано' : 'Завершено'
-    },
-    formatTimer(sec) {
-      const m = String(Math.floor(sec / 60)).padStart(2, '0')
-      const s = String(sec % 60).padStart(2, '0')
-      return `${m}:${s}`
-    },
-    viewFightDetail(id) { this.$router.push(`/fights/${id}`) },
-    manualRefresh() { this.loadFights() },
-    toggleAutoRefresh(enable) {
-      if (this.refreshInterval) clearInterval(this.refreshInterval)
-      if (enable) {
-        this.refreshInterval = setInterval(this.loadFights, 10000)
-        console.log('Автообновление включено')
+      switch (s) {
+        case 'IN_PROGRESS': return 'LIVE'
+        case 'SCHEDULED': return 'Запланировано'
+        case 'COMPLETED': return 'Завершено'
+        default: return 'Неизвестно'
       }
+    },
+    viewFightDetail(id) {
+      this.$router.push(`/fights/${id}`)
     }
   }
 }
 </script>
 
 <style scoped>
-.fights-overview { min-height: 100vh; background: #f9f9fb; padding: 90px 2rem 4rem; font-family: 'SF Pro Display', -apple-system, sans-serif; color: #1a1a1a; }
-
-.fights-header h1 { font-size: 2.8rem; font-weight: 900; background: linear-gradient(90deg, #c89b3c, #f4d03f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
-.subtitle { font-size: 1.25rem; color: #666; text-align: center; margin-top: 0.5rem; }
-
-.filters-section {
-  display: flex; gap: 2rem; margin: 3rem auto; max-width: 900px; padding: 1rem 1.5rem; background: white; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); flex-wrap: wrap; justify-content: center;
+/* Стили полностью сохранены из предыдущей версии */
+.fights-overview {
+  min-height: 100vh;
+  background: #f9f9fb;
+  padding: 90px 1.5rem 4rem;
+  font-family: 'SF Pro Display', -apple-system, sans-serif;
+  color: #1a1a1a;
 }
-.filter-group { display: flex; align-items: center; gap: 1rem; }
-.filter-group label { font-weight: 600; color: #333; white-space: nowrap; }
-.filter-group select { padding: 0.75rem 1rem; border: 2px solid #e0e0e0; border-radius: 14px; font-weight: 600; min-width: 200px; }
-
-.tatami-sections { max-width: 1400px; margin: 0 auto; }
-
-.tatami-section { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 3rem; border-top: 6px solid #c89b3c; }
-
+.fights-header h1 {
+  font-size: 2.4rem;
+  font-weight: 900;
+  background: linear-gradient(90deg, #c89b3c, #f4d03f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+.subtitle {
+  font-size: 1.15rem;
+  color: #666;
+  text-align: center;
+  margin-top: 0.4rem;
+}
+.filters-section {
+  display: flex;
+  gap: 1.5rem;
+  margin: 2.5rem auto;
+  max-width: 800px;
+  padding: 1rem 1.2rem;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.filter-group label {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+.filter-group select {
+  padding: 0.65rem 0.9rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-weight: 600;
+  min-width: 220px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+.filter-group select:hover:not(:disabled) {
+  border-color: #c89b3c;
+}
+.filter-group select:disabled {
+  background: #f5f5f5;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.tatami-sections {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+.tatami-section {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.09);
+  margin-bottom: 2.5rem;
+  border-top: 5px solid #c89b3c;
+}
 .tatami-header {
   display: flex;
   align-items: center;
-  padding: 1.8rem 2rem;
+  padding: 1.4rem 1.6rem;
   background: white;
   border-bottom: 1px solid #eee;
 }
-
 .tatami-number {
-  font-size: 4.5rem;
+  font-size: 3.5rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-right: 1.2rem;
+  margin-right: 1rem;
   line-height: 1;
 }
-
 .tatami-title {
-  font-size: 2.4rem;
+  font-size: 2rem;
   font-weight: 900;
   margin: 0;
   color: #c89b3c;
 }
-
-.fights-rows { }
-
+.fights-rows {}
 .fight-row {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 1.8rem 2rem;
+  padding: 1.4rem 1.6rem;
   border-bottom: 1px solid #eee;
   cursor: pointer;
   transition: background 0.3s;
 }
-.fight-row:hover { background: #fdfdfb; }
-.fight-row:last-child { border-bottom: none; }
-
+.fight-row:hover {
+  background: #fdfdfb;
+}
+.fight-row:last-child {
+  border-bottom: none;
+}
 .status-bar {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 12px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
   background: linear-gradient(135deg, #c89b3c, #f4d03f);
 }
-
 .status-corner {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  top: 10px;
+  right: 14px;
   background: white;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   z-index: 10;
   color: #c89b3c;
 }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: #c89b3c; animation: pulse 1.8s infinite; }
-
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c89b3c;
+  animation: pulse 1.8s infinite;
+}
 .row-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-right: 180px;
+  padding-right: 140px;
 }
-
 .category-weight {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  min-width: 120px;
+  min-width: 110px;
   color: #c89b3c;
 }
-
 .fighters-matchup {
   flex: 1;
   display: flex;
   justify-content: space-between;
-  padding: 0 3rem;
+  padding: 0 2rem;
 }
-
 .fighter {
   display: flex;
   flex-direction: column;
-  min-width: 280px;
+  min-width: 240px;
 }
-.fighter.left { align-items: flex-start; text-align: left; }
-.fighter.right { align-items: flex-end; text-align: right; }
-
+.fighter.left {
+  align-items: flex-start;
+  text-align: left;
+}
+.fighter.right {
+  align-items: flex-end;
+  text-align: right;
+}
 .club-code {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #c89b3c;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
-
 .fighter-name {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #000;
 }
-
 .round-or-timer {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   font-weight: 900;
   font-family: 'SF Pro Display', monospace;
-  min-width: 160px;
+  min-width: 140px;
   text-align: center;
   color: #1a1a1a;
 }
 .live-timer {
   color: #c89b3c;
-  font-size: 2.6rem;
+  font-size: 2.2rem;
 }
-
-.empty-state { text-align: center; padding: 6rem; color: #666; }
+.empty-state {
+  text-align: center;
+  padding: 4rem;
+  color: #666;
+}
+.empty-icon {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #c89b3c;
+  margin-bottom: 1rem;
+}
 .reset-filters-btn {
   background: linear-gradient(135deg, #c89b3c, #f4d03f);
-  color: white; padding: 1rem 2.5rem; border: none; border-radius: 16px; font-weight: 700; cursor: pointer;
+  color: white;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: transform 0.2s;
 }
-
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
+.reset-filters-btn:hover {
+  transform: translateY(-2px);
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
 @media (max-width: 992px) {
-  .row-content { flex-direction: column; align-items: flex-start; padding-right: 0; }
-  .fighters-matchup { padding: 1rem 0; width: 100%; justify-content: space-between; }
-  .round-or-timer { margin: 1rem 0; text-align: left; }
-  .category-weight { margin-bottom: 1rem; }
-  .tatami-header { flex-direction: column; text-align: center; }
-  .tatami-number { margin-right: 0; margin-bottom: 0.5rem; }
-  .status-corner { right: 50%; transform: translateX(50%); top: 8px; }
+  .row-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-right: 0;
+  }
+  .fighters-matchup {
+    padding: 0.8rem 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .round-or-timer {
+    margin: 0.8rem 0;
+    text-align: left;
+  }
+  .category-weight {
+    margin-bottom: 0.8rem;
+  }
+  .tatami-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  .tatami-number {
+    margin-right: 0;
+    margin-bottom: 0.4rem;
+  }
+  .status-corner {
+    right: 50%;
+    transform: translateX(50%);
+    top: 6px;
+  }
 }
-
 @media (max-width: 768px) {
-  .fighters-matchup { flex-direction: column; align-items: center; gap: 1rem; }
-  .fighter.left, .fighter.right { align-items: center; text-align: center; }
-  .tatami-number { font-size: 3.5rem; }
-  .tatami-title { font-size: 2rem; }
+  .fighters-matchup {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .fighter.left,
+  .fighter.right {
+    align-items: center;
+    text-align: center;
+  }
+  .tatami-number {
+    font-size: 3rem;
+  }
+  .tatami-title {
+    font-size: 1.8rem;
+  }
+  .filter-group select {
+    min-width: 100%;
+  }
+  .filters-section {
+    flex-direction: column;
+  }
 }
 </style>

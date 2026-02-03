@@ -23,10 +23,10 @@ export const startFight = async (data,id) => {
     }
 };
 
-export const endFight = async (data,id) => {
+export const endFight = async (data, fight_id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/fights/${id}/finish`, {
-            method: 'POST',
+        const response = await fetch(`http://127.0.0.1:5001/api/fights/${fight_id}/end-fight`, {
+            method: 'PUT',  // Изменено на PUT
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
@@ -36,17 +36,16 @@ export const endFight = async (data,id) => {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Ошибка при создании категории');
+            throw new Error(errorData.message || 'Ошибка при завершении схватки');
         }
 
         const result = await response.json();
         return { success: true, data: result };
     } catch (error) {
-        console.error('Ошибка при создании категории:', error);
+        console.error('Ошибка при завершении схватки:', error);
         return { success: false, error: error.message };
     }
 };
-
 // ==================== 10 ФУНКЦИЙ ДЛЯ ВАШИХ ЭНДПОИНТОВ ====================
 
 // 1. Получить текущие оценки

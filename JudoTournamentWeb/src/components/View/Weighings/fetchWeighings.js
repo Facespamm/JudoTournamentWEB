@@ -1,6 +1,6 @@
-export const fetchWeighings = async (tournamentId) => {
+export const fetchWeighings = async (tournamentId,categoryId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/weighing/?tournament_id=${tournamentId}`, {
+        const response = await fetch(`http://127.0.0.1:5001/weighing/?tournament_id=${tournamentId}&athlete_id=1&category_id=${categoryId}`, {
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'

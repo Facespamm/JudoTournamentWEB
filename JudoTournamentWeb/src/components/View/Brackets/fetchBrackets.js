@@ -23,9 +23,7 @@ export const createBracket = async (bracketData,tournament_id,categoryId) => {
 };
 
 export const fetchBrackets = async (tournament_id, category_id) => {
-    // ЭТО САМОЕ ГЛАВНОЕ — URL с реальными id
-    const url = `http://127.0.0.1:5001/api/brackets/?tournament_id=${tournament_id}&category_id=${category_id}`;
-
+    const url = `/api/brackets/${tournament_id}/fights?category=${category_id}`;
     try {
         const response = await fetch(url, {
             headers: { 'X-API-Key': 'mobile_app_2024' }
@@ -34,17 +32,15 @@ export const fetchBrackets = async (tournament_id, category_id) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
-        return {
-            success: true,
-            brackets: data.brackets || [],
-            total: data.total || 0
-        };
+
+        // Возвращаем данные как есть от API
+        // API возвращает структуру: { fights: [...], success: true, tournament_name: "..." }
+        return data;
     } catch (error) {
         console.error('Ошибка загрузки сеток:', error);
         return { success: false, error: error.message };
     }
 };
-
 export const fetchBracketDetail = async (id) => {
     try {
         const response = await fetch(`http://127.0.0.1:5001/api/brackets/${id}/fights

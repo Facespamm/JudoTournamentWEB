@@ -1,52 +1,6 @@
 const API_BASE_URL = 'http://127.0.0.1:5001';
 const API_KEY = 'mobile_app_2024';
 
-/**
- * 1. Получить всех атлетов клуба для турнира
- * Использует эндпоинт: GET /tournaments/club-athletes
- */
-/*
-export const getClubAthletes = async (clubId, onlyActive = true, includeTournamentInfo = false, tournamentId = null) => {
-    try {
-        const params = new URLSearchParams({
-            club_id: clubId,
-            only_active: onlyActive,
-            include_tournament_info: includeTournamentInfo
-        });
-
-        if (tournamentId) {
-            params.append('tournament_id', tournamentId);
-        }
-
-        const response = await fetch(`${API_BASE_URL}/clubs/1/club-athletes?include_tournament_info=false`, {
-            headers: {
-                'X-API-Key': API_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return {
-            success: true,
-            clubId: data.club_id,
-            clubName: data.club_name,
-            athletesCount: data.athletes_count,
-            athletes: data.athletes || []
-        };
-    } catch (error) {
-        console.error('Ошибка при загрузке атлетов клуба:', error);
-        return {
-            success: false,
-            error: error.message,
-            athletes: []
-        };
-    }
-};
-*/
 export const getClubAthletes = async (clubId = null) => {
     try {
         const url = `http://127.0.0.1:5001/clubs/${clubId}/club-athletes/?include_tournament_info=true`;
@@ -110,7 +64,7 @@ export const searchAthletes = async (
         const url = `http://127.0.0.1:5001/clubs/search?${params.toString()}`;
 
         const response = await fetch(url, {
-            method: 'GET', // явно указываем, что это GET
+            method: 'GET',
             headers: {
                 'X-API-Key': API_KEY,
                 'Content-Type': 'application/json'
@@ -123,9 +77,13 @@ export const searchAthletes = async (
         }
 
         const data = await response.json();
+
+        // Возвращаем полный объект ответа с массивом athletes
         return {
-            success: true,
-            athletes: data || []
+            success: data.success !== false, // если success явно не false, то true
+            athletes: data.athletes || [],   // извлекаем массив athletes
+            athletes_count: data.athletes_count || 0,
+            search_params: data.search_params || {}
         };
     } catch (error) {
         console.error('Ошибка при поиске атлетов по ФИО:', error);
@@ -135,38 +93,37 @@ export const searchAthletes = async (
             athletes: []
         };
     }
-};
-/**
+};/**
  * 3. Получить всех атлетов
  * Использует эндпоинт: GET /athletes/
  */
 export const getAllAthletes = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/athletes/`, {
-            headers: {
-                'X-API-Key': API_KEY,
-                'Content-Type': 'application/json'
+        try {
+            const response = await fetch(`${API_BASE_URL}/athletes/`, {
+                headers: {
+                    'X-API-Key': API_KEY,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            return {
+                success: true,
+                athletes: data.athletes || data || []
+            };
+        } catch (error) {
+            console.error('Ошибка при загрузке всех атлетов:', error);
+            return {
+                success: false,
+                error: error.message,
+                athletes: []
+            };
         }
-
-        const data = await response.json();
-        return {
-            success: true,
-            athletes: data.athletes || data || []
-        };
-    } catch (error) {
-        console.error('Ошибка при загрузке всех атлетов:', error);
-        return {
-            success: false,
-            error: error.message,
-            athletes: []
-        };
-    }
-};
+    };
 
 /**
  * 4. Получить все турниры
@@ -200,43 +157,6 @@ export const fetchTournaments = async () => {
         };
     }
 };
-
-/**
- * 5. Получить детали турнира
- * Использует эндпоинт: GET /tournaments/{id}
- */
-export const getTournamentDetails = async (tournamentId) => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}`, {
-            headers: {
-                'X-API-Key': API_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return {
-            success: true,
-            tournament: data
-        };
-    } catch (error) {
-        console.error('Ошибка при загрузке деталей турнира:', error);
-        return {
-            success: false,
-            error: error.message,
-            tournament: null
-        };
-    }
-};
-
-/**
- * 6. Добавить клуб на турнир
- * Использует эндпоинт: POST /tournaments/{id}/add-club?club_id={club_id}
- */
 export const addClubToTournament = async (tournamentId, clubId) => {
     try {
         const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/add-club?club_id=${clubId}`, {
@@ -269,7 +189,7 @@ export const addClubToTournament = async (tournamentId, clubId) => {
  * 7. Добавить атлетов на турнир
  * Использует эндпоинт: POST /tournaments/{id}/add-athletes
  */
-export const addAthletesToTournament = async (tournamentId, athleteIds) => {
+export const addAthletesToTournament = async (tournamentId, payload) => {
     try {
         const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/add-athletes`, {
             method: 'POST',
@@ -277,9 +197,7 @@ export const addAthletesToTournament = async (tournamentId, athleteIds) => {
                 'X-API-Key': API_KEY,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                athlete_ids: athleteIds
-            })
+            body: JSON.stringify(payload) // ← Теперь отправляем { category_id, athlete_ids }
         });
 
         if (!response.ok) {
@@ -289,13 +207,10 @@ export const addAthletesToTournament = async (tournamentId, athleteIds) => {
         const data = await response.json();
         return {
             success: data.success === true,
-            message: data.message || 'Атлеты добавлены'
+            message: data.message || 'Атлеты добавлены в категорию'
         };
     } catch (error) {
         console.error('Ошибка при регистрации атлетов:', error);
-        return {
-            success: false,
-            error: error.message
-        };
+        return { success: false, error: error.message };
     }
 };

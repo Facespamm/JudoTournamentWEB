@@ -11,20 +11,6 @@
           >
             Создать сетку
           </button>
-          <button
-              class="nav-tab"
-              :class="{ active: activeTab === 'view' }"
-              @click="activeTab = 'view'"
-          >
-            Просмотр сеток
-          </button>
-          <button
-              class="nav-tab"
-              :class="{ active: activeTab === 'edit' }"
-              @click="activeTab = 'edit'"
-          >
-            Создание боя
-          </button>
         </nav>
       </section>
 

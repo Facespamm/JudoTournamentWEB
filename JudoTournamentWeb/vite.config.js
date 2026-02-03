@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:5001',
+        changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/api/, '') // раскомментируйте, если нужно убрать /api из пути на бэкенде
+      }
+    }
+  }
 })

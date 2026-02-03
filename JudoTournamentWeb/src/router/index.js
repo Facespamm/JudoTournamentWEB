@@ -22,7 +22,7 @@ import BracketViewDetail from "@/components/View/Brackets/BracketViewDetail.vue"
 import RefereeDashboard from "@/components/View/RefereeDashboard/RefereeDashboard.vue";
 import ManageRole from "@/components/View/Authentication/SelectRoleView/ManageRole.vue";
 import Weighings from "@/components/View/Weighings/Weighings.vue";
-import RegistrationModal from "@/components/View/Tournaments/RegistrationModal.vue";
+import RegistrationModal from "@/components/View/RegistrationAthletesTournament/RegistrationModal.vue";
 import Clubs from "@/components/View/Clubs/Clubs.vue";
 const routes = [
     { path: '/', redirect: '/login' },

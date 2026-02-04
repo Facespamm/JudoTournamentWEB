@@ -1,6 +1,6 @@
 export const fetchWeighings = async (tournamentId,categoryId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/weighing/?tournament_id=${tournamentId}&athlete_id=1&category_id=${categoryId}`, {
+        const response = await fetch(`/api/weighing/?tournament_id=${tournamentId}&athlete_id=1&category_id=${categoryId}`, {
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
@@ -26,7 +26,7 @@ export const fetchWeighings = async (tournamentId,categoryId) => {
 
 export const updateWeighing = async (weighingId, data) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/weighing/${weighingId}`, {
+        const response = await fetch(`/api/weighing/${weighingId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ export const updateWeighing = async (weighingId, data) => {
 
 export const toggleWeighingValidation = async (weighingId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/weighing/${weighingId}/toggle-validation`, {
+        const response = await fetch(`/api/weighing/${weighingId}/toggle-validation`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',

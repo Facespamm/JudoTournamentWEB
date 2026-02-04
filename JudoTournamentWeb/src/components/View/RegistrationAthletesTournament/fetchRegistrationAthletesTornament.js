@@ -1,9 +1,9 @@
-const API_BASE_URL = 'http://127.0.0.1:5001';
+const API_BASE_URL = '/api/';
 const API_KEY = 'mobile_app_2024';
 
 export const getClubAthletes = async (clubId = null) => {
     try {
-        const url = `http://127.0.0.1:5001/clubs/${clubId}/club-athletes/?include_tournament_info=true`;
+        const url = `/api/clubs/${clubId}/club-athletes/?include_tournament_info=true`;
         // Не добавляем tournament_id — получаем ВСЕХ спортсменов клуба с информацией о турнирах
 
         const response = await fetch(url, {

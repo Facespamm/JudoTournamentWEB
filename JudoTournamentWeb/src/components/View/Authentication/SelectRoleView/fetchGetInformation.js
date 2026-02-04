@@ -1,7 +1,7 @@
 
 export const fetchDan = async () => {
     try {
-        const response = await fetch('http://127.0.0.1:5001/dans/')
+        const response = await fetch('/api/dans/')
 
         if (!response.ok) {
             const err = await response.json()
@@ -26,7 +26,7 @@ export const fetchDan = async () => {
 
 export const fetchClubs = async () => {
     try {
-        const response = await fetch('http://127.0.0.1:5001/clubs/')
+        const response = await fetch('/api/clubs/')
 
         if (!response.ok) {
             const err = await response.json()
@@ -51,7 +51,7 @@ export const fetchClubs = async () => {
 }
 export const fetchUserInformation = async (id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/users/${id}`)
+        const response = await fetch(`/api/users/${id}`)
 
         if (!response.ok) {
             const err = await response.json()
@@ -68,7 +68,7 @@ export const fetchUserInformation = async (id) => {
 
 export const fetchCreateAthlete = async (data,userId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/athletes/${userId}`, {
+        const response = await fetch(`/api/athletes/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

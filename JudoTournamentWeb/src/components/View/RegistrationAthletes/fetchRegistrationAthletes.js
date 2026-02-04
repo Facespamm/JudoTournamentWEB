@@ -17,7 +17,7 @@ export const createAthlete = async (athleteData) => {
             coach: athleteData.coach || ""
         };
 
-        const response = await fetch('http://127.0.0.1:5001/athletes/', {
+        const response = await fetch('/api/athletes/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ export const createAthlete = async (athleteData) => {
 
 export const fetchAthletes = async () => {
     try {
-        const response = await fetch('http://127.0.0.1:5001/athletes/', {
+        const response = await fetch('/api/athletes/', {
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
@@ -71,7 +71,7 @@ export const fetchAthletes = async () => {
 
 export const createRecordWeight = async (categoryData) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/weighing/
+        const response = await fetch(`/api/weighing/
 `, {
             method: 'POST',
             headers: {

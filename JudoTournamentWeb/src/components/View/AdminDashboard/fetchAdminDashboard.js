@@ -1,6 +1,6 @@
 export const GetAdminStatistics = async () => {
     try {
-        const response = await fetch('http://localhost:5001/statistics/live-detailed')
+        const response = await fetch('/api/statistics/live-detailed')
 
         if (!response.ok) {
             const err = await response.json()
@@ -19,7 +19,7 @@ export const GetAdminStatistics = async () => {
 
 export const GetLiveTournamentAdmin = async () => {
     try {
-        const response = await fetch('http://localhost:5001/statistics/active-tournaments')
+        const response = await fetch('/api/statistics/active-tournaments')
 
         if (!response.ok) {
             const err = await response.json()

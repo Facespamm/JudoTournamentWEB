@@ -1,6 +1,6 @@
 export const UpdateClubs = async (clubsId, userData) => {
     try {
-        const response = await fetch(`http://localhost:5001/clubs/${clubsId}`, {
+        const response = await fetch(`/api/clubs/${clubsId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -27,7 +27,7 @@ export const UpdateClubs = async (clubsId, userData) => {
 
 export const createClub = async (clubData) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/clubs/
+        const response = await fetch(`/api/clubs/
 `, {
             method: 'POST',
             headers: {
@@ -51,7 +51,7 @@ export const createClub = async (clubData) => {
 
 export const DeleteClub = async (clubId) => {
     try {
-        const response = await fetch(`http://localhost:5001/clubs/${clubId}`, {
+        const response = await fetch(`/api/clubs/${clubId}`, {
             method: 'DELETE',
             headers: { 'X-API-Key': 'mobile_app_2024' }
         });

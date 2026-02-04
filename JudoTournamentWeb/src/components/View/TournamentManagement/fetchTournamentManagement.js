@@ -2,7 +2,7 @@
 
 export const createTournament = async (data) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/tournaments/`, {
+        const response = await fetch(`/api/tournaments/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export const createTournament = async (data) => {
 
 export const createCategory = async (categoryData) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/categories/`, {
+        const response = await fetch(`/api/categories/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ export const createCategory = async (categoryData) => {
 
 export const fetchCategories = async () => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/categories/?tournament_id`, {
+        const response = await fetch(`/api/categories/?tournament_id`, {
             headers: {
                 'X-API-Key': 'mobile_app_2024'
             }

@@ -1,6 +1,6 @@
 export const fetchGetFights = async () => {
     try {
-        const response = await fetch('http://127.0.0.1:5001/api/fights/?tournament_id&status&tatami', {
+        const response = await fetch('/api/fights/?tournament_id&status&tatami', {
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
@@ -26,7 +26,7 @@ export const fetchGetFights = async () => {
 
 export const fetchGetDetailFight = async (id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/fights/${id}`);
+        const response = await fetch(`/api/fights/${id}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

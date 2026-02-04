@@ -1,6 +1,6 @@
 export const fetchAthleteDetail = async (id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/athletes/${id}`);
+        const response = await fetch(`/api/athletes/${id}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

@@ -1,6 +1,6 @@
 export const GetCountRolesUsers = async () => {
     try {
-        const response = await fetch('http://localhost:5001/statistics/users-by-role')
+        const response = await fetch('/api/statistics/users-by-role')
 
         if (!response.ok) {
             const err = await response.json()
@@ -18,7 +18,7 @@ export const GetCountRolesUsers = async () => {
 
 export const GetAllUsersInformation = async () => {
     try {
-        const response = await fetch('http://localhost:5001/statistics/users')
+        const response = await fetch('/api/statistics/users')
 
         if (!response.ok) {
             const err = await response.json()
@@ -35,7 +35,7 @@ export const GetAllUsersInformation = async () => {
 
 export const DeleteUser = async (userId) => {
     try {
-        const response = await fetch(`http://localhost:5001/statistics/users/${userId}`, {
+        const response = await fetch(`/api/statistics/users/${userId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ export const DeleteUser = async (userId) => {
 
 export const UpdateUser = async (userId, userData) => {
     try {
-        const response = await fetch(`http://localhost:5001/statistics/users/${userId}`, {
+        const response = await fetch(`/api/statistics/users/${userId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

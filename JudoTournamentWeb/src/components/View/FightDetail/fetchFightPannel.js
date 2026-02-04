@@ -1,6 +1,6 @@
 export const startFight = async (data,id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/fights/${id}/start
+        const response = await fetch(`/api/fights/${id}/start
 `, {
             method: 'POST',
             headers: {
@@ -25,7 +25,7 @@ export const startFight = async (data,id) => {
 
 export const endFight = async (data, fight_id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/fights/${fight_id}/end-fight`, {
+        const response = await fetch(`/api/fights/${fight_id}/end-fight`, {
             method: 'PUT',  // Изменено на PUT
             headers: {
                 'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ export const endFight = async (data, fight_id) => {
 
 // 1. Получить текущие оценки
 export const getScores = async (fightId) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/current`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/current`, {
         headers: { 'X-API-Key': 'mobile_app_2024' }
     });
     return response.json();
@@ -58,7 +58,7 @@ export const getScores = async (fightId) => {
 
 // 2. Перейти в золотой скор
 export const enterGoldenScore = async (fightId) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/golden-score`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/golden-score`, {
         method: 'POST',
         headers: { 'X-API-Key': 'mobile_app_2024' }
     });
@@ -70,7 +70,7 @@ export const addIppon = async (fightId, athleteColor, technique = null) => {
     const body = { athlete_color: athleteColor.toUpperCase() };
     if (technique) body.technique = technique;
 
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/ippon`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/ippon`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ export const addIppon = async (fightId, athleteColor, technique = null) => {
 
 // 4. Начать ОСАЕКОМИ
 export const startOsaekomi = async (fightId, athleteColor) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/osaekomi/start`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/osaekomi/start`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export const startOsaekomi = async (fightId, athleteColor) => {
 
 // 5. Остановить ОСАЕКОМИ
 export const stopOsaekomi = async (fightId) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/osaekomi/stop`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/osaekomi/stop`, {
         method: 'POST',
         headers: { 'X-API-Key': 'mobile_app_2024' }
     });
@@ -107,7 +107,7 @@ export const stopOsaekomi = async (fightId) => {
 
 // 6. Добавить штраф
 export const addPenalty = async (fightId, athleteColor, penaltyType) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/penalty`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/penalty`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export const addPenalty = async (fightId, athleteColor, penaltyType) => {
 
 // 7. Сбросить все оценки
 export const resetScores = async (fightId) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/reset`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/reset`, {
         method: 'POST',
         headers: { 'X-API-Key': 'mobile_app_2024' }
     });
@@ -132,7 +132,7 @@ export const resetScores = async (fightId) => {
 
 // 8. Отменить последнее действие
 export const undoAction = async (fightId) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/undo`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/undo`, {
         method: 'POST',
         headers: { 'X-API-Key': 'mobile_app_2024' }
     });
@@ -144,7 +144,7 @@ export const addWazaari = async (fightId, athleteColor, technique = null) => {
     const body = { athlete_color: athleteColor.toUpperCase() };
     if (technique) body.technique = technique;
 
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/wazaari`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/wazaari`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ export const addWazaari = async (fightId, athleteColor, technique = null) => {
 
 // 10. Добавить ЮКО
 export const addYuko = async (fightId, athleteColor) => {
-    const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/yuko`, {
+    const response = await fetch(`/api/scores/fight/${fightId}/yuko`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ export const addYuko = async (fightId, athleteColor) => {
 // 11. Сохранить все события боя пачкой (одним запросом)
 export const saveEventsBatch = async (fightId, events) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/events/batch`, {
+        const response = await fetch(`/api/scores/fight/${fightId}/events/batch`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ export const saveEventsBatch = async (fightId, events) => {
 // 12. Получить хронологию боя (все события по порядку)
 export const getFightTimeline = async (fightId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/timeline`, {
+        const response = await fetch(`/api/scores/fight/${fightId}/timeline`, {
             headers: { 'X-API-Key': 'mobile_app_2024' }
         });
 
@@ -218,7 +218,7 @@ export const getFightTimeline = async (fightId) => {
 // 13. Получить сводку матча (сгруппированные данные)
 export const getFightSummary = async (fightId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/scores/fight/${fightId}/summary`, {
+        const response = await fetch(`/api/scores/fight/${fightId}/summary`, {
             headers: { 'X-API-Key': 'mobile_app_2024' }
         });
 

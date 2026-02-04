@@ -1,7 +1,7 @@
 
 export const fetchAthletes = async () => {
     try {
-        const response = await fetch('http://127.0.0.1:5001/athletes/')
+        const response = await fetch('/api/athletes/')
 
         if (!response.ok) {
             const err = await response.json()

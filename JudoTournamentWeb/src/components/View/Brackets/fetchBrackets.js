@@ -1,7 +1,7 @@
 
 export const createBracket = async (bracketData,tournament_id,categoryId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/brackets/${tournament_id}?category=${categoryId}`, {
+        const response = await fetch(`/api/brackets/${tournament_id}?category=${categoryId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ export const fetchBrackets = async (tournament_id, category_id) => {
 };
 export const fetchBracketDetail = async (id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/brackets/${id}/fights
+        const response = await fetch(`/api/brackets/${id}/fights
 `);
 
         if (!response.ok) {
@@ -64,7 +64,7 @@ export const fetchBracketDetail = async (id) => {
 
 export const createFight = async (bracketFightData, id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/api/brackets/${id}/generate`, {
+        const response = await fetch(`/api/brackets/${id}/generate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

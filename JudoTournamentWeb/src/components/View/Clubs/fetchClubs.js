@@ -1,7 +1,7 @@
 
 export const getClubs = async () => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/clubs/
+        const response = await fetch(`/api/clubs/
 `, {
             headers: { 'X-API-Key': 'mobile_app_2024' }
         });

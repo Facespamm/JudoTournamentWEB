@@ -49,7 +49,7 @@ export const getClubAthletes = async (clubId, onlyActive = true, includeTourname
 */
 export const getClubAthletes = async (clubId = null) => {
     try {
-        const url = `http://127.0.0.1:5001/clubs/${clubId}/club-athletes/?include_tournament_info=true`;
+        const url = `/api/clubs/${clubId}/club-athletes/?include_tournament_info=true`;
         // Не добавляем tournament_id — получаем ВСЕХ спортсменов клуба с информацией о турнирах
 
         const response = await fetch(url, {
@@ -107,7 +107,7 @@ export const searchAthletes = async (
         if (middleName) params.append('middle_name', middleName);
         if (clubId !== null) params.append('club_id', clubId.toString());
 
-        const url = `http://127.0.0.1:5001/clubs/search?${params.toString()}`;
+        const url = `/api/clubs/search?${params.toString()}`;
 
         const response = await fetch(url, {
             method: 'GET', // явно указываем, что это GET
@@ -142,7 +142,7 @@ export const searchAthletes = async (
  */
 export const getAllAthletes = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/athletes/`, {
+        const response = await fetch(`/api/athletes/`, {
             headers: {
                 'X-API-Key': API_KEY,
                 'Content-Type': 'application/json'
@@ -174,7 +174,7 @@ export const getAllAthletes = async () => {
  */
 export const fetchTournaments = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/tournaments/`, {
+        const response = await fetch(`/api/tournaments/`, {
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': API_KEY
@@ -207,7 +207,7 @@ export const fetchTournaments = async () => {
  */
 export const getTournamentDetails = async (tournamentId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}`, {
+        const response = await fetch(`/api/tournaments/${tournamentId}`, {
             headers: {
                 'X-API-Key': API_KEY,
                 'Content-Type': 'application/json'
@@ -239,7 +239,7 @@ export const getTournamentDetails = async (tournamentId) => {
  */
 export const addClubToTournament = async (tournamentId, clubId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/add-club?club_id=${clubId}`, {
+        const response = await fetch(`/api/tournaments/${tournamentId}/add-club?club_id=${clubId}`, {
             method: 'POST',
             headers: {
                 'X-API-Key': API_KEY,
@@ -271,7 +271,7 @@ export const addClubToTournament = async (tournamentId, clubId) => {
  */
 export const addAthletesToTournament = async (tournamentId, athleteIds) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/add-athletes`, {
+        const response = await fetch(`/api/tournaments/${tournamentId}/add-athletes`, {
             method: 'POST',
             headers: {
                 'X-API-Key': API_KEY,

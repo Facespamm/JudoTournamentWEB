@@ -1,7 +1,7 @@
 // @/components/View/Tournaments/fetchTournamentDetail.js
 export const fetchTournamentDetail = async (id) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/tournaments/${id}`);
+        const response = await fetch(`/api/tournaments/${id}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -21,7 +21,7 @@ export const fetchTournamentDetail = async (id) => {
 
 export const fetchCategoriesById = async (categoryId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/tournaments/${categoryId}/categories`, {
+        const response = await fetch(`/api/tournaments/${categoryId}/categories`, {
             headers: {
                 'X-API-Key': 'mobile_app_2024'
             }

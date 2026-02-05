@@ -2,25 +2,34 @@
   <div class="judo-tournament">
     <!-- ФИЛЬТРЫ -->
     <div class="judo-tournament-setting_search">
-      <select class="judo-tournament-setting_search_select_category" name="tournament_filter_category">
-        <option value="all">Категория турнира</option>
-        <option value="continental">Континентальные</option>
-        <option value="national">Национальные</option>
-        <option value="regional">Региональные</option>
+      <select v-model="categoryFilter" class="judo-tournament-setting_search_select_category" name="tournament_filter_category">
+        <option value="all">Все категории</option>
+        <option
+            v-if="categories.length > 0"
+            v-for="cat in categories"
+            :key="cat.id"
+            :value="cat.id"
+        >
+          {{ cat.name }} ({{ cat.gender }}, {{ cat.min_age }}–{{ cat.max_age }} лет, {{ cat.min_weight }}–{{ cat.max_weight }} кг)
+        </option>
+        <option v-else disabled>Категории загружаются или недоступны...</option>
       </select>
-      <select class="judo-tournament-setting_select_age_group" name="tournament_age_group">
-        <option value="all">Возрастная группа</option>
-        <option value="cadets">Кадеты (15-17 лет)</option>
-        <option value="juniors">Юниоры (18-20 лет)</option>
-        <option value="seniors">Взрослые (21+ лет)</option>
-      </select>
-      <select class="judo-tournament-setting_date" name="tournament_date">
+
+      <select v-model="yearFilter" class="judo-tournament-setting_date" name="tournament_date">
         <option value="all">Год проведения</option>
+        <option value="2026">2026</option>
         <option value="2025">2025</option>
         <option value="2024">2024</option>
         <option value="2023">2023</option>
       </select>
-      <input type="search" name="tournament_search" placeholder="Поиск турниров" class="search-input" />
+
+      <input
+          v-model="searchQuery"
+          type="search"
+          name="tournament_search"
+          placeholder="Поиск турниров"
+          class="search-input"
+      />
     </div>
 
     <!-- СПИСОК ТУРНИРОВ -->
@@ -37,13 +46,13 @@
         <!-- Сообщение об ошибке -->
         <div v-else-if="error" class="error-message">
           <p>{{ error }}</p>
-          <button @click="loadTournaments" class="retry-button">Попробовать снова</button>
+          <button @click="loadTournaments(categoryFilter)" class="retry-button">Попробовать снова</button>
         </div>
 
         <!-- Список турниров -->
         <div v-else class="tournament-cards-container">
           <article
-              v-for="tournament in tournaments"
+              v-for="tournament in visibleTournaments"
               :key="tournament.id"
               class="judo-tournament-card"
               :class="{ 'live': tournament.status === 'LIVE' }"
@@ -85,15 +94,16 @@
           </article>
 
           <!-- Сообщение если нет турниров -->
-          <div v-if="tournaments.length === 0 && !isLoading" class="no-tournaments">
+          <div v-if="visibleTournaments.length === 0 && !isLoading" class="no-tournaments">
             <p>Нет доступных турниров</p>
+            <small v-if="hasActiveFilters">Попробуйте изменить фильтры</small>
           </div>
         </div>
       </section>
     </div>
 
     <!-- ПАГИНАЦИЯ -->
-    <div v-if="tournaments.length > 0" class="judo-tournament_button_pagination">
+    <div v-if="hasMore" class="judo-tournament_button_pagination">
       <button type="button" class="judo-tournament_button_pagination_next" @click="loadMore">
         Показать ещё турниры
       </button>
@@ -102,60 +112,175 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchTournaments } from '@/components/View/Tournaments/fetchTournaments.js'
+import { fetchTournaments, fetchTournamentsByCategory } from '@/components/View/Tournaments/fetchTournaments.js'
+import { fetchCategories } from "@/components/View/TournamentManagement/fetchTournamentManagement.js"
 import "./Tournaments.css"
-import {fetchCategories} from "@/components/View/TournamentManagement/fetchTournamentManagement.js";
 
 const router = useRouter()
 
+// Фильтры
+const categoryFilter = ref('all') // 'all' или id категории (number)
+const yearFilter = ref('all')
+const searchQuery = ref('')
+const debouncedSearch = ref('')
+const timeoutId = ref(null)
+
+// Данные категорий
+const categories = ref([])
+
 // Состояния
-const tournaments = ref([])
+const rawTournaments = ref([])
 const isLoading = ref(false)
 const error = ref('')
 
-// Проверка доступности регистрации
+// Пагинация (клиентская)
+const initialCount = 10
+const visibleCount = ref(initialCount)
+
+// Вычисляемые свойства
+const filteredTournaments = computed(() => {
+  let list = rawTournaments.value
+
+  // Поиск
+  if (debouncedSearch.value) {
+    const query = debouncedSearch.value.toLowerCase()
+    list = list.filter(t =>
+        (t.name || '').toLowerCase().includes(query) ||
+        (t.venue || '').toLowerCase().includes(query) ||
+        (t.city || '').toLowerCase().includes(query) ||
+        (t.description || '').toLowerCase().includes(query)
+    )
+  }
+
+  // Год
+  if (yearFilter.value !== 'all' && yearFilter.value) {
+    const selectedYear = Number(yearFilter.value)
+    list = list.filter(t => {
+      if (!t.start_date) return false
+      return new Date(t.start_date).getFullYear() === selectedYear
+    })
+  }
+
+  // Сортировка по статусу и дате
+  const statusPriority = {
+    'LIVE': 0,
+    'REGISTRATION': 1,
+    'PLANNED': 2,
+    'WEIGHING': 3,
+    'BRACKETS': 4,
+    'COMPLETED': 5
+  }
+
+  list = [...list].sort((a, b) => {
+    const priA = statusPriority[a.status] ?? 10
+    const priB = statusPriority[b.status] ?? 10
+    if (priA !== priB) return priA - priB
+    const dateA = new Date(a.start_date || '9999-12-31')
+    const dateB = new Date(b.start_date || '9999-12-31')
+    return dateA - dateB
+  })
+
+  return list
+})
+
+const visibleTournaments = computed(() => filteredTournaments.value.slice(0, visibleCount.value))
+const hasMore = computed(() => filteredTournaments.value.length > visibleCount.value)
+const hasActiveFilters = computed(() => searchQuery.value || yearFilter.value !== 'all' || categoryFilter.value !== 'all')
+
+const loadMore = () => {
+  visibleCount.value += initialCount
+}
+
+// Загрузка категорий
+const loadCategories = async () => {
+  try {
+    const result = await fetchCategories()
+    if (result && result.success && result.data && Array.isArray(result.data.categories)) {
+      categories.value = result.data.categories
+    } else {
+      console.warn('Не удалось загрузить категории: неожиданная структура или ошибка', result)
+      categories.value = []
+    }
+  } catch (err) {
+    console.error('Ошибка при загрузке категорий:', err)
+    categories.value = []
+  }
+}
+
+// Загрузка турниров с учётом категории
+const loadTournaments = async (category = 'all') => {
+  isLoading.value = true
+  error.value = ''
+
+  try {
+    let result
+    if (category === 'all') {
+      result = await fetchTournaments()
+    } else {
+      result = await fetchTournamentsByCategory(category)
+    }
+
+    if (result && result.success) {
+      rawTournaments.value = result.data || []
+    } else {
+      throw new Error(result?.error || 'Неизвестная ошибка')
+    }
+  } catch (err) {
+    console.error('Ошибка при загрузке турниров:', err)
+    error.value = 'Не удалось загрузить турниры. Пожалуйста, попробуйте позже.'
+    rawTournaments.value = []
+  } finally {
+    isLoading.value = false
+    visibleCount.value = initialCount
+  }
+}
+
+// Реакция на смену категории
+watch(categoryFilter, (newCategory) => {
+  loadTournaments(newCategory)
+})
+
+// Сброс пагинации при смене года
+watch(yearFilter, () => {
+  visibleCount.value = initialCount
+})
+
+// Дебаунс поиска
+watch(searchQuery, (newQuery) => {
+  if (timeoutId.value !== null) clearTimeout(timeoutId.value)
+
+  timeoutId.value = setTimeout(() => {
+    debouncedSearch.value = newQuery.trim().toLowerCase()
+    visibleCount.value = initialCount
+  }, 500)
+})
+
+// Вспомогательные функции
 const isRegistrationAvailable = (tournament) => {
   const allowedStatuses = ['PLANNED', 'REGISTRATION']
   return allowedStatuses.includes(tournament.status)
 }
 
-// Загрузка турниров
-const loadTournaments = async () => {
-  isLoading.value = true
-  error.value = ''
-  try {
-    const result = await fetchTournaments()
-    if (result.success) {
-      tournaments.value = result.data
-    } else {
-      error.value = result.error
-    }
-  } catch (err) {
-    console.error('Ошибка при загрузке турниров:', err)
-    error.value = 'Не удалось загрузить турниры. Пожалуйста, попробуйте позже.'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Вспомогательные функции
 const formatDate = (startDate, endDate) => {
-  if (!startDate) return ''
+  if (!startDate) return 'Дата не указана'
   const start = new Date(startDate)
+  const options = { day: 'numeric', month: 'long', year: 'numeric' }
+  const startStr = start.toLocaleDateString('ru-RU', options)
+
+  if (!endDate || startDate === endDate) return startStr
+
   const end = new Date(endDate)
-  if (startDate === endDate) {
-    return start.toLocaleDateString('ru-RU')
-  }
-  return `${start.toLocaleDateString('ru-RU')} – ${end.toLocaleDateString('ru-RU')}`
+  const endStr = end.toLocaleDateString('ru-RU', options)
+  return `${startStr} – ${endStr}`
 }
 
 const getLocation = (tournament) => {
   const parts = []
   if (tournament.venue) parts.push(tournament.venue)
   if (tournament.city) parts.push(tournament.city)
-  if (tournament.country && tournament.country !== 'string') parts.push(tournament.country)
+  if (tournament.country) parts.push(tournament.country)
   return parts.join(', ') || 'Место не указано'
 }
 
@@ -183,10 +308,6 @@ const getStatusText = (status) => {
   return statusMap[status] || status
 }
 
-const loadMore = () => {
-  console.log('Загрузка дополнительных турниров...')
-}
-
 const navigateToDetails = (id) => {
   router.push(`/tournamentdetails/${id}`)
 }
@@ -196,9 +317,10 @@ const navigateToRegistration = (id) => {
   router.push('/registrationathlete')
 }
 
-// Загрузка данных при монтировании
-onMounted(() => {
-  loadTournaments()
+// Инициализация
+onMounted(async () => {
+  await loadCategories()
+  await loadTournaments('all')
 })
 </script>
 

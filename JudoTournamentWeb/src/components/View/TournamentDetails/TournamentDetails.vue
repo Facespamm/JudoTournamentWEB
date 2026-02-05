@@ -160,15 +160,16 @@
                   :key="match.fightId"
                   class="match"
                   :class="{
-                  'tbd-match': !match.hasFighters,
-                  ['status-' + match.status.toLowerCase()]: true
-                }"
+                    'tbd-match': !match.hasFighters,
+                    'bye-match': match.isBye,
+                    ['status-' + match.status.toLowerCase()]: true
+                  }"
               >
-                <div class="slot top">
+                <div class="slot top" :class="{ 'bye-slot': match.topName === 'BYE' }">
                   <span class="name">{{ match.topName }}</span>
                 </div>
                 <div class="vs">vs</div>
-                <div class="slot bottom">
+                <div class="slot bottom" :class="{ 'bye-slot': match.bottomName === 'BYE' }">
                   <span class="name">{{ match.bottomName }}</span>
                 </div>
               </div>
@@ -210,7 +211,7 @@ const getAthleteName = (athlete) => {
   return `${athlete.middle_name || ''} ${athlete.first_name || ''} ${athlete.last_name || ''}`.trim() || 'TBD'
 }
 
-// Группировка и сортировка боёв по раундам (по id боя для правильного порядка)
+// Группировка и сортировка боёв по раундам
 const fightsByRound = computed(() => {
   const groups = {}
   if (!bracketData.value?.fights || !Array.isArray(bracketData.value.fights)) return groups
@@ -219,11 +220,29 @@ const fightsByRound = computed(() => {
     const r = fight.round || 1
     if (!groups[r]) groups[r] = []
 
+    const whiteName = getAthleteName(fight.white_athlete)
+    const blueName = getAthleteName(fight.blue_athlete)
+    const realCount = (fight.white_athlete ? 1 : 0) + (fight.blue_athlete ? 1 : 0)
+
+    let topName = whiteName
+    let bottomName = blueName
+    let isBye = false
+
+    if (realCount === 1) {
+      isBye = true
+      if (!fight.white_athlete) topName = 'BYE'
+      if (!fight.blue_athlete) bottomName = 'BYE'
+    } else if (realCount === 0) {
+      topName = 'TBD'
+      bottomName = 'TBD'
+    }
+
     groups[r].push({
       fightId: fight.id,
-      topName: getAthleteName(fight.white_athlete),
-      bottomName: getAthleteName(fight.blue_athlete),
-      hasFighters: !!(fight.white_athlete || fight.blue_athlete),
+      topName,
+      bottomName,
+      hasFighters: realCount > 0,
+      isBye,
       status: fight.status_fight || 'SCHEDULED'
     })
   })
@@ -401,18 +420,18 @@ onMounted(() => {
   margin-top: 1rem;
 }
 
-/* СЕТКА - УЛУЧШЕННЫЕ СТИЛИ */
+/* СЕТКА - УЛУЧШЕНИЯ ДЛЯ ВИДИМОСТИ НАЗВАНИЙ РАУНДОВ */
 .tournament-bracket-final {
-  margin-top: 4rem; /* Отступ от плеера */
+  margin-top: 4rem; /* Увеличили отступ сверху, чтобы сетка была ниже остальных секций */
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 2rem;
-  border-radius: 20px;
+  padding: 1rem;
+  border-radius: 16px;
 }
 
 .section-title {
   text-align: center;
-  font-size: 2rem;
-  margin-bottom: 2.5rem;
+  font-size: 1.6rem;
+  margin-bottom: 1.8rem;
   color: #2c3e50;
   font-weight: 700;
   text-transform: uppercase;
@@ -421,26 +440,25 @@ onMounted(() => {
 
 .no-matches {
   text-align: center;
-  padding: 3rem;
+  padding: 2rem;
   background: white;
-  border: 3px dashed #c89b3c;
-  border-radius: 20px;
+  border: 2px dashed #c89b3c;
+  border-radius: 16px;
   color: #666;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .bracket-canvas {
   background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-  border: 3px solid #dee2e6;
-  border-radius: 20px;
-  padding: 5rem 2rem;
+  border: 2px solid #dee2e6;
+  border-radius: 16px;
+  padding: 80px 2rem 2.5rem 2rem; /* Большой padding-top для названий раундов */
   overflow-x: auto;
   display: flex;
-  justify-content: center;
-  gap: 140px; /* Увеличен для места под линии */
+  justify-content: flex-start; /* Сетка начинается слева — первый раунд (1/8, 1/16 и т.д.) всегда виден без скролла */
+  gap: 70px;
   position: relative;
-  min-height: 650px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
 }
 
 .round {
@@ -449,86 +467,84 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: 240px;
+  min-width: 160px;
 }
 
 .round-label {
   position: absolute;
-  top: -80px;
+  top: -70px; /* Подвинули выше, чтобы точно помещалось в padding-top */
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
-  border: none;
   color: #1a1a1a;
-  padding: 0.8rem 2rem;
+  padding: 0.4rem 1rem;
   border-radius: 30px;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   white-space: nowrap;
   z-index: 10;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 3px 10px rgba(212, 175, 55, 0.3);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .matches {
   display: flex;
   flex-direction: column;
-  gap: 50px;
-  margin-top: 20px;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .match {
-  width: 220px;
+  width: 150px;
   background: white;
-  border: 3px solid #dee2e6;
-  border-radius: 16px;
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   position: relative;
   transition: all 0.3s ease;
 }
 
 .match:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
-.tbd-match .slot {
+.tbd-match .slot,
+.bye-slot {
   background: #f1f3f5 !important;
-  color: #adb5bd;
+  color: #888 !important;
   font-style: italic;
 }
+
 .tbd-match .vs {
   background: #e9ecef;
   color: #adb5bd;
 }
 
 .slot {
-  padding: 14px 18px;
+  padding: 8px 12px;
   font-weight: 600;
-  min-height: 55px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease;
 }
 
-/* White athlete (top) - белый цвет */
 .slot.top {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
   color: #2c3e50;
 }
 
-/* Blue athlete (bottom) - голубой цвет */
 .slot.bottom {
   background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
   color: white;
 }
 
 .name {
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-align: center;
   line-height: 1.3;
@@ -536,27 +552,27 @@ onMounted(() => {
 
 .vs {
   text-align: center;
-  padding: 6px;
+  padding: 3px;
   background: linear-gradient(90deg, #e9ecef 0%, #dee2e6 100%);
   color: #495057;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
 }
 
-/* ЗОЛОТЫЕ СОЕДИНИТЕЛЬНЫЕ ЛИНИИ (видимые, толстые, золотые) */
+/* ЗОЛОТЫЕ ЛИНИИ */
 .round:not(:last-child) .match::after {
   content: '';
   position: absolute;
   left: 100%;
   top: 50%;
-  width: 100px;
-  height: 6px;
+  width: 50px;
+  height: 3px;
   background: linear-gradient(to right, #d4af37, #f4d03f);
   transform: translateY(-50%);
-  border-radius: 0 4px 4px 0;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.6);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 1px 6px rgba(212, 175, 55, 0.5);
   z-index: 1;
 }
 
@@ -565,57 +581,54 @@ onMounted(() => {
   position: absolute;
   right: 100%;
   top: 50%;
-  width: 100px;
-  height: 6px;
+  width: 50px;
+  height: 3px;
   background: linear-gradient(to right, #d4af37, #f4d03f);
   transform: translateY(-50%);
-  border-radius: 4px 0 0 4px;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.6);
+  border-radius: 3px 0 0 3px;
+  box-shadow: 0 1px 6px rgba(212, 175, 55, 0.5);
   z-index: 1;
 }
 
-/* Статусы матчей */
-.status-scheduled {
-  border-color: #adb5bd;
-}
-
+/* Статусы */
+.status-scheduled { border-color: #adb5bd; }
 .status-live {
   border-color: #fa5252;
-  box-shadow: 0 0 25px rgba(250, 82, 82, 0.4);
+  box-shadow: 0 0 12px rgba(250, 82, 82, 0.3);
   animation: pulse-live 2s infinite;
 }
-
 @keyframes pulse-live {
-  0%, 100% { box-shadow: 0 0 25px rgba(250, 82, 82, 0.4); }
-  50% { box-shadow: 0 0 35px rgba(250, 82, 82, 0.6); }
+  0%, 100% { box-shadow: 0 0 12px rgba(250, 82, 82, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(250, 82, 82, 0.5); }
 }
-
 .status-completed {
   border-color: #51cf66;
-  box-shadow: 0 0 20px rgba(81, 207, 102, 0.3);
-  opacity: 0.85;
+  box-shadow: 0 0 10px rgba(81, 207, 102, 0.2);
 }
 
 /* Адаптив */
 @media (max-width: 768px) {
   .bracket-canvas {
-    gap: 80px;
-    padding: 4rem 1rem;
+    gap: 40px;
+    padding: 70px 1rem 2rem 1rem;
   }
   .match {
-    width: 180px;
+    width: 130px;
   }
   .round {
-    min-width: 200px;
+    min-width: 140px;
   }
   .round-label {
-    font-size: 0.95rem;
-    padding: 0.6rem 1.5rem;
-    top: -70px;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.9rem;
+    top: -65px;
   }
   .round:not(:last-child) .match::after,
   .round:not(:first-child) .match::before {
-    width: 60px;
+    width: 30px;
+  }
+  .matches {
+    gap: 16px;
   }
 }
 </style>

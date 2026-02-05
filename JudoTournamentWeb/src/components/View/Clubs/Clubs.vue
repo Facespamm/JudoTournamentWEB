@@ -72,6 +72,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import {fetchClubs} from "@/components/View/Authentication/SelectRoleView/fetchGetInformation.js";
 import "./Clubs.css"
 
 const clubs = ref([])
@@ -104,7 +105,7 @@ const loadClubs = async () => {
   error.value = null
 
   try {
-    const response = await fetch('http://127.0.0.1:5001/clubs/', {
+    const response = await fetch('api/clubs/', {
       headers: { 'X-API-Key': 'mobile_app_2024' }
     })
 

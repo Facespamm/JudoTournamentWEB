@@ -1,24 +1,31 @@
 
-export const createBracket = async (bracketData,tournament_id,categoryId) => {
+export const createBracket = async (bracketData, tournament_id, categoryId, tatami_number = null) => {
     try {
-        const response = await fetch(`/api/brackets/${tournament_id}?category=${categoryId}`, {
+        // Формируем URL динамически — добавляем tatami_number только если он указан и валиден
+        let url = `/api/brackets/${tournament_id}?category=${categoryId}`
+
+        if (tatami_number !== null && tatami_number !== undefined && Number.isInteger(tatami_number) && tatami_number >= 1) {
+            url += `&tatami_number=${tatami_number}`
+        }
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
             },
             body: JSON.stringify(bracketData)
-        });
+        })
 
         if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            throw new Error(err.message || 'Ошибка при создании сетки');
+            const err = await response.json().catch(() => ({}))
+            throw new Error(err.message || 'Ошибка при создании сетки')
         }
 
-        return { success: true, data: await response.json() };
+        return { success: true, data: await response.json() }
     } catch (error) {
-        console.error('Ошибка при создании сетки:', error);
-        return { success: false, error: error.message };
+        console.error('Ошибка при создании сетки:', error)
+        return { success: false, error: error.message }
     }
 };
 
@@ -83,5 +90,27 @@ export const createFight = async (bracketFightData, id) => {
     } catch (error) {
         console.error('Ошибка при создании боев:', error);
         return { success: false, error: error.message };
+    }
+};
+
+
+export const fetchGetCategoryByTournament = async (id) => {
+    try {
+        const response = await fetch(`/api/tournaments/${id}/categories
+`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // ДЛЯ ОТЛАДКИ - выведем что приходит с сервера
+        console.log('Tournament detail response:', data);
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching tournament details:', error);
+        throw error;
     }
 };

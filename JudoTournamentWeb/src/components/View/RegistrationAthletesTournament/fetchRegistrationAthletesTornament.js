@@ -61,7 +61,7 @@ export const searchAthletes = async (
         if (middleName) params.append('middle_name', middleName);
         if (clubId !== null) params.append('club_id', clubId.toString());
 
-        const url = `http://127.0.0.1:5001/clubs/search?${params.toString()}`;
+        const url = `api/clubs/search?${params.toString()}`;
 
         const response = await fetch(url, {
             method: 'GET',
@@ -159,32 +159,50 @@ export const fetchTournaments = async () => {
 };
 export const addClubToTournament = async (tournamentId, clubId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/add-club?club_id=${clubId}`, {
-            method: 'POST',
-            headers: {
-                'X-API-Key': API_KEY,
-                'Content-Type': 'application/json'
+        const response = await fetch(
+            `${API_BASE_URL}/tournaments/${tournamentId}/add-club?club_id=${clubId}`,
+            {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': API_KEY,
+                    'Content-Type': 'application/json',
+                },
             }
-        });
+        );
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Всегда пытаемся разобрать JSON, даже при ошибочном статусе
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            // Если JSON не удалось разобрать — продолжаем без него
         }
 
-        const data = await response.json();
-        return {
-            success: data.success === true,
-            message: data.message || 'Клуб добавлен'
-        };
+        if (response.ok) {
+            return {
+                success: true,
+                message: data.message || 'Клуб успешно добавлен к турниру',
+            };
+        } else {
+            // Ошибка — используем сообщение из тела, если оно есть
+            const errorMessage =
+                data.message ||
+                data.error ||
+                `HTTP error! status: ${response.status}`;
+
+            return {
+                success: false,
+                error: errorMessage,
+            };
+        }
     } catch (error) {
         console.error('Ошибка при регистрации клуба:', error);
         return {
             success: false,
-            error: error.message
+            error: error.message || 'Неизвестная ошибка сети',
         };
     }
 };
-
 /**
  * 7. Добавить атлетов на турнир
  * Использует эндпоинт: POST /tournaments/{id}/add-athletes

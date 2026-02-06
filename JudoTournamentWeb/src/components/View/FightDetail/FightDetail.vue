@@ -151,7 +151,7 @@
 </template>
 
 <script>
-import { endFight } from "@/components/View/FightDetail/fetchFightPannel.js"
+import { endFight, setLifeFight } from "@/components/View/FightDetail/fetchFightPannel.js"
 import { fetchGetDetailFight } from "@/components/View/Fight/fetchFights.js"
 import "./FightDetail.css"
 
@@ -455,12 +455,34 @@ export default {
       if (this.fightStatus !== 'COMPLETED') this.timerSeconds = Math.max(0, this.timerSeconds + d)
     },
 
-    startTimer() {
+    async startTimer() {
       if (this.fightStatus === 'COMPLETED') return
+
+      // Первый старт — переход из SCHEDULED в IN_PROGRESS
       if (this.fightStatus === 'SCHEDULED') {
         this.fightStatus = 'IN_PROGRESS'
         this.addEvent('fight', 'Hajime!')
+
+        // Попытка отправить статус LIVE на сервер
+        if (this.fightId && this.fight?.tatami != null) {
+          try {
+            const result = await setLifeFight(this.fightId, this.fight.tatami)
+            if (result.success) {
+              this.addEvent('system', `Схватка переведена в LIVE на татами ${this.fight.tatami}`)
+            } else {
+              this.addEvent('error', `Не удалось перевести в LIVE: ${result.error || 'неизвестная ошибка'}`)
+              console.error('setLifeFight error:', result)
+            }
+          } catch (err) {
+            this.addEvent('error', `Ошибка сети при переводе в LIVE: ${err.message || err}`)
+            console.error('setLifeFight exception:', err)
+          }
+        } else {
+          this.addEvent('warning', 'Нет fightId или номера татами — перевод в LIVE пропущен')
+        }
       }
+
+      // Запуск/возобновление таймера (в любом случае)
       this.isRunning = true
       clearInterval(this.timerInterval)
       this.timerInterval = setInterval(() => {

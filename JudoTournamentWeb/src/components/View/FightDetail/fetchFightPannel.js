@@ -234,3 +234,37 @@ export const getFightSummary = async (fightId) => {
         return { success: false, error: error.message };
     }
 };
+
+export const setLifeFight = async (fightId,tatami_number) => {
+    try {
+        const response = await fetch(`/api/fights/${fightId}/set-live?tatami_number=${tatami_number}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: result.message || 'Ошибка при изменении статуса валидации',
+                status: response.status
+            };
+        }
+
+        return {
+            success: true,
+            data: result,
+            message: result.message || 'Статус валидации успешно изменен'
+        };
+    } catch (error) {
+        console.error('Ошибка при изменении статуса валидации:', error);
+        return {
+            success: false,
+            error: error.message || 'Ошибка сети при изменении статуса валидации'
+        };
+    }
+};

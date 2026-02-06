@@ -1,6 +1,6 @@
 export const fetchWeighings = async (tournamentId,categoryId) => {
     try {
-        const response = await fetch(`/api/weighing/?tournament_id=${tournamentId}&athlete_id=1&category_id=${categoryId}`, {
+        const response = await fetch(`/api/weighing/?tournament_id=${tournamentId}&category_id=${categoryId}`, {
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': 'mobile_app_2024'
@@ -82,3 +82,55 @@ export const toggleWeighingValidation = async (weighingId) => {
         };
     }
 };
+
+export const fetchCreateWeight = async (data) => {
+    try {
+        const response = await fetch(`/api/weighing/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Ошибка при создании взвешивания');
+        }
+
+        const result = await response.json();
+        return { success: true, data: result };
+    } catch (error) {
+        console.error('Ошибка при создании взвешивания:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+
+
+export const fetchRegister = async (tournamentId,categoryId) => {
+    try {
+        const response = await fetch(`/api/tournaments/${tournamentId}/athletes?category_id=${categoryId}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return { success: true, data: result };
+
+    } catch (error) {
+        console.error('Ошибка при загрузке взвешиваний:', error);
+        return {
+            success: false,
+            error: error.message || 'Произошла неизвестная ошибка'
+        };
+    }
+}

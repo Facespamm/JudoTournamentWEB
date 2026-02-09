@@ -133,7 +133,7 @@
         </div>
       </section>
 
-      <!-- ТУРНИРНАЯ СЕТКА ПОД ПЛЕЕРОМ (только при выбранной категории) -->
+      <!-- НОВАЯ ТУРНИРНАЯ СЕТКА -->
       <div v-if="selectedCategory" class="tournament-bracket-final">
         <h2 class="section-title">Турнирная сетка</h2>
 
@@ -146,31 +146,59 @@
           <p>Турнирная сетка будет опубликована после завершения жеребьёвки.</p>
         </div>
 
-        <div v-else class="bracket-canvas">
-          <div
-              v-for="(round, roundIndex) in sortedRounds"
-              :key="round.roundNumber"
-              class="round"
-              :class="getRoundClass(roundIndex, sortedRounds.length)"
-          >
-            <div class="round-label">{{ getRoundName(round.roundNumber, sortedRounds.length) }}</div>
-            <div class="matches">
+        <div v-else class="bracket-wrapper">
+          <div class="bracket-container">
+            <!-- SVG для линий -->
+            <svg class="bracket-lines" :width="svgWidth" :height="svgHeight">
+              <defs>
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#d4af37;stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#f4d03f;stop-opacity:1" />
+                </linearGradient>
+              </defs>
+              <path
+                  v-for="(line, index) in connectionLines"
+                  :key="index"
+                  :d="line.path"
+                  fill="none"
+                  stroke="url(#lineGradient)"
+                  stroke-width="3"
+                  class="connection-line"
+              />
+            </svg>
+
+            <!-- Раунды с матчами -->
+            <div class="bracket-rounds">
               <div
-                  v-for="(match, matchIndex) in round.matches"
-                  :key="match.fightId"
-                  class="match"
-                  :class="{
-                    'tbd-match': !match.hasFighters,
-                    'bye-match': match.isBye,
-                    ['status-' + match.status.toLowerCase()]: true
-                  }"
+                  v-for="(round, roundIndex) in sortedRounds"
+                  :key="round.roundNumber"
+                  class="bracket-round"
+                  :ref="el => setRoundRef(el, roundIndex)"
               >
-                <div class="slot top" :class="{ 'bye-slot': match.topName === 'BYE' }">
-                  <span class="name">{{ match.topName }}</span>
+                <div class="round-header">
+                  <h3>{{ getRoundName(round.roundNumber, sortedRounds.length) }}</h3>
                 </div>
-                <div class="vs">vs</div>
-                <div class="slot bottom" :class="{ 'bye-slot': match.bottomName === 'BYE' }">
-                  <span class="name">{{ match.bottomName }}</span>
+
+                <div class="round-matches">
+                  <div
+                      v-for="(match, matchIndex) in round.matches"
+                      :key="match.fightId"
+                      class="bracket-match"
+                      :ref="el => setMatchRef(el, roundIndex, matchIndex)"
+                      :class="{
+                      'tbd-match': !match.hasFighters,
+                      'bye-match': match.isBye,
+                      ['status-' + match.status.toLowerCase()]: true
+                    }"
+                  >
+                    <div class="match-participant white" :class="{ 'bye-participant': match.topName === 'BYE' }">
+                      <div class="participant-name">{{ match.topName }}</div>
+                    </div>
+
+                    <div class="match-participant blue" :class="{ 'bye-participant': match.bottomName === 'BYE' }">
+                      <div class="participant-name">{{ match.bottomName }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -182,7 +210,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchTournamentDetail, fetchCategoriesById } from '@/components/View/TournamentDetails/fetchTournamentDetail.js'
 import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"
@@ -196,6 +224,24 @@ const bracketData = ref(null)
 const bracketLoading = ref(false)
 const isLoading = ref(true)
 const error = ref('')
+
+// Refs для элементов сетки
+const roundRefs = ref([])
+const matchRefs = ref({})
+const svgWidth = ref(2000)
+const svgHeight = ref(1000)
+const connectionLines = ref([])
+
+const setRoundRef = (el, index) => {
+  if (el) roundRefs.value[index] = el
+}
+
+const setMatchRef = (el, roundIndex, matchIndex) => {
+  if (el) {
+    if (!matchRefs.value[roundIndex]) matchRefs.value[roundIndex] = {}
+    matchRefs.value[roundIndex][matchIndex] = el
+  }
+}
 
 const selectedCategory = computed(() =>
     categories.value.find(cat => cat.id === selectedCategoryId.value) || null
@@ -247,7 +293,6 @@ const fightsByRound = computed(() => {
     })
   })
 
-  // Сортируем матчи в каждом раунде по id боя
   Object.keys(groups).forEach(r => {
     groups[r].sort((a, b) => a.fightId - b.fightId)
   })
@@ -255,7 +300,6 @@ const fightsByRound = computed(() => {
   return groups
 })
 
-// Отсортированные раунды (от первого к финалу)
 const sortedRounds = computed(() => {
   if (Object.keys(fightsByRound.value).length === 0) return []
 
@@ -269,12 +313,6 @@ const sortedRounds = computed(() => {
 
 const hasBracketMatches = computed(() => sortedRounds.value.length > 0)
 
-const getRoundClass = (index, total) => {
-  if (index === 0) return 'first-round'
-  if (index === total - 1) return 'final-round'
-  return 'middle-round'
-}
-
 // Умные названия раундов на русском
 const getRoundName = (roundNumber, totalRounds) => {
   if (totalRounds <= 1) return 'Финал'
@@ -282,7 +320,67 @@ const getRoundName = (roundNumber, totalRounds) => {
 
   const stage = Math.pow(2, totalRounds - roundNumber)
   if (stage === 2) return 'Полуфинал'
+  if (stage === 4) return '1/4 финала'
+  if (stage === 8) return '1/8 финала'
+  if (stage === 16) return '1/16 финала'
   return `1/${stage} финала`
+}
+
+// Функция для расчета линий соединения
+const calculateConnectionLines = () => {
+  connectionLines.value = []
+
+  if (!sortedRounds.value.length || sortedRounds.value.length < 2) return
+
+  nextTick(() => {
+    for (let roundIndex = 0; roundIndex < sortedRounds.value.length - 1; roundIndex++) {
+      const currentRound = sortedRounds.value[roundIndex]
+      const nextRound = sortedRounds.value[roundIndex + 1]
+
+      if (!matchRefs.value[roundIndex] || !matchRefs.value[roundIndex + 1]) continue
+
+      const matchesPerNextMatch = Math.ceil(currentRound.matches.length / nextRound.matches.length)
+
+      nextRound.matches.forEach((nextMatch, nextMatchIndex) => {
+        const startMatchIndex = nextMatchIndex * matchesPerNextMatch
+        const endMatchIndex = Math.min(startMatchIndex + matchesPerNextMatch, currentRound.matches.length)
+
+        const sourceMatches = []
+        for (let i = startMatchIndex; i < endMatchIndex; i++) {
+          const matchEl = matchRefs.value[roundIndex][i]
+          if (matchEl) sourceMatches.push(matchEl)
+        }
+
+        const targetMatchEl = matchRefs.value[roundIndex + 1][nextMatchIndex]
+        if (!targetMatchEl || sourceMatches.length === 0) return
+
+        const targetRect = targetMatchEl.getBoundingClientRect()
+        const containerRect = targetMatchEl.closest('.bracket-container').getBoundingClientRect()
+
+        const targetX = targetRect.left - containerRect.left
+        const targetY = targetRect.top - containerRect.top + targetRect.height / 2
+
+        sourceMatches.forEach(sourceEl => {
+          const sourceRect = sourceEl.getBoundingClientRect()
+          const sourceX = sourceRect.right - containerRect.left
+          const sourceY = sourceRect.top - containerRect.top + sourceRect.height / 2
+
+          const midX = (sourceX + targetX) / 2
+
+          const path = `M ${sourceX} ${sourceY} L ${midX} ${sourceY} L ${midX} ${targetY} L ${targetX} ${targetY}`
+
+          connectionLines.value.push({ path })
+        })
+      })
+    }
+
+    // Обновить размеры SVG
+    const container = document.querySelector('.bracket-container')
+    if (container) {
+      svgWidth.value = container.scrollWidth
+      svgHeight.value = container.scrollHeight
+    }
+  })
 }
 
 // Вспомогательные функции
@@ -358,6 +456,10 @@ const loadTournamentDetail = async () => {
 // Загрузка сетки при выборе категории
 watch(selectedCategoryId, async (newId) => {
   bracketData.value = null
+  matchRefs.value = {}
+  roundRefs.value = []
+  connectionLines.value = []
+
   if (newId !== null && tournament.value) {
     bracketLoading.value = true
     try {
@@ -368,8 +470,11 @@ watch(selectedCategoryId, async (newId) => {
       }
 
       bracketData.value = res
-
       console.log('Loaded bracket data:', res)
+
+      // Рассчитать линии после загрузки данных
+      await nextTick()
+      setTimeout(calculateConnectionLines, 100)
     } catch (e) {
       console.error('Ошибка загрузки сетки:', e)
       error.value = 'Не удалось загрузить сетку категории'
@@ -420,18 +525,18 @@ onMounted(() => {
   margin-top: 1rem;
 }
 
-/* СЕТКА - УЛУЧШЕНИЯ ДЛЯ ВИДИМОСТИ НАЗВАНИЙ РАУНДОВ */
+/* НОВАЯ ТУРНИРНАЯ СЕТКА */
 .tournament-bracket-final {
-  margin-top: 4rem; /* Увеличили отступ сверху, чтобы сетка была ниже остальных секций */
+  margin-top: 4rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 1rem;
+  padding: 2rem;
   border-radius: 16px;
 }
 
 .section-title {
   text-align: center;
-  font-size: 1.6rem;
-  margin-bottom: 1.8rem;
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
   color: #2c3e50;
   font-weight: 700;
   text-transform: uppercase;
@@ -448,187 +553,225 @@ onMounted(() => {
   font-size: 1rem;
 }
 
-.bracket-canvas {
-  background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-  border: 2px solid #dee2e6;
+.bracket-wrapper {
+  background: white;
   border-radius: 16px;
-  padding: 80px 2rem 2.5rem 2rem; /* Большой padding-top для названий раундов */
+  padding: 2rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   overflow-x: auto;
-  display: flex;
-  justify-content: flex-start; /* Сетка начинается слева — первый раунд (1/8, 1/16 и т.д.) всегда виден без скролла */
-  gap: 70px;
-  position: relative;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  overflow-y: hidden;
 }
 
-.round {
+.bracket-container {
   position: relative;
-  text-align: center;
+  min-width: max-content;
+  padding: 2rem 0;
+}
+
+.bracket-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.connection-line {
+  filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.3));
+}
+
+.bracket-rounds {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 120px;
+  align-items: center;
+}
+
+.bracket-round {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-width: 160px;
+  min-width: 200px;
 }
 
-.round-label {
-  position: absolute;
-  top: -70px; /* Подвинули выше, чтобы точно помещалось в padding-top */
-  left: 50%;
-  transform: translateX(-50%);
+.round-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+  padding: 0.5rem 0;
+}
+
+.round-header h3 {
   background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
   color: #1a1a1a;
-  padding: 0.4rem 1rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 30px;
   font-weight: 700;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  z-index: 10;
-  box-shadow: 0 3px 10px rgba(212, 175, 55, 0.3);
+  font-size: 1rem;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.matches {
+.round-matches {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-top: 10px;
+  gap: 2rem;
+  justify-content: center;
+  flex: 1;
 }
 
-.match {
-  width: 150px;
+.bracket-match {
   background: white;
-  border: 2px solid #dee2e6;
+  border: 3px solid #dee2e6;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
+  min-width: 200px;
 }
 
-.match:hover {
+.bracket-match:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  border-color: #d4af37;
 }
 
-.tbd-match .slot,
-.bye-slot {
-  background: #f1f3f5 !important;
-  color: #888 !important;
-  font-style: italic;
-}
-
-.tbd-match .vs {
-  background: #e9ecef;
-  color: #adb5bd;
-}
-
-.slot {
-  padding: 8px 12px;
-  font-weight: 600;
-  min-height: 40px;
+.match-participant {
+  padding: 1rem 1.2rem;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.slot.top {
+.match-participant.white {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-bottom: 1px solid #dee2e6;
-  color: #2c3e50;
+  border-bottom: 2px solid #e9ecef;
 }
 
-.slot.bottom {
+.match-participant.blue {
   background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
   color: white;
 }
 
-.name {
-  font-size: 0.8rem;
+.match-participant:hover {
+  filter: brightness(1.05);
+}
+
+.participant-name {
+  font-size: 0.95rem;
   font-weight: 600;
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
-.vs {
-  text-align: center;
-  padding: 3px;
-  background: linear-gradient(90deg, #e9ecef 0%, #dee2e6 100%);
-  color: #495057;
-  font-weight: 700;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+.bye-participant {
+  background: #f1f3f5 !important;
+  color: #adb5bd !important;
+  font-style: italic;
+  opacity: 0.7;
 }
 
-/* ЗОЛОТЫЕ ЛИНИИ */
-.round:not(:last-child) .match::after {
-  content: '';
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  width: 50px;
-  height: 3px;
-  background: linear-gradient(to right, #d4af37, #f4d03f);
-  transform: translateY(-50%);
-  border-radius: 0 3px 3px 0;
-  box-shadow: 0 1px 6px rgba(212, 175, 55, 0.5);
-  z-index: 1;
+.tbd-match .match-participant {
+  background: #f8f9fa !important;
+  color: #868e96 !important;
+  font-style: italic;
 }
 
-.round:not(:first-child) .match::before {
-  content: '';
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  width: 50px;
-  height: 3px;
-  background: linear-gradient(to right, #d4af37, #f4d03f);
-  transform: translateY(-50%);
-  border-radius: 3px 0 0 3px;
-  box-shadow: 0 1px 6px rgba(212, 175, 55, 0.5);
-  z-index: 1;
+/* Статусы матчей */
+.status-scheduled {
+  border-color: #adb5bd;
 }
 
-/* Статусы */
-.status-scheduled { border-color: #adb5bd; }
 .status-live {
   border-color: #fa5252;
-  box-shadow: 0 0 12px rgba(250, 82, 82, 0.3);
+  box-shadow: 0 0 20px rgba(250, 82, 82, 0.4);
   animation: pulse-live 2s infinite;
 }
+
 @keyframes pulse-live {
-  0%, 100% { box-shadow: 0 0 12px rgba(250, 82, 82, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(250, 82, 82, 0.5); }
-}
-.status-completed {
-  border-color: #51cf66;
-  box-shadow: 0 0 10px rgba(81, 207, 102, 0.2);
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(250, 82, 82, 0.4);
+    border-color: #fa5252;
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(250, 82, 82, 0.6);
+    border-color: #ff6b6b;
+  }
 }
 
-/* Адаптив */
+.status-completed {
+  border-color: #51cf66;
+  box-shadow: 0 0 12px rgba(81, 207, 102, 0.3);
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .bracket-rounds {
+    gap: 80px;
+  }
+
+  .bracket-match {
+    min-width: 180px;
+  }
+}
+
 @media (max-width: 768px) {
-  .bracket-canvas {
-    gap: 40px;
-    padding: 70px 1rem 2rem 1rem;
+  .bracket-wrapper {
+    padding: 1rem;
   }
-  .match {
-    width: 130px;
+
+  .bracket-rounds {
+    gap: 60px;
   }
-  .round {
-    min-width: 140px;
+
+  .bracket-match {
+    min-width: 150px;
   }
-  .round-label {
-    font-size: 0.8rem;
-    padding: 0.35rem 0.9rem;
-    top: -65px;
+
+  .round-header h3 {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
   }
-  .round:not(:last-child) .match::after,
-  .round:not(:first-child) .match::before {
-    width: 30px;
+
+  .participant-name {
+    font-size: 0.85rem;
   }
-  .matches {
-    gap: 16px;
+
+  .match-participant {
+    padding: 0.8rem 1rem;
+    min-height: 45px;
+  }
+
+  .round-matches {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tournament-bracket-final {
+    padding: 1rem;
+  }
+
+  .bracket-rounds {
+    gap: 50px;
+  }
+
+  .bracket-match {
+    min-width: 130px;
+  }
+
+  .participant-name {
+    font-size: 0.75rem;
   }
 }
 </style>

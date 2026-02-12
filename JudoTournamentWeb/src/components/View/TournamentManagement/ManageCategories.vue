@@ -11,19 +11,6 @@
     <form @submit.prevent="submit">
       <div class="form-grid">
         <div class="form-group">
-          <label for="category_name">Название категории *</label>
-          <input
-              v-model="formData.name"
-              type="text"
-              id="category_name"
-              placeholder="Например: Категория 2"
-              :disabled="isLoading"
-              required
-          />
-          <span v-if="errors.name" class="error">{{ errors.name }}</span>
-        </div>
-
-        <div class="form-group">
           <label for="gender">Пол *</label>
           <select
               v-model="formData.gender"
@@ -90,6 +77,12 @@
         </div>
       </div>
 
+      <!-- Предпросмотр сгенерированного названия -->
+      <div class="preview-section">
+        <label>Название категории (автоматически):</label>
+        <p class="generated-name"><strong>{{ generatedName }}</strong></p>
+      </div>
+
       <div class="form-actions">
         <button
             type="submit"
@@ -104,14 +97,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { createCategory } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
 import "./TournamentManagement.css"
 
 const isLoading = ref(false)
 
 const formData = ref({
-  name: '',
   gender: 'мужской',
   min_age: 0,
   max_age: 0,
@@ -121,14 +113,46 @@ const formData = ref({
 
 const errors = ref({})
 
+const generateCategoryName = (data) => {
+  const genderTitle = data.gender === 'мужской' ? 'Мужская' : 'Женская'
+  const parts = [genderTitle]
+
+  // Возраст
+  let agePart = ''
+  if (data.min_age > 0 || data.max_age > 0) {
+    if (data.min_age > 0 && data.max_age > 0) {
+      agePart = `${data.min_age}-${data.max_age} лет`
+    } else if (data.min_age > 0) {
+      agePart = `${data.min_age}+ лет`
+    } else if (data.max_age > 0) {
+      agePart = `до ${data.max_age} лет`
+    }
+  }
+  if (agePart) parts.push(agePart)
+
+  // Вес
+  let weightPart = ''
+  if (data.min_weight > 0 || data.max_weight > 0) {
+    const minW = data.min_weight.toString().replace('.', ',')
+    const maxW = data.max_weight.toString().replace('.', ',')
+    if (data.min_weight > 0 && data.max_weight > 0) {
+      weightPart = `${minW}-${maxW} кг`
+    } else if (data.min_weight > 0) {
+      weightPart = `${minW}+ кг`
+    } else if (data.max_weight > 0) {
+      weightPart = `до ${maxW} кг`
+    }
+  }
+  if (weightPart) parts.push(weightPart)
+
+  return parts.join(' ')
+}
+
+const generatedName = computed(() => generateCategoryName(formData.value))
+
 const validateForm = () => {
   errors.value = {}
   let isValid = true
-
-  if (!formData.value.name.trim()) {
-    errors.value.name = 'Название категории обязательно'
-    isValid = false
-  }
 
   if (formData.value.min_age > formData.value.max_age && formData.value.max_age > 0) {
     errors.value.max_age = 'Максимальный возраст не может быть меньше минимального'
@@ -150,7 +174,7 @@ const submit = async () => {
 
   try {
     const payload = {
-      name: formData.value.name.trim(),
+      name: generatedName.value,
       gender: formData.value.gender,
       min_age: formData.value.min_age || 0,
       max_age: formData.value.max_age || 0,
@@ -163,7 +187,6 @@ const submit = async () => {
     if (result.success) {
       // Сброс формы
       formData.value = {
-        name: '',
         gender: 'мужской',
         min_age: 0,
         max_age: 0,
@@ -187,4 +210,21 @@ const submit = async () => {
 </script>
 
 <style scoped>
+.preview-section {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.preview-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.generated-name {
+  font-size: 1.2em;
+  color: #333;
+}
 </style>

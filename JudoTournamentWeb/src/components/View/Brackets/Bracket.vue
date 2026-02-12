@@ -10,6 +10,12 @@
               @click="activeTab = 'create'"
           >
             Создать сетку
+          </button> <button
+              class="nav-tab"
+              :class="{ active: activeTab === 'view' }"
+              @click="activeTab = 'view'"
+          >
+            Просмотр сеток
           </button>
         </nav>
       </section>

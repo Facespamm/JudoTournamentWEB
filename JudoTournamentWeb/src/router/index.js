@@ -40,6 +40,38 @@ const routes = [
         meta: { hideSidebar: true }
     },
     {
+        path: '/tournamentdetails/:id',
+        name: 'tournamentdetails',
+        component: () => import('@/components/View/TournamentDetails/TournamentDetails.vue'),
+        children: [
+            {
+                path: '',                  // ← Обзор (чистый URL /tournamentdetails/1)
+                name: 'tournament-overview',
+                component: () => import('@/components/View/TournamentDetails/OverviewTab.vue')
+            },
+            {
+                path: 'draw',
+                component: () => import('@/components/View/TournamentDetails/DrawTab.vue')
+            },
+            {
+                path: 'order',
+                component: () => import('@/components/View/TournamentDetails/OrderTab.vue')
+            },
+            {
+                path: 'athletes',
+                component: () => import('@/components/View/TournamentDetails/AthletesTab.vue')
+            },
+            {
+                path: 'results',
+                component: () => import('@/components/View/TournamentDetails/ResultsTab.vue')
+            },
+            {
+                path: 'live',
+                component: () => import('@/components/View/TournamentDetails/LiveTab.vue')
+            }
+        ]
+    },
+    {
         path: '/home',
         name: 'home',
         component: HomePage

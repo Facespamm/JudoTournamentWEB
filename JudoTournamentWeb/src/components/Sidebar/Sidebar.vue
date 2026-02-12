@@ -2,48 +2,59 @@
   <!-- Верхняя полоса -->
   <div class="top-bar"></div>
 
-  <!-- Сайдбар — всегда раскрыт -->
   <div class="sidebar">
     <div class="sidebar-header">
       <h1>
-        <img :src="TrophyIcon" class="logo-icon" alt="Trophy" /> Judo-Stream
+        <img :src="TrophyIcon" class="logo-icon" alt="Trophy" />
+        <span class="header-text">Judo-Stream</span>
       </h1>
     </div>
 
     <nav class="nav-buttons">
-      <button type="button" name="main_page" @click="RedirectToHome">
-        <img :src="HomeIcon" class="nav-icon" alt="Home" /> Главная
+      <button type="button" name="main_page" @click="RedirectToHome" title="Главная">
+        <img :src="HomeIcon" class="nav-icon" alt="Главная" />
+        <span class="nav-text">Главная</span>
       </button>
-      <button type="button" name="athletes_page" @click="RedirectToAthletes">
-        <img :src="UserIcon" class="nav-icon" alt="Athletes" /> Дзюдоисты
+      <button type="button" name="athletes_page" @click="RedirectToAthletes" title="Дзюдоисты">
+        <img :src="UserIcon" class="nav-icon" alt="Дзюдоисты" />
+        <span class="nav-text">Дзюдоисты</span>
       </button>
-      <button type="button" name="tournament_page" @click="RedirectToTournament">
-        <img :src="TrophyIcon" class="nav-icon" alt="Trophy" /> Турниры
+      <button type="button" name="tournament_page" @click="RedirectToTournament" title="Турниры">
+        <img :src="TrophyIcon" class="nav-icon" alt="Турниры" />
+        <span class="nav-text">Турниры</span>
       </button>
 
       <!-- НОВАЯ КНОПКА: Клубы -->
-      <button type="button" name="clubs_page" @click="RedirectToClubs">
-        <img :src="ClubIcon" class="nav-icon" alt="Clubs" /> Клубы
+      <button type="button" name="clubs_page" @click="RedirectToClubs" title="Клубы">
+        <img :src="ClubIcon" class="nav-icon" alt="Клубы" />
+        <span class="nav-text">Клубы</span>
       </button>
 
-      <!-- Остальные кнопки -->
-      <button type="button" name="referee_page" @click="RedirectToReferee">
-        <img :src="RefereeIcon" class="nav-icon" alt="Referee" /> Рефери
+      <button type="button" name="referee_page" @click="RedirectToReferee" title="Рефери">
+        <img :src="RefereeIcon" class="nav-icon" alt="Рефери" />
+        <span class="nav-text">Рефери</span>
       </button>
-      <button type="button" name="admin_page" @click="RedirectToAdmin">
-        <img :src="AdminIcon" class="nav-icon" alt="Admin" /> Админ
+      <button type="button" name="admin_page" @click="RedirectToAdmin" title="Админ">
+        <img :src="AdminIcon" class="nav-icon" alt="Админ" />
+        <span class="nav-text">Админ</span>
       </button>
     </nav>
 
-    <!-- Язык внизу с выпадающим меню -->
+    <!-- Язык внизу -->
     <div class="footer-nav">
-      <button type="button" name="language_submit" @click="toggleLanguageMenu" class="language-button">
+      <button
+          type="button"
+          name="language_submit"
+          @click="toggleLanguageMenu"
+          class="language-button"
+          :title="currentLanguage"
+      >
         <img :src="GlobeIcon" class="nav-icon" alt="Language" />
-        {{ currentLanguage }}
+        <span class="lang-text">{{ currentLanguage }}</span>
       </button>
 
-      <!-- Выпадающее меню языков -->
-      <transition name="slide-up">
+      <!-- Выпадающее меню языков (выезжает вправо от сайдбара) -->
+      <transition name="slide-right">
         <div v-if="isLanguageMenuOpen" class="language-menu">
           <button
               v-for="lang in languages"
@@ -69,7 +80,7 @@ import TrophyIcon from '@/components/icons/CupIconAdmin.png'
 import GlobeIcon from '@/components/icons/LanguageSwitch.png'
 import RefereeIcon from '@/components/icons/Referee.png'
 import AdminIcon from '@/components/icons/Admin.png'
-import ClubIcon from '@/components/icons/ClubIcon.png'  // Убедитесь, что иконка существует!
+import ClubIcon from '@/components/icons/ClubIcon.png'
 
 import {
   RedirectToHome,
@@ -77,7 +88,7 @@ import {
   RedirectToTournament,
   RedirectToReferee,
   RedirectToAdmin,
-  RedirectToClubs,  // ← Добавьте эту функцию в redirect.js
+  RedirectToClubs,
 } from "@/router/redirect.js"
 
 // Языки
@@ -101,19 +112,7 @@ const selectLanguage = (lang) => {
 }
 </script>
 
-<!-- Стили остаются без изменений (полностью совместимы) -->
 <style scoped>
-/* === ПЕРЕМЕННЫЕ === */
-:root {
-  --sidebar-bg: #fff9c4;
-  --sidebar-border: #e0e0e0;
-  --text-color: #2c3e50;
-  --hover-bg: #fff59d;
-  --active-color: #f57c00;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  --sidebar-width: 260px;
-}
-
 /* === ВЕРХНЯЯ ПОЛОСА === */
 .top-bar {
   position: fixed;
@@ -135,41 +134,49 @@ const selectLanguage = (lang) => {
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
-  padding: 1.5rem 1.2rem;
+  padding: 2rem 0.8rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
   z-index: 1001;
   box-shadow: var(--shadow);
 }
 
 .sidebar-header {
   display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
-  padding-top: 0.5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 3rem;
 }
 
 .sidebar-header h1 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-color);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .logo-icon {
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
+}
+
+.header-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-color);
+  white-space: nowrap;
 }
 
 .nav-buttons {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 2rem;
+  align-items: center;
+  width: 100%;
 }
 
 .nav-buttons button,
@@ -177,15 +184,13 @@ const selectLanguage = (lang) => {
   background: none;
   border: none;
   color: var(--text-color);
-  text-align: left;
-  padding: 1rem 1.2rem;
   cursor: pointer;
   border-radius: 12px;
-  font-size: 1.05rem;
-  font-weight: 500;
+  padding: 0.9rem 0.5rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   transition: all 0.25s ease;
   width: 100%;
 }
@@ -194,41 +199,54 @@ const selectLanguage = (lang) => {
 .language-button:hover {
   background-color: var(--hover-bg);
   color: var(--active-color);
-  transform: translateX(4px);
+  transform: scale(1.08);
 }
 
 .nav-buttons button:active,
-.nav-buttons button.active,
 .language-button:active {
   background-color: #fff8e1;
   color: var(--active-color);
-  font-weight: 600;
 }
 
 .nav-icon {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
-  flex-shrink: 0;
+}
+
+.nav-text,
+.lang-text {
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
 .footer-nav {
   margin-top: auto;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
+/* Меню языков — выезжает вправо */
 .language-menu {
   position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
+  left: 100%;
+  margin-left: 12px;
+  bottom: 0;
+  width: 210px;
   background: white;
   border-radius: 12px;
-  margin-bottom: 0.5rem;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   border: 1px solid var(--sidebar-border);
+  z-index: 1003;
 }
 
 .language-option {
@@ -239,7 +257,7 @@ const selectLanguage = (lang) => {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
   font-size: 1rem;
   font-weight: 500;
   color: var(--text-color);
@@ -251,10 +269,19 @@ const selectLanguage = (lang) => {
 .language-option:hover { background-color: var(--hover-bg); color: var(--active-color); }
 .language-option.active { background-color: #fff8e1; color: var(--active-color); font-weight: 600; }
 
-.lang-flag { font-size: 1.3rem; line-height: 1; }
-.lang-name { flex: 1; }
+.lang-flag { font-size: 1.8rem; }
+.lang-name { flex: 1; font-size: 1.05rem; }
 
-.slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s ease; }
-.slide-up-enter-from { opacity: 0; transform: translateY(10px); }
-.slide-up-leave-to { opacity: 0; transform: translateY(10px); }
+/* Анимация появления меню вправо */
+.slide-right-enter-active, .slide-right-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
 </style>

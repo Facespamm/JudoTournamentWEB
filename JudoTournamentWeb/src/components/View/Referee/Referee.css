@@ -1,247 +1,327 @@
 /* ============================================= */
 /*          СУДЕЙСКАЯ ПАНЕЛЬ — ПОЛНЫЙ CSS        */
 /* ============================================= */
-
-.referee-panel {
+.judo_athletes {
     width: 100%;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e8f0f8 50%, #f5f7fa 100%);
-    padding: 90px 2rem 4rem;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-}
-
-.panel-title {
-    font-size: 2rem;
-    font-weight: 800;
-    margin-bottom: 2rem;
-    background: linear-gradient(90deg, #1a1a1a, #2c3e50);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
-}
-
-.fight-card {
-    display: flex;
-    width: 100%;
-    max-width: 1200px;
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 24px;
-    box-shadow:
-            0 20px 40px rgba(0, 0, 0, 0.08),
-            0 8px 20px rgba(0, 0, 0, 0.06),
-            0 0 0 1px rgba(255, 255, 255, 0.6) inset;
-    overflow: hidden;
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-.athlete-section {
-    flex: 1;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.2rem;
-    position: relative;
-}
-
-.white { background: linear-gradient(135deg, #ffffff 0%, #f8fbfd 100%); }
-.blue  { background: linear-gradient(135deg, #f0f8ff 0%, #e1f0ff 100%); }
-
-.athlete-name {
-    font-size: 1.6rem;
-    font-weight: 700;
-    text-align: center;
+    background: linear-gradient(to bottom, #fefefe, #f8f9fa);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
     color: #1a1a1a;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    padding: 90px 0 4rem 0;
+    margin: 0;
+    box-sizing: border-box;
 }
-
-.scores p {
-    margin: 0.5rem 0;
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: #2c3e50;
-}
-
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-}
-
-.btn-score, .btn-penalty {
-    padding: 0.9rem 1.8rem;
-    border-radius: 50px;
-    font-weight: 700;
+.judo-card {
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border: none;
-    position: relative;
-    overflow: hidden;
+}
+
+.judo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* === ФИЛЬТРЫ === */
+.judo_athletes-setting_search {
+    display: flex;
+    gap: 1rem;
+    margin: 0 2rem 3rem;
+    flex-wrap: wrap;
+    align-items: center;
+    padding-left: 2rem;
+}
+
+/* Стили для кнопки */
+.register-button {
+    background: #c89b3c;
     color: white;
-}
-
-.btn-score  { background: linear-gradient(135deg, #43a047, #66bb6a); }
-.btn-penalty { background: linear-gradient(135deg, #e53935, #f44336); }
-
-.hansoku {
-    background: linear-gradient(135deg, #c62828, #d32f2f) !important;
-    box-shadow: 0 6px 20px rgba(198, 40, 40, 0.3);
-}
-
-.btn-score:hover, .btn-penalty:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
-}
-
-.technique-select {
-    padding: 0.9rem 1rem;
-    border-radius: 16px;
-    border: 2px solid #e0e0e0;
-    background: white;
-    width: 100%;
-    max-width: 220px;
-    text-align: center;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 0.85rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.technique-select:focus {
+.register-button:hover {
+    background: #e0b456;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
+}
+
+.judo-athletes-setting_search_select_category,
+.judo-athletes-setting_select_filter_city {
+    padding: 0.85rem 1.2rem;
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    background: white;
+    font-size: 0.95rem;
+    color: #333;
+    min-width: 200px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.judo-athletes-setting_search_select_category:hover,
+.judo-athletes-setting_select_filter_city:hover {
+    border-color: #c89b3c;
+}
+
+.judo-athletes-setting_search_select_category:focus,
+.judo-athletes-setting_select_filter_city:focus {
     outline: none;
     border-color: #c89b3c;
-    box-shadow: 0 0 0 4px rgba(200, 155, 60, 0.15);
+    box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.1);
 }
 
-/* ============ ТАЙМЕР ============ */
-.timer-section {
+.search-input {
     flex: 1;
-    background: linear-gradient(145deg, #fdfdfd, #f5f5f5);
+    min-width: 260px;
+    max-width: 380px;
+    padding: 0.85rem 1.2rem 0.85rem 2.8rem;
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 1rem center;
+    background-size: 18px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.search-input:hover {
+    border-color: #c89b3c;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #c89b3c;
+    box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.1);
+}
+
+/* === ЗАГОЛОВОК === */
+.judo-list h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 2.5rem;
+    color: #1a1a1a;
+    text-align: center;
+}
+
+/* === КОНТЕЙНЕР КАРТОЧЕК === */
+.judo_form-athletes_info {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    justify-items: start;
+}
+
+/* === ПЛОСКИЕ КАРТОЧКИ === */
+.judo-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+}
+
+.judo-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-color: #c89b3c;
+}
+
+.rank-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #c89b3c;
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+}
+
+.judo_card_info {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    border-left: 1px solid #e8e8e8;
-    border-right: 1px solid #e8e8e8;
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.03);
+    gap: 1rem;
 }
 
-.timer-display {
-    font-size: 4.5rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #c89b3c, #e6c06a);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
-    letter-spacing: -2px;
-    text-shadow: 0 4px 10px rgba(200, 155, 60, 0.2);
-}
-
-.golden-score {
-    color: #ffd700;
-    font-weight: 800;
+.judo_card_name {
+    margin: 0;
     font-size: 1.3rem;
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-    margin-bottom: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    padding-right: 3rem;
 }
 
-.timer-controls {
+/* Стили для детальной информации в карточках */
+.card-details {
     display: flex;
-    gap: 1.2rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
-.btn-timer {
-    padding: 1.1rem 2.4rem;
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 600;
+}
+
+/* === СОСТОЯНИЯ === */
+.loading, .error, .no-data {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    grid-column: 1 / -1;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #c89b3c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error {
+    background: #ffebee;
+    border: 1px solid #ffcdd2;
+    border-radius: 8px;
+    color: #d32f2f;
+    padding: 1rem;
+}
+
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+/* === КНОПКА === */
+.judo-tournament_button_pagination {
+    text-align: center;
+    margin: 3rem 0 2rem 0;
+    padding: 0 2rem;
+}
+
+.judo-tournament_button_pagination_next {
+    background: white;
+    border: 2px solid #c89b3c;
+    color: #c89b3c;
+    padding: 1rem 3rem;
     border-radius: 50px;
     font-weight: 700;
-    color: white;
+    font-size: 1rem;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
-    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-.start  { background: linear-gradient(135deg, #43a047, #66bb6a); }
-.pause  { background: linear-gradient(135deg, #3949ab, #5c6bc0); } /* ← ИСПРАВЛЕНО! Теперь яркий индиго */
-.reset  { background: linear-gradient(135deg, #e53935, #f44336); }
-
-.btn-timer:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.25);
-}
-
-.fight-status {
-    margin-top: 1.5rem;
-    font-weight: 600;
-    color: #424242;
-    font-size: 1.1rem;
-}
-
-/* ============ ЗАВЕРШЕНИЕ СХВАТКИ ============ */
-.result-section {
-    margin-top: 3.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.2rem;
-    width: 100%;
-    max-width: 600px;
-}
-
-.result-section select {
-    padding: 1rem 1.8rem;
-    border-radius: 16px;
-    border: 2px solid #e0e0e0;
-    background: white;
-    width: 100%;
-    font-weight: 500;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-}
-
-.btn-complete {
-    padding: 1.2rem 3.5rem;
-    background: linear-gradient(135deg, #b8860b, #d4af37);
+.judo-tournament_button_pagination_next:hover {
+    background: #c89b3c;
     color: white;
-    border-radius: 50px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.4s ease;
-    box-shadow: 0 8px 25px rgba(184, 134, 11, 0.3);
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
 }
 
-.btn-complete:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 15px 35px rgba(184, 134, 11, 0.4);
-    background: linear-gradient(135deg, #d4af37, #e6c06a);
+/* === АДАПТИВ === */
+@media (max-width: 1200px) {
+    .cards-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
-/* ============ АДАПТИВ ============ */
 @media (max-width: 992px) {
-    .fight-card {
-        flex-direction: column;
-        border-radius: 20px;
+    .cards-container {
+        grid-template-columns: repeat(2, 1fr);
     }
-    .timer-section {
-        border: none;
-        border-top: 1px solid #e8e8e8;
-        border-bottom: 1px solid #e8e8e8;
+
+    .judo_athletes-setting_search {
+        margin: 1.5rem 1.5rem 2.5rem;
+        padding-left: 1.5rem;
     }
-    .timer-controls {
+
+    .judo_form-athletes_info {
+        padding: 0 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+
+    .judo_athletes-setting_search {
         flex-direction: column;
-        align-items: center;
+        margin: 1.5rem 1rem 2rem;
+        padding-left: 1rem;
+    }
+
+    .judo-athletes-setting_search_select_category,
+    .judo-athletes-setting_select_filter_city,
+    .search-input,
+    .register-button {
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
+    }
+
+    .judo_form-athletes_info {
+        padding: 0 1rem;
+    }
+
+    .judo-list h2 {
+        font-size: 1.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .judo_athletes {
+        padding-top: 75px;
+    }
+
+    .judo_athletes-setting_search {
+        margin: 1rem 0.75rem 1.5rem;
+        padding-left: 0.75rem;
+    }
+
+    .judo_form-athletes_info {
+        padding: 0 0.75rem;
+    }
+
+    .judo_card_name {
+        font-size: 1.15rem;
     }
 }

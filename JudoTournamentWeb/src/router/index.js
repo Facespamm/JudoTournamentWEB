@@ -24,6 +24,7 @@ import ManageRole from "@/components/View/Authentication/SelectRoleView/ManageRo
 import Weighings from "@/components/View/Weighings/Weighings.vue";
 import RegistrationModal from "@/components/View/RegistrationAthletesTournament/RegistrationModal.vue";
 import Clubs from "@/components/View/Clubs/Clubs.vue";
+import RefereeDetail from "@/components/View/RefereeDetail/RefereeDetail.vue";
 const routes = [
     { path: '/', redirect: '/login' },
 
@@ -174,7 +175,11 @@ const routes = [
         path: '/fights/:id',
         name: 'fight-detail',
         component: FightDetail,
-    },
+    },{
+        path: '/referee/:id',
+        name: 'referee-detail',
+        component: RefereeDetail
+    }
 ]
 
 const router = createRouter({

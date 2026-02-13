@@ -24,7 +24,7 @@
       <!-- Детальная информация -->
       <div v-else-if="athlete" class="athlete-info">
         <div class="athlete-main-info">
-          <h2 class="athlete-name">{{ athlete.full_name }}</h2>
+          <h2 class="athlete-name">{{ getFullName(athlete) }}</h2>
           <div class="athlete-badge">{{ athlete.rank }}</div>
         </div>
 
@@ -123,6 +123,11 @@ const formatDate = (dateString) => {
   if (!dateString) return 'Не указана'
   const date = new Date(dateString)
   return date.toLocaleDateString('ru-RU')
+}
+
+const getFullName = (athlete) => {
+  if (athlete.full_name) return athlete.full_name
+  return `${athlete.last_name || ''} ${athlete.first_name || ''} ${athlete.middle_name || ''}`.trim()
 }
 
 // Загрузка данных атлета

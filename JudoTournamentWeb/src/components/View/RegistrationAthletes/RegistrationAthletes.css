@@ -1,21 +1,80 @@
-/* Основной контейнер */
-.registration_athletes {
-    width: 100%;
+/* RegistrationAthletes.css — полный финальный вариант */
+
+.registration-athletes-page {
     min-height: 100vh;
-    background: linear-gradient(to bottom, #fefefe, #f8f9fa);
+    background: #ffffff; /* Чистый белый фон, как в админке */
     font-family: 'Inter', 'Segoe UI', sans-serif;
     color: #1a1a1a;
-    padding: 90px 0 2rem 0;
-    margin: 0;
     box-sizing: border-box;
+    padding-top: 80px;
+    padding-bottom: 2rem;
+    padding-left: 40px;
+    padding-right: 100px;
+    max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.judo_form-athletes_info {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
+.registration-navigation {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
 }
 
+.registration-navigation h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #1a1a1a;
+    text-align: center;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nav-tab {
+    background: #f8f9fa;
+    border: 1.5px solid #e9ecef;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #495057;
+    flex: 1;
+    min-width: 160px;
+    text-align: center;
+}
+
+.nav-tab:hover {
+    border-color: #c89b3c;
+    color: #1a1a1a;
+    background: #fff9f0;
+}
+
+.nav-tab.active {
+    background: linear-gradient(135deg, #c89b3c, #e0b456);
+    color: white;
+    border-color: #c89b3c;
+    box-shadow: 0 2px 8px rgba(200, 155, 60, 0.3);
+}
+
+.registration-content {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+/* Формы и остальные стили (для WeighingForm и будущих вкладок) */
 .athlete-registration {
     background: white;
     border-radius: 16px;
@@ -50,7 +109,6 @@
     color: #1a1a1a;
 }
 
-/* Стили для индикатора загрузки */
 .loading-overlay {
     position: absolute;
     top: 0;
@@ -81,13 +139,11 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Стили форм */
 .form-grid {
     display: grid;
     gap: 1rem;
 }
 
-/* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ СЕТКИ */
 .form-grid-multi {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
@@ -96,13 +152,11 @@
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
-/* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ФОРМ-ГРУПП */
 .form-group {
     display: flex;
     flex-direction: column;
 }
 
-/* ОСОБЫЕ СТИЛИ ДЛЯ ПОЛЕЙ ИМЕНИ И ФАМИЛИИ */
 .form-group:has(#last_name),
 .form-group:has(#first_name) {
     grid-column: span 1;
@@ -165,13 +219,11 @@
     display: block;
 }
 
-/* ОТСТУПЫ ДЛЯ КНОПОК */
 .form-actions {
     margin-top: 1.5rem;
     text-align: center;
 }
 
-/* Для формы взвешивания - кнопка под формой */
 .form-section:last-child .submit-button {
     margin-top: 1.5rem;
     width: 100%;
@@ -201,233 +253,12 @@
     transform: none !important;
 }
 
-/* TOAST УВЕДОМЛЕНИЕ */
-.toast-notification {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    min-width: 320px;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    color: white;
-    font-weight: 600;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    z-index: 10000;
-    animation: slideIn 0.4s ease-out;
-}
-
-.toast-notification.success {
-    background: linear-gradient(135deg, #28a745, #34ce57);
-}
-
-.toast-notification.error {
-    background: linear-gradient(135deg, #dc3545, #e4606d);
-}
-
-.toast-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.toast-icon {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.fade-enter-active, .fade-leave-active {
-    transition: opacity .3s ease, transform .3s ease;
-}
-
-.fade-enter-from, .fade-leave-to {
-    opacity: 0;
-    transform: translateY(20px);
-}
-
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to   { transform: translateX(0); opacity: 1; }
-}
-
 /* Адаптив */
-@media (max-width: 768px) {
-    .registration_athletes {
-        padding-top: 80px;
-    }
-
-    .judo_form-athletes_info {
-        padding: 0 1rem;
-    }
-
-    .athlete-registration {
-        padding: 1.5rem;
-    }
-
-    .form-grid-multi {
-        grid-template-columns: 1fr;
-    }
-
-    .form-grid-double {
-        grid-template-columns: 1fr;
-    }
-
-    /* Обеспечиваем одинаковую ширину полей на мобильных */
-    .form-group:has(#last_name),
-    .form-group:has(#first_name) {
-        grid-column: span 1;
-    }
-
-    .toast-notification {
-        left: 20px;
-        right: 20px;
-        bottom: 20px;
-        min-width: auto;
-    }
-
-    /* Адаптив для кнопок */
-    .form-section:last-child .submit-button {
-        max-width: 100%;
-        width: 100%;
-    }
-
-    .form-actions .submit-button {
-        width: 100%;
-        max-width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .registration_athletes {
-        padding-top: 75px;
-    }
-
-    .athlete-registration {
-        padding: 1rem;
-    }
-
-    .athlete-registration h2 {
-        font-size: 1.5rem;
-    }
-
-    .form-section h3 {
-        font-size: 1.1rem;
-    }
-
-    .form-section {
-        padding: 1rem;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        padding: 0.6rem;
-        font-size: 0.9rem;
-    }
-
-    .submit-button {
-        padding: 0.6rem 1.5rem;
-        font-size: 0.9rem;
-    }
-}
-
-/* ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ ВЫРАВНИВАНИЯ */
-.form-grid-multi .form-group {
-    min-width: 0; /* Предотвращает растягивание */
-}
-
-/* Гарантируем, что все поля в одной строке имеют одинаковую ширину */
-.form-grid-multi > .form-group {
-    flex: 1;
-}
-
-/* Особые стили для полей, которые должны занимать полную ширину */
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-.registration-athletes-page {
-    width: 100%;
-    min-height: 100vh;
-    background: linear-gradient(to bottom, #fefefe, #f8f9fa);
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    color: #1a1a1a;
-    padding: 90px 0 2rem 0;
-    margin: 0;
-    box-sizing: border-box;
-}
-
-.registration-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem;
-}
-
-.registration-navigation {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 1.5rem;
-}
-
-.registration-navigation h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: #1a1a1a;
-    text-align: center;
-}
-
-.nav-tabs {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.nav-tab {
-    background: #f8f9fa;
-    border: 1.5px solid #e9ecef;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: #495057;
-    flex: 1;
-    min-width: 160px;
-    text-align: center;
-}
-
-.nav-tab:hover {
-    border-color: #c89b3c;
-    color: #1a1a1a;
-    background: #fff9f0;
-}
-
-.nav-tab.active {
-    background: linear-gradient(135deg, #c89b3c, #e0b456);
-    color: white;
-    border-color: #c89b3c;
-    box-shadow: 0 2px 8px rgba(200, 155, 60, 0.3);
-}
-
-.registration-content {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    position: relative;
-}
-
 @media (max-width: 768px) {
     .registration-athletes-page {
         padding-top: 80px;
-    }
-
-    .registration-container {
-        padding: 0 1rem;
+        padding-left: 20px;
+        padding-right: 20px;
     }
 
     .registration-navigation,

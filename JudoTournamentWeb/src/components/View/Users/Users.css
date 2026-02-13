@@ -1,11 +1,14 @@
 .admin-users-management {
-    padding: 90px 2rem 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
     min-height: 100vh;
-    background: linear-gradient(to bottom, #fefefe, #f8f9fa);
+    background: #ffffff; /* Чистый белый фон */
+    padding-top: 80px;
+    max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
+    margin-left: auto; /* Центрируем/прижимаем к правой части после sidebar */
+    margin-right: auto;
+    padding-left: 40px;  /* Увеличил немного для симметрии и дыхания */
+    padding-right: 100px; /* Уменьшил с 100px — 100px было слишком много */
+    box-sizing: border-box; /* Чтобы padding не ломал ширину */
 }
-
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -322,9 +325,10 @@
     justify-content: center;
     color: white;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.3rem; /* Немного увеличил — буква A теперь точно по центру и лучше выглядит */
+    line-height: 1; /* Дополнительная страховка от вертикального сдвига */
+    text-align: center;
 }
-
 .user-details {
     display: flex;
     flex-direction: column;

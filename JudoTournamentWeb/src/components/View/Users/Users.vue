@@ -50,35 +50,30 @@
     <!-- СТАТИСТИКА -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon admin">A</div>
         <div class="stat-info">
           <div class="stat-number">{{ stats.adminCount }}</div>
           <div class="stat-label">Администраторов</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon referee">S</div>
         <div class="stat-info">
           <div class="stat-number">{{ stats.refereeCount }}</div>
           <div class="stat-label">Судей</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon scoreboard">T</div>
         <div class="stat-info">
           <div class="stat-number">{{ stats.scoreboardCount }}</div>
           <div class="stat-label">Операторов табло</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon participant">P</div>
         <div class="stat-info">
           <div class="stat-number">{{ stats.participantCount }}</div>
           <div class="stat-label">Участников</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon total">U</div>
         <div class="stat-info">
           <div class="stat-number">{{ stats.totalCount }}</div>
           <div class="stat-label">Всего активных</div>

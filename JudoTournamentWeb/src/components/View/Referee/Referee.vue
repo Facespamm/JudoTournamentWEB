@@ -1,37 +1,12 @@
 <template>
-  <div class="judo_athletes">
-    <!-- ФИЛЬТРЫ -->
-    <div class="judo_athletes-setting_search">
-      <select class="judo-athletes-setting_search_select_category" name="athlete_filter_category">
-        <option value="all">Категория спортсмена</option>
-        <option value="60">до 60 кг</option>
-        <option value="66">до 66 кг</option>
-        <option value="73">до 73 кг</option>
-        <option value="81">до 81 кг</option>
-        <option value="90">до 90 кг</option>
-        <option value="100">до 100 кг</option>
-        <option value="+100">свыше 100 кг</option>
-      </select>
-
-      <select class="judo-athletes-setting_select_filter_city" name="athlete_filter_city">
-        <option value="">Город</option>
-        <option value="Астана">Астана</option>
-        <option value="Алматы">Алматы</option>
-        <option value="Шымкент">Шымкент</option>
-        <option value="Актобе">Актобе</option>
-        <option value="Караганда">Караганда</option>
-        <option value="Павлодар">Павлодар</option>
-        <option value="Усть-Каменогорск">Усть-Каменогорск</option>
-        <option value="Тараз">Тараз</option>
-        <option value="Костанай">Костанай</option>
-        <option value="Атырау">Атырау</option>
-      </select>
-
-      <input type="search" placeholder="Поиск спортсменов" class="search-input" />
+  <div class="judo_referees">
+    <!-- ПОИСК -->
+    <div class="judo_referees-setting_search">
+      <input type="search" placeholder="Поиск судей" class="search-input" />
     </div>
 
     <!-- СПИСОК -->
-    <div class="judo_form-athletes_info">
+    <div class="judo_form-referees_info">
       <section class="judo-list">
         <h2>Судьи</h2>
 
@@ -64,7 +39,7 @@
           </article>
 
           <div v-if="referees.length === 0" class="no-data">
-            <p>Спортсмены не найдены</p>
+            <p>Судьи не найдены</p>
           </div>
         </div>
       </section>
@@ -109,8 +84,6 @@ const loadReferees = async () => {
 
   if (result.success) {
     referees.value = result.referees
-    // можно также сохранить total, если нужно
-    // totalReferees.value = result.total
   } else {
     error.value = result.error || 'Ошибка загрузки'
     referees.value = [] // очистите список при ошибке

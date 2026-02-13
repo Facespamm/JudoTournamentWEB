@@ -76,7 +76,6 @@
         </div>
       </div>
       <div v-if="availableTatamis.length === 0 && !tournamentsLoading" class="empty-state">
-        <div class="empty-icon">Gi</div>
         <h3>
           {{ selectedCategory === null ? 'Выберите категорию для просмотра схваток' : 'Схватки не найдены' }}
         </h3>
@@ -337,37 +336,37 @@ export default {
 
 .tatami-section {
   background: white;
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.09);
-  margin-bottom: 2.5rem;
-  border-top: 6px solid #c89b3c;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  margin-bottom: 1.5rem;
+  border-top: 3px solid #c89b3c;
   transition: all 0.3s ease;
 }
 
 .tatami-section:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 
 .tatami-header {
   display: flex;
   align-items: center;
-  padding: 1.6rem 2rem;
+  padding: 0.8rem 1.4rem;
   background: linear-gradient(135deg, #fffdf7 0%, #ffffff 100%);
   border-bottom: 1px solid #eee;
 }
 
 .tatami-number {
-  font-size: 3.8rem;
+  font-size: 2.4rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-right: 1.2rem;
+  margin-right: 0.8rem;
   line-height: 1;
 }
 
 .tatami-title {
-  font-size: 2.1rem;
+  font-size: 1.4rem;
   font-weight: 900;
   margin: 0;
   color: #c89b3c;
@@ -377,7 +376,7 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 1.6rem 2rem;
+  padding: 0.9rem 1.4rem;
   border-bottom: 1px solid #eee;
   cursor: pointer;
   transition: background 0.3s ease;
@@ -396,32 +395,32 @@ export default {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 12px;
+  width: 6px;
   background: linear-gradient(135deg, #c89b3c, #e0b456);
 }
 
 .status-corner {
   position: absolute;
-  top: 12px;
-  right: 18px;
+  top: 10px;
+  right: 14px;
   background: white;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 0.85rem;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
   font-weight: 800;
   text-transform: uppercase;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   z-index: 10;
   color: #c89b3c;
   border: 2px solid #c89b3c;
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #c89b3c;
   animation: pulse 1.8s infinite;
@@ -432,13 +431,13 @@ export default {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-right: 160px;
+  padding-right: 140px;
 }
 
 .category-weight {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  min-width: 120px;
+  min-width: 110px;
   color: #c89b3c;
 }
 
@@ -446,13 +445,13 @@ export default {
   flex: 1;
   display: flex;
   justify-content: space-between;
-  padding: 0 3rem;
+  padding: 0 2rem;
 }
 
 .fighter {
   display: flex;
   flex-direction: column;
-  min-width: 260px;
+  min-width: 240px;
 }
 
 .fighter.left {
@@ -466,49 +465,42 @@ export default {
 }
 
 .club-code {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #c89b3c;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 
 .fighter-name {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #000;
 }
 
 .round-or-timer {
-  font-size: 1.9rem;
+  font-size: 1.6rem;
   font-weight: 900;
   font-family: 'SF Pro Display', monospace;
-  min-width: 160px;
+  min-width: 130px;
   text-align: center;
   color: #1a1a1a;
 }
 
 .live-timer {
   color: #c89b3c;
-  font-size: 2.4rem;
+  font-size: 2rem;
   animation: pulse 2s infinite;
 }
 
 /* Пустое состояние */
 .empty-state {
   text-align: center;
-  padding: 100px 20px 60px;
+  padding: 80px 20px 50px;
   color: #666;
 }
 
-.empty-icon {
-  font-size: 5rem;
-  font-weight: 900;
-  color: #c89b3c;
-  margin-bottom: 1.5rem;
-}
-
 .empty-state h3 {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   margin-bottom: 1.5rem;
   color: #444;
 }
@@ -516,11 +508,11 @@ export default {
 .reset-filters-btn {
   background: linear-gradient(135deg, #c89b3c, #e0b456);
   color: white;
-  padding: 0.9rem 2.2rem;
+  padding: 0.8rem 2rem;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   margin-top: 1rem;
   transition: all 0.3s ease;
@@ -528,8 +520,8 @@ export default {
 }
 
 .reset-filters-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(200, 155, 60, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(200, 155, 60, 0.4);
 }
 
 @keyframes pulse {
@@ -566,11 +558,11 @@ export default {
   .tatami-header {
     flex-direction: column;
     text-align: center;
-    padding: 1.4rem 1.6rem;
+    padding: 1rem 1.2rem;
   }
   .tatami-number {
     margin-right: 0;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
   }
   .status-corner {
     right: 50%;
@@ -595,10 +587,10 @@ export default {
     min-width: auto;
   }
   .tatami-number {
-    font-size: 3.2rem;
+    font-size: 2.2rem;
   }
   .tatami-title {
-    font-size: 1.9rem;
+    font-size: 1.3rem;
   }
   .filters-section {
     flex-direction: column;
@@ -621,7 +613,7 @@ export default {
     font-size: 2rem;
   }
   .tatami-number {
-    font-size: 2.8rem;
+    font-size: 2rem;
   }
 }
 </style>

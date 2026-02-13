@@ -75,7 +75,7 @@
             <path d="M17 16v-4"/>
           </svg>
         </span>
-        <span class="label">Результаты</span>
+        <span class="label">Взвешивание</span>
       </button>
 
       <button

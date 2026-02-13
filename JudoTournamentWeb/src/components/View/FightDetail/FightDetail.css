@@ -1,4 +1,5 @@
-/* Полный CSS с новыми стилями */
+/*
+!* Полный CSS с новыми стилями *!
 .complete {
     background: #b8860b !important;
 }
@@ -104,10 +105,10 @@
     border-left: 3px solid #4caf50;
 }
 
-.score-row:nth-child(2) { border-left-color: #ff9800; } /* Wazaari */
-.score-row:nth-child(3) { border-left-color: #2196f3; } /* Yuko */
-.score-row:nth-child(4) { border-left-color: #ffc107; } /* Shido */
-.score-row:nth-child(5) { border-left-color: #9c27b0; } /* Osaekomi */
+.score-row:nth-child(2) { border-left-color: #ff9800; } !* Wazaari *!
+.score-row:nth-child(3) { border-left-color: #2196f3; } !* Yuko *!
+.score-row:nth-child(4) { border-left-color: #ffc107; } !* Shido *!
+.score-row:nth-child(5) { border-left-color: #9c27b0; } !* Osaekomi *!
 
 .score-label {
     font-weight: 500;
@@ -205,7 +206,7 @@
     cursor: not-allowed;
 }
 
-/* СЕКЦИЯ ТАЙМЕРА */
+!* СЕКЦИЯ ТАЙМЕРА *!
 .timer-section {
     flex: 1;
     background: #fdfdfd;
@@ -338,7 +339,7 @@
     cursor: not-allowed;
 }
 
-/* Osaekomi секция */
+!* Osaekomi секция *!
 .osaekomi-section {
     background: #f3e5f5;
     border-radius: 10px;
@@ -546,7 +547,7 @@
 .in-progress { color: #ff3b30; font-weight: 600; }
 .completed   { color: #34c759; }
 
-/* Лог событий */
+!* Лог событий *!
 .log-entries {
     max-height: 300px;
     overflow-y: auto;
@@ -620,7 +621,7 @@
     font-size: 0.9rem;
 }
 
-/* АДАПТИВНОСТЬ */
+!* АДАПТИВНОСТЬ *!
 @media (max-width: 1200px) {
     .timer-section {
         min-width: 380px;
@@ -794,7 +795,7 @@
         box-sizing: border-box;
     }
 
-    /* Header — кнопка слева, текст строго по центру */
+    !* Header — кнопка слева, текст строго по центру *!
     .header {
         max-width: 1200px;
         margin: 0 auto 2rem;
@@ -823,7 +824,7 @@
     .header-content {
         flex: 1;
         text-align: center;
-        padding: 0 100px; /* увеличил отступы, чтобы текст был точно по центру */
+        padding: 0 100px; !* увеличил отступы, чтобы текст был точно по центру *!
     }
 
     .header h1 {
@@ -1010,4 +1011,231 @@
         .header-content { padding: 0 80px; }
     }
 
+    .fight-page {
+        width: 100%;
+        min-height: 100vh;
+        background: #f9f9fb;
+        font-family: 'SF Pro Display', -apple-system, sans-serif;
+        color: #1a1a1a;
+        padding: 90px 2rem 4rem;
+        box-sizing: border-box;
+    }
+
+    .header {
+        max-width: 1200px;
+        margin: 0 auto 2rem;
+        display: flex;
+        align-items: center;
+        position: relative;
+        height: 60px;
+    }
+
+    .back {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        cursor: pointer;
+        color: #c89b3c;
+        padding: 0.5rem 1rem;
+        z-index: 10;
+    }
+
+    .back:hover { color: #e0b456; }
+
+    .header-content {
+        flex: 1;
+        text-align: center;
+        padding: 0 100px;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    .meta {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.4rem;
+    }
+
+    .fight-card {
+        display: flex;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e8e8e8;
+    }
+
+    .athlete-section {
+        flex: 1;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        background: #fdfdfd;
+    }
+
+    .athlete-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        text-align: center;
+        color: #1a1a1a;
+    }
+
+    .scores { width: 100%; }
+
+    .score-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0.4rem 0;
+        padding: 0.6rem 0.8rem;
+        background: rgba(255,255,255,0.8);
+        border-radius: 8px;
+        border-left: 4px solid #c89b3c;
+    }
+
+    .score-label { font-weight: 500; font-size: 1rem; color: #333; flex: 1; }
+    .score-value { font-weight: 700; font-size: 1.3rem; color: #c89b3c; min-width: 50px; text-align: right; }
+
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        justify-content: center;
+        margin: 1rem 0;
+        width: 100%;
+    }
+
+    .btn-action {
+        padding: 0.8rem 1.4rem;
+        border-radius: 30px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        font-size: 1rem;
+        color: white;
+        background: linear-gradient(135deg, #c89b3c, #f4d03f);
+        box-shadow: 0 6px 20px rgba(200,155,60,0.3);
+        flex: 1;
+        min-width: 130px;
+    }
+
+    .btn-action:hover:not(:disabled) {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(200,155,60,0.4);
+    }
+
+    .btn-action.active {
+        background: linear-gradient(135deg, #a67c00, #d4af37);
+        animation: pulse 2s infinite;
+    }
+
+    .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .timer-section {
+        flex: 1;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 2.5rem;
+        border-left: 1px solid #e8e8e8;
+        border-right: 1px solid #e8e8e8;
+        min-width: 400px;
+    }
+
+    .timer-display {
+        font-size: 4.5rem;
+        font-weight: 900;
+        color: #c89b3c;
+        margin-bottom: 0.5rem;
+        font-family: 'SF Pro Display', monospace;
+    }
+
+    .golden-score {
+        color: #c89b3c;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .timer-controls { width: 100%; max-width: 420px; }
+
+    .time-btn, .quick-time-btn, .btn-timer {
+        background: linear-gradient(135deg, #c89b3c, #f4d03f);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 6px 20px rgba(200,155,60,0.3);
+        padding: 0.8rem 1.2rem;
+    }
+
+    .time-btn:hover:not(:disabled), .quick-time-btn:hover:not(:disabled), .btn-timer:hover:not(:disabled) {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(200,155,60,0.4);
+    }
+
+    .osaekomi-section {
+        background: #fdfaf0;
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-top: 1.5rem;
+        width: 100%;
+        max-width: 400px;
+        border: 2px solid #c89b3c;
+    }
+
+    .osaekomi-time { color: #c89b3c; font-size: 2.5rem; font-weight: 700; }
+    .progress-fill { background: linear-gradient(90deg, #c89b3c, #f4d03f); }
+    .progress-text { color: #a67c00; }
+    .btn-osaekomi { background: #a67c00; color: white; padding: 0.7rem 1.5rem; border: none; border-radius: 30px; cursor: pointer; }
+
+    .result-section, .info-block, .result-card {
+        background: white;
+        border-left: 6px solid #c89b3c;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .result-label, .info-block h4 { color: #a67c00; }
+
+    .log-entry {
+        background: #fdfdfb;
+        border-left: 4px solid #c89b3c;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(200,155,60,0.4); } 70% { box-shadow: 0 0 0 10px rgba(200,155,60,0); } 100% { box-shadow: 0 0 0 0 rgba(200,155,60,0); } }
+
+    @media (max-width: 768px) {
+        .fight-card { flex-direction: column; }
+        .timer-section { min-width: 100%; order: -1; border: none; border-top: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; }
+        .actions { flex-direction: column; }
+        .btn-action { width: 100%; }
+        .header-content { padding: 0 80px; }
+    }
+
+
 }
+*/

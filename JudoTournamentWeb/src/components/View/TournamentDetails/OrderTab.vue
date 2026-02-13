@@ -58,7 +58,6 @@
               v-for="fight in groupedFights[tatami]"
               :key="fight.id"
               class="fight-row"
-              @click="viewFightDetail(fight.id)"
           >
             <div class="status-bar"></div>
             <div class="status-corner">
@@ -241,8 +240,8 @@ onMounted(() => {
 <style scoped>
 .fights-overview {
   min-height: 100vh;
-  background: #f9f9fb;
-  padding: 90px 1.5rem 4rem;
+  background: #ffffff;
+  padding: 40px 1.5rem 4rem;
   font-family: 'SF Pro Display', -apple-system, sans-serif;
   color: #1a1a1a;
 }
@@ -266,7 +265,7 @@ onMounted(() => {
 .weight-categories-dropdown {
   display: flex;
   justify-content: center;
-  margin: 2.5rem 0 2rem;
+  margin: 1.5rem 0 1.5rem;
 }
 
 .category-dropdown {
@@ -297,7 +296,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-size: 1.1rem;
   font-weight: 700;
 }
@@ -312,37 +311,38 @@ onMounted(() => {
 }
 
 .tatami-sections {
-  max-width: 1300px;
+  max-width: 95%;
   margin: 0 auto;
+  width: 100%;
 }
 
 .tatami-section {
   background: white;
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.09);
-  margin-bottom: 2.5rem;
-  border-top: 5px solid #c89b3c;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  margin-bottom: 1.5rem;
+  border-top: 3px solid #c89b3c;
 }
 
 .tatami-header {
   display: flex;
   align-items: center;
-  padding: 1.4rem 1.6rem;
+  padding: 0.7rem 1.2rem;
   background: white;
   border-bottom: 1px solid #eee;
 }
 
 .tatami-number {
-  font-size: 3.5rem;
+  font-size: 2.2rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-right: 1rem;
+  margin-right: 0.6rem;
   line-height: 1;
 }
 
 .tatami-title {
-  font-size: 2rem;
+  font-size: 1.3rem;
   font-weight: 900;
   margin: 0;
   color: #c89b3c;
@@ -352,14 +352,13 @@ onMounted(() => {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 1.4rem 1.6rem;
+  padding: 0.8rem 1.2rem;
   border-bottom: 1px solid #eee;
-  cursor: pointer;
   transition: background 0.3s;
 }
 
 .fight-row:hover {
-  background: #fdfdfb;
+  background: #fafafa;
 }
 
 .fight-row:last-child {
@@ -371,7 +370,7 @@ onMounted(() => {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 10px;
+  width: 6px;
   background: linear-gradient(135deg, #c89b3c, #f4d03f);
 }
 

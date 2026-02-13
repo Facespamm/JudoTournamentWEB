@@ -1,9 +1,9 @@
 <template>
-  <div class="fight-page">
+  <div class="fight-detail">
     <div class="header">
-      <button class="back" @click="$router.back()">Назад</button>
+      <button class="back" @click="$router.back()">←</button>
       <div class="header-content">
-        <h1>Судейская панель: Схватка #{{ fight?.fight_number || fightId }}</h1>
+        <h1>Схватка #{{ fight?.fight_number || fightId }}</h1>
         <div class="meta">
           Татами {{ fight?.tatami || '—' }} • Раунд {{ fight?.round_number || '—' }} • <span :class="statusClass">{{ statusText }}</span>
         </div>
@@ -17,24 +17,22 @@
     <div v-else class="fight-card">
       <!-- Белый -->
       <div class="athlete-section white">
-        <h2 class="athlete-name">{{ getAthleteName(fight?.white_athlete) }} (Белый)</h2>
+        <h2 class="athlete-name">{{ getAthleteName(fight?.white_athlete) }}</h2>
+        <span class="color-badge">Белый</span>
         <div class="scores">
           <div class="score-row"><span class="score-label">Ippon:</span><span class="score-value">{{ scores.white.ippon || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Waza-ari:</span><span class="score-value">{{ scores.white.wazaari || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Shido:</span><span class="score-value">{{ scores.white.penalty_count || 0 }}</span></div>
-          <div class="score-row" v-if="osaekomi.active && osaekomi.athlete_color === 'WHITE'">
-            <span class="score-label">Osaekomi:</span><span class="score-value">{{ osaekomi.time }}с</span>
-          </div>
         </div>
         <div class="actions">
           <button class="btn-action ippon" @click="confirmIppon('WHITE')" :disabled="fightStatus === 'COMPLETED'">Ippon</button>
           <button class="btn-action wazaari" @click="addWazaari('WHITE')" :disabled="fightStatus === 'COMPLETED'">Waza-ari</button>
           <button class="btn-action shido" @click="addPenalty('WHITE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">Shido</button>
-          <button class="btn-action hansoku" @click="addPenalty('WHITE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku-make</button>
+          <button class="btn-action hansoku" @click="addPenalty('WHITE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku</button>
           <button class="btn-action osaekomi" @click="toggleOsaekomi('WHITE')"
                   :disabled="fightStatus === 'COMPLETED' || (osaekomi.active && osaekomi.athlete_color !== 'WHITE')"
                   :class="{ active: osaekomi.active && osaekomi.athlete_color === 'WHITE' }">
-            {{ osaekomi.active && osaekomi.athlete_color === 'WHITE' ? 'Osaekomi (идёт)' : 'Osaekomi' }}
+            {{ osaekomi.active && osaekomi.athlete_color === 'WHITE' ? 'Osaekomi ✓' : 'Osaekomi' }}
           </button>
         </div>
       </div>
@@ -44,104 +42,89 @@
         <h3 class="timer-display">
           {{ isGoldenScore ? formatTime(gsSeconds) : formatTime(timerSeconds) }}
         </h3>
-        <p v-if="isGoldenScore" class="golden-score">Golden Score (прошедшее время)</p>
+        <p v-if="isGoldenScore" class="golden-score">Golden Score</p>
         <div class="timer-controls">
-          <div class="time-controls-top">
-            <button class="time-btn minus" @click="adjustTimer(-10)" :disabled="fightStatus === 'COMPLETED'">-10s</button>
-            <div class="quick-time-buttons">
-              <button class="quick-time-btn" @click="setTimerTime(120)">2:00</button>
-              <button class="quick-time-btn" @click="setTimerTime(180)">3:00</button>
-              <button class="quick-time-btn" @click="setTimerTime(240)">4:00</button>
-              <button class="quick-time-btn skip-btn" @click="skipToTime(30)">→0:30</button>
+          <div class="time-adjust">
+            <button class="time-btn" @click="adjustTimer(-10)" :disabled="fightStatus === 'COMPLETED'">-10s</button>
+            <div class="quick-times">
+              <button class="quick-btn" @click="setTimerTime(120)">2:00</button>
+              <button class="quick-btn" @click="setTimerTime(180)">3:00</button>
+              <button class="quick-btn" @click="setTimerTime(240)">4:00</button>
             </div>
-            <button class="time-btn plus" @click="adjustTimer(10)" :disabled="fightStatus === 'COMPLETED'">+10s</button>
+            <button class="time-btn" @click="adjustTimer(10)" :disabled="fightStatus === 'COMPLETED'">+10s</button>
           </div>
-          <div class="timer-main-controls">
+          <div class="main-controls">
             <button v-if="!isRunning && fightStatus !== 'COMPLETED'" class="btn-timer start" @click="startTimer">
-              {{ fightStatus === 'SCHEDULED' ? 'Hajime (Старт)' : 'Продолжить' }}
+              {{ fightStatus === 'SCHEDULED' ? 'Hajime' : 'Продолжить' }}
             </button>
-            <button v-if="isRunning" class="btn-timer pause" @click="pauseTimer">Matte (Пауза)</button>
-            <button class="btn-timer golden-score-btn" @click="enterGoldenScore" :disabled="fightStatus === 'COMPLETED'">
+            <button v-if="isRunning" class="btn-timer pause" @click="pauseTimer">Matte</button>
+            <button class="btn-timer golden" @click="enterGoldenScore" :disabled="fightStatus === 'COMPLETED'">
               {{ isGoldenScore ? 'Обычное время' : 'Golden Score' }}
             </button>
-            <button class="btn-timer reset-scores" @click="resetScores" :disabled="fightStatus === 'COMPLETED'">Сбросить очки</button>
-            <button class="btn-timer complete-btn" @click="openCompleteDialog"
-                    :disabled="fightStatus !== 'IN_PROGRESS'">
-              Завершить матч
-            </button>
-            <button v-if="fightStatus === 'COMPLETED'" class="btn-timer reset-full" @click="resetFullMatch">
-              Сбросить матч
+            <button class="btn-timer complete" @click="openCompleteDialog" :disabled="fightStatus !== 'IN_PROGRESS'">
+              Завершить
             </button>
           </div>
         </div>
 
-        <div class="osaekomi-section" v-if="osaekomi.active">
-          <h4>Osaekomi таймер:</h4>
-          <div class="osaekomi-timer">
+        <div class="osaekomi-box" v-if="osaekomi.active">
+          <div class="osaekomi-header">
             <span class="osaekomi-time">{{ formatTime(osaekomi.time) }}</span>
             <span class="osaekomi-athlete">{{ osaekomi.athlete_color === 'WHITE' ? 'Белый' : 'Синий' }}</span>
           </div>
-          <div class="osaekomi-progress">
-            <div class="progress-bar"><div class="progress-fill" :style="{ width: osaekomiProgress + '%' }"></div></div>
-            <span class="progress-text">
-              {{ osaekomiProgress }}% ({{ osaekomi.time }}/20с)
-              <span v-if="osaekomi.time >= 10" class="progress-notice">WAZA-ARI</span>
-              <span v-if="osaekomi.time >= 20" class="progress-notice ippon">IPPON!</span>
-            </span>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: osaekomiProgress + '%' }"></div>
           </div>
-          <button class="btn-osaekomi" @click="stopOsaekomi">Токета</button>
+          <button class="btn-stop" @click="stopOsaekomi">Токета</button>
         </div>
 
-        <p class="fight-status">Статус: {{ statusText }}</p>
+        <p class="status-text">{{ statusText }}</p>
       </div>
 
       <!-- Синий -->
       <div class="athlete-section blue">
-        <h2 class="athlete-name">{{ getAthleteName(fight?.blue_athlete) }} (Синий)</h2>
+        <h2 class="athlete-name">{{ getAthleteName(fight?.blue_athlete) }}</h2>
+        <span class="color-badge">Синий</span>
         <div class="scores">
           <div class="score-row"><span class="score-label">Ippon:</span><span class="score-value">{{ scores.blue.ippon || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Waza-ari:</span><span class="score-value">{{ scores.blue.wazaari || 0 }}</span></div>
           <div class="score-row"><span class="score-label">Shido:</span><span class="score-value">{{ scores.blue.penalty_count || 0 }}</span></div>
-          <div class="score-row" v-if="osaekomi.active && osaekomi.athlete_color === 'BLUE'">
-            <span class="score-label">Osaekomi:</span><span class="score-value">{{ osaekomi.time }}с</span>
-          </div>
         </div>
         <div class="actions">
           <button class="btn-action ippon" @click="confirmIppon('BLUE')" :disabled="fightStatus === 'COMPLETED'">Ippon</button>
           <button class="btn-action wazaari" @click="addWazaari('BLUE')" :disabled="fightStatus === 'COMPLETED'">Waza-ari</button>
           <button class="btn-action shido" @click="addPenalty('BLUE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">Shido</button>
-          <button class="btn-action hansoku" @click="addPenalty('BLUE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku-make</button>
+          <button class="btn-action hansoku" @click="addPenalty('BLUE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku</button>
           <button class="btn-action osaekomi" @click="toggleOsaekomi('BLUE')"
                   :disabled="fightStatus === 'COMPLETED' || (osaekomi.active && osaekomi.athlete_color !== 'BLUE')"
                   :class="{ active: osaekomi.active && osaekomi.athlete_color === 'BLUE' }">
-            {{ osaekomi.active && osaekomi.athlete_color === 'BLUE' ? 'Osaekomi (идёт)' : 'Osaekomi' }}
+            {{ osaekomi.active && osaekomi.athlete_color === 'BLUE' ? 'Osaekomi ✓' : 'Osaekomi' }}
           </button>
         </div>
       </div>
     </div>
 
-    <div v-if="fightStatus === 'COMPLETED' && !loading" class="result-section">
-      <h3>Схватка завершена</h3>
-      <div class="result-card">
-        <div class="result-item"><span class="result-label">Победитель:</span><span class="result-value">{{ getWinnerName() }}</span></div>
-        <div class="result-item"><span class="result-label">Тип победы:</span><span class="result-value">{{ victoryTypeText }}</span></div>
+    <div v-if="fightStatus === 'COMPLETED' && !loading" class="result-box">
+      <h3>Результат</h3>
+      <div class="result-info">
+        <div class="result-row"><span>Победитель:</span><strong>{{ getWinnerName() }}</strong></div>
+        <div class="result-row"><span>Тип победы:</span><strong>{{ victoryTypeText }}</strong></div>
       </div>
     </div>
 
-    <div class="info-grid">
-      <div class="info-block">
-        <h4>Информация о схватке</h4>
-        <div class="info-item">Категория: <strong>{{ fight?.category || 'Не указана' }}</strong></div>
-        <div class="info-item">Весовая: <strong>{{ fight?.weight_class || 'Не указана' }}</strong></div>
-        <div class="info-item">Статус: <strong :class="statusClass">{{ statusText }}</strong></div>
-        <div class="info-item">Время: <strong>{{ formatTime(fightDurationPreset) }}</strong></div>
+    <div class="info-section">
+      <div class="info-card">
+        <h4>Информация</h4>
+        <div class="info-row">Категория: <strong>{{ fight?.category || '—' }}</strong></div>
+        <div class="info-row">Весовая: <strong>{{ fight?.weight_class || '—' }}</strong></div>
+        <div class="info-row">Время: <strong>{{ formatTime(fightDurationPreset) }}</strong></div>
       </div>
-      <div class="info-block">
+      <div class="info-card">
         <h4>Журнал событий</h4>
-        <div class="log-entries">
-          <div v-for="(e, i) in eventLog" :key="i" class="log-entry" :class="e.type">
+        <div class="log-box">
+          <div v-for="(e, i) in eventLog" :key="i" class="log-item">
             <span class="log-time">{{ e.time }}</span>
-            <span class="log-message">{{ e.message }}</span>
+            <span class="log-msg">{{ e.message }}</span>
           </div>
           <div v-if="!eventLog.length" class="no-events">Событий пока нет</div>
         </div>
@@ -153,7 +136,6 @@
 <script>
 import { endFight, setLifeFight } from "@/components/View/FightDetail/fetchFightPannel.js"
 import { fetchGetDetailFight } from "@/components/View/Fight/fetchFights.js"
-import "./FightDetail.css"
 
 export default {
   name: 'RefereePanel',
@@ -447,10 +429,6 @@ export default {
       if (this.fightStatus !== 'COMPLETED') this.timerSeconds = s
     },
 
-    skipToTime(s) {
-      this.setTimerTime(s)
-    },
-
     adjustTimer(d) {
       if (this.fightStatus !== 'COMPLETED') this.timerSeconds = Math.max(0, this.timerSeconds + d)
     },
@@ -458,12 +436,10 @@ export default {
     async startTimer() {
       if (this.fightStatus === 'COMPLETED') return
 
-      // Первый старт — переход из SCHEDULED в IN_PROGRESS
       if (this.fightStatus === 'SCHEDULED') {
         this.fightStatus = 'IN_PROGRESS'
         this.addEvent('fight', 'Hajime!')
 
-        // Попытка отправить статус LIVE на сервер
         if (this.fightId && this.fight?.tatami != null) {
           try {
             const result = await setLifeFight(this.fightId, this.fight.tatami)
@@ -482,7 +458,6 @@ export default {
         }
       }
 
-      // Запуск/возобновление таймера (в любом случае)
       this.isRunning = true
       clearInterval(this.timerInterval)
       this.timerInterval = setInterval(() => {
@@ -503,59 +478,34 @@ export default {
         clearInterval(this.timerInterval)
         this.addEvent('timer', 'Matte')
       }
-    },
-
-    resetScores() {
-      if (confirm('Сбросить все очки и штрафы?')) {
-        this.scores = {
-          white: { ippon: 0, wazaari: 0, penalty_count: 0 },
-          blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
-        }
-        this.addEvent('reset', 'Очки и штрафы сброшены')
-      }
-    },
-
-    resetFullMatch() {
-      if (confirm('Сбросить весь матч полностью?')) {
-        this.scores = {
-          white: { ippon: 0, wazaari: 0, penalty_count: 0 },
-          blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
-        }
-        this.osaekomi = { active: false, athlete_color: null, time: 0 }
-        this.timerSeconds = this.fightDurationPreset
-        this.gsSeconds = 0
-        this.isGoldenScore = false
-        this.fightStatus = 'IN_PROGRESS'
-        this.victoryType = null
-        this.winnerColor = null
-        this.isRunning = false
-        clearInterval(this.timerInterval)
-        clearInterval(this.osaekomiInterval)
-        this.addEvent('system', 'Матч полностью сброшен')
-      }
     }
   }
 }
 </script>
 
 <style scoped>
-.fight-page {
+.fight-detail {
   width: 100%;
   min-height: 100vh;
-  background: #f9f9fb;
-  font-family: 'SF Pro Display', -apple-system, sans-serif;
+  background: #ffffff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
   color: #1a1a1a;
-  padding: 90px 2rem 4rem;
   box-sizing: border-box;
+  margin-left: 0;
+  padding-top: 80px;
+  max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
+  padding-left: 20px;
+  padding-right: 100px;
+
 }
 
 .header {
   max-width: 1200px;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.5rem;
   display: flex;
   align-items: center;
   position: relative;
-  height: 60px;
+  height: 50px;
 }
 
 .back {
@@ -565,10 +515,10 @@ export default {
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
   color: #c89b3c;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   z-index: 10;
 }
 
@@ -577,20 +527,20 @@ export default {
 .header-content {
   flex: 1;
   text-align: center;
-  padding: 0 100px;
+  padding: 0 80px;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a1a;
 }
 
 .meta {
   color: #666;
-  font-size: 0.9rem;
-  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
 }
 
 .fight-card {
@@ -599,27 +549,37 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   overflow: hidden;
   border: 1px solid #e8e8e8;
 }
 
 .athlete-section {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
   background: #fdfdfd;
 }
 
 .athlete-name {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 600;
   text-align: center;
   color: #1a1a1a;
+  margin: 0;
+}
+
+.color-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #c89b3c;
+  background: #fdfaf0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
 }
 
 .scores { width: 100%; }
@@ -628,43 +588,43 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0.4rem 0;
-  padding: 0.6rem 0.8rem;
+  margin: 0.3rem 0;
+  padding: 0.5rem 0.7rem;
   background: rgba(255,255,255,0.8);
-  border-radius: 8px;
-  border-left: 4px solid #c89b3c;
+  border-radius: 6px;
+  border-left: 3px solid #c89b3c;
 }
 
-.score-label { font-weight: 500; font-size: 1rem; color: #333; flex: 1; }
-.score-value { font-weight: 700; font-size: 1.3rem; color: #c89b3c; min-width: 50px; text-align: right; }
+.score-label { font-weight: 500; font-size: 0.9rem; color: #333; flex: 1; }
+.score-value { font-weight: 700; font-size: 1.1rem; color: #c89b3c; min-width: 40px; text-align: right; }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  gap: 0.6rem;
   justify-content: center;
-  margin: 1rem 0;
+  margin: 0.6rem 0;
   width: 100%;
 }
 
 .btn-action {
-  padding: 0.8rem 1.4rem;
-  border-radius: 30px;
-  font-weight: 800;
+  padding: 0.6rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border: none;
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: white;
   background: linear-gradient(135deg, #c89b3c, #f4d03f);
-  box-shadow: 0 6px 20px rgba(200,155,60,0.3);
+  box-shadow: 0 4px 12px rgba(200,155,60,0.2);
   flex: 1;
-  min-width: 130px;
+  min-width: 100px;
 }
 
 .btn-action:hover:not(:disabled) {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(200,155,60,0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(200,155,60,0.3);
 }
 
 .btn-action.active {
@@ -681,86 +641,269 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 2.5rem;
+  padding: 1.5rem;
   border-left: 1px solid #e8e8e8;
   border-right: 1px solid #e8e8e8;
-  min-width: 400px;
+  min-width: 350px;
 }
 
 .timer-display {
-  font-size: 4.5rem;
+  font-size: 3.5rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.4rem 0;
   font-family: 'SF Pro Display', monospace;
 }
 
 .golden-score {
   color: #c89b3c;
   font-weight: 700;
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  margin: 0 0 1rem 0;
 }
 
-.timer-controls { width: 100%; max-width: 420px; }
+.timer-controls { width: 100%; max-width: 380px; }
 
-.time-btn, .quick-time-btn, .btn-timer {
+.time-adjust {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.time-btn {
   background: linear-gradient(135deg, #c89b3c, #f4d03f);
   color: white;
   border: none;
-  border-radius: 30px;
-  font-weight: 800;
+  border-radius: 20px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 6px 20px rgba(200,155,60,0.3);
-  padding: 0.8rem 1.2rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(200,155,60,0.2);
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
-.time-btn:hover:not(:disabled), .quick-time-btn:hover:not(:disabled), .btn-timer:hover:not(:disabled) {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(200,155,60,0.4);
+.quick-times {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
 }
 
-.osaekomi-section {
-  background: #fdfaf0;
-  border-radius: 12px;
-  padding: 1.2rem;
-  margin-top: 1.5rem;
-  width: 100%;
-  max-width: 400px;
-  border: 2px solid #c89b3c;
-}
-
-.osaekomi-time { color: #c89b3c; font-size: 2.5rem; font-weight: 700; }
-.progress-fill { background: linear-gradient(90deg, #c89b3c, #f4d03f); }
-.progress-text { color: #a67c00; }
-.btn-osaekomi { background: #a67c00; color: white; padding: 0.7rem 1.5rem; border: none; border-radius: 30px; cursor: pointer; }
-
-.result-section, .info-block, .result-card {
-  background: white;
-  border-left: 6px solid #c89b3c;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.result-label, .info-block h4 { color: #a67c00; }
-
-.log-entry {
-  background: #fdfdfb;
-  border-left: 4px solid #c89b3c;
+.quick-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 16px;
   padding: 0.6rem 0.8rem;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex: 1;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.quick-btn:hover {
+  background: #c89b3c;
+  color: white;
+  border-color: #c89b3c;
+}
+
+.main-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.btn-timer {
+  background: linear-gradient(135deg, #c89b3c, #f4d03f);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(200,155,60,0.2);
+  padding: 0.7rem 1.2rem;
   font-size: 0.9rem;
 }
 
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(200,155,60,0.4); } 70% { box-shadow: 0 0 0 10px rgba(200,155,60,0); } 100% { box-shadow: 0 0 0 0 rgba(200,155,60,0); } }
+.btn-timer:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(200,155,60,0.3);
+}
+
+.btn-timer:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.osaekomi-box {
+  background: #fdfaf0;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 350px;
+  border: 2px solid #c89b3c;
+}
+
+.osaekomi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.osaekomi-time { color: #c89b3c; font-size: 2rem; font-weight: 700; font-family: monospace; }
+.osaekomi-athlete { font-weight: 600; color: #a67c00; font-size: 1rem; }
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #e8e8e8;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c89b3c, #f4d03f);
+  transition: width 1s ease;
+}
+
+.btn-stop {
+  background: #a67c00;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.status-text {
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.result-box {
+  background: white;
+  border-left: 5px solid #c89b3c;
+  border-radius: 12px;
+  padding: 1.2rem;
+  max-width: 1200px;
+  margin: 1.5rem auto;
+}
+
+.result-box h3 {
+  margin: 0 0 0.8rem 0;
+  color: #a67c00;
+  font-size: 1.1rem;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 0.9rem;
+}
+
+.result-row:last-child { border-bottom: none; }
+
+.info-section {
+  max-width: 1200px;
+  margin: 1.5rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.2rem;
+}
+
+.info-card {
+  background: white;
+  padding: 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border: 1px solid #e8e8e8;
+}
+
+.info-card h4 {
+  margin: 0 0 0.8rem 0;
+  color: #a67c00;
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid #f5f5f5;
+  padding-bottom: 0.6rem;
+}
+
+.info-row {
+  margin: 0.3rem 0;
+  font-size: 0.85rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.log-box {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+
+.log-item {
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: #fdfdfb;
+  border-left: 3px solid #c89b3c;
+  display: flex;
+  gap: 0.8rem;
+}
+
+.log-time {
+  font-weight: 600;
+  color: #666;
+  min-width: 60px;
+  font-size: 0.75rem;
+}
+
+.log-msg { flex: 1; color: #333; }
+
+.no-events {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(200,155,60,0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(200,155,60,0); }
+  100% { box-shadow: 0 0 0 0 rgba(200,155,60,0); }
+}
 
 @media (max-width: 768px) {
   .fight-card { flex-direction: column; }
-  .timer-section { min-width: 100%; order: -1; border: none; border-top: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; }
+  .timer-section { min-width: 100%; order: -1; border: none; border-bottom: 1px solid #e8e8e8; }
   .actions { flex-direction: column; }
   .btn-action { width: 100%; }
-  .header-content { padding: 0 80px; }
+  .header-content { padding: 0 60px; }
+  .time-adjust { flex-direction: column; }
+  .quick-times { width: 100%; }
 }
 </style>

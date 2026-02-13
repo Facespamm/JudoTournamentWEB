@@ -1,5 +1,4 @@
 <template>
-  <div class="judo-tournament">
     <!-- ФИЛЬТРЫ -->
     <div class="judo-tournament-setting_search">
       <select v-model="categoryFilter" class="judo-tournament-setting_search_select_category" name="tournament_filter_category">
@@ -108,7 +107,6 @@
         Показать ещё турниры
       </button>
     </div>
-  </div>
 </template>
 
 <script setup>

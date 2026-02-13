@@ -2,20 +2,32 @@
   <div class="home_page_main-layout">
     <div class="content-wrapper">
       <!-- Левая карточка: Текущий турнир -->
-      <div class="tournament-card" @click="goToFeatured">
+      <div v-if="featured" class="tournament-card" @click="goToFeatured">
         <div class="tournament-placeholder">
           <div class="tournament-overlay">
-            <h1>{{ featured?.name || 'Текущий турнир' }}</h1>
+            <h1>{{ featured.name }}</h1>
             <p class="date">
-              {{ featured ? formatDate(featured.start_date, featured.end_date) + ' — ' + (featured.city || 'Алматы') : '14–16 нояб. 2025 — Алматы' }}
+              {{ formatDate(featured.start_date, featured.end_date) }} — {{ featured.city }}
             </p>
-            <p class="stats">{{ featured?.athletes_count || 370 }} дзюдоистов</p>
+            <p class="stats">{{ featured.athletes_count || 0 }} дзюдоистов</p>
             <div class="tournament-buttons">
               <button class="btn-outline">Обзор</button>
-              <!-- Кнопка «Календарь» ведёт на страницу всех турниров -->
               <button class="btn-primary" @click.stop="goToAllTournaments">Календарь</button>
             </div>
-            <span v-if="featured?.status === 'LIVE'" class="live-badge">ПРЯМОЙ ЭФИР</span>
+            <span v-if="featured.status === 'LIVE'" class="live-badge">ПРЯМОЙ ЭФИР</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="tournament-card">
+        <div class="tournament-placeholder">
+          <div class="tournament-overlay">
+            <h1>Текущий турнир</h1>
+            <p class="date">Информация о турнире появится здесь</p>
+            <div class="tournament-buttons">
+              <button class="btn-outline" disabled>Обзор</button>
+              <button class="btn-primary" @click="goToAllTournaments">Календарь</button>
+            </div>
           </div>
         </div>
       </div>
@@ -36,7 +48,6 @@
             <h3>{{ t.name }}</h3>
             <p class="event-stats">{{ t.athletes_count || 0 }} дзюдоистов</p>
           </div>
-
           <div v-if="!isLoading && upcoming.length === 0" class="event-item">
             <p>Нет актуальных соревнований</p>
           </div>
@@ -86,9 +97,9 @@ const goToFeatured = () => {
   if (featured.value) goToTournament(featured.value.id)
 }
 
-// Переход на страницу всех турниров (по кнопке «Календарь»)
+// Переход на страницу всех турниров
 const goToAllTournaments = () => {
-  router.push('/tournament')          // или { name: 'tournaments' } если у тебя именованный роут
+  router.push('/tournament')
 }
 
 onMounted(async () => {

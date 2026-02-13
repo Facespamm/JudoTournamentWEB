@@ -1,18 +1,4 @@
 /* === ОСНОВА — ОТСТУП ПОД ХЕДЕР === */
-.judo_athletes {
-    width: 100%;
-    min-height: 100vh;
-    background: linear-gradient(to bottom, #fefefe, #f8f9fa);
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    color: #1a1a1a;
-    box-sizing: border-box;
-    padding-top: 80px;
-    max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
-    margin-left: 0;
-    padding-left: 20px;
-    padding-right: 100px;
-
-}
 .judo-card {
     cursor: pointer;
 }
@@ -112,9 +98,12 @@
 
 /* === КОНТЕЙНЕР КАРТОЧЕК === */
 .judo_form-athletes_info {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem;
+    padding-top: 80px;
+    max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
+    margin-left: 0;
+    padding-left: 20px;
+    padding-right: 100px;
+
 }
 
 .cards-container {

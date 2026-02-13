@@ -1,5 +1,4 @@
 <template>
-  <div class="judo_athletes">
     <!-- ФИЛЬТРЫ -->
     <div class="judo_athletes-setting_search">
       <select class="judo-athletes-setting_search_select_category" name="athlete_filter_category">
@@ -77,7 +76,6 @@
         Показать ещё
       </button>
     </div>
-  </div>
 </template>
 
 <script setup>

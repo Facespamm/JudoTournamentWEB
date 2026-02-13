@@ -91,7 +91,7 @@
 <script>
 import { fetchTournaments } from "@/components/View/Tournaments/fetchTournaments.js"
 import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
-import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"  // Используется для загрузки боёв по категории
+import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"
 import {fetchGetDetailFight} from "@/components/View/Fight/fetchFights.js";
 import "./Fight.css"
 
@@ -115,7 +115,6 @@ export default {
     },
     availableTatamis() {
       const tatamis = [...new Set(this.filteredFights.map(f => f.tatami))].sort((a, b) => a - b)
-      // Татами с номером > 0 сначала (по возрастанию), 0 ("Не назначено") в конец
       const positive = tatamis.filter(t => t > 0)
       const zero = tatamis.includes(0) ? [0] : []
       return positive.concat(zero)
@@ -127,7 +126,6 @@ export default {
         if (!grouped[key]) grouped[key] = []
         grouped[key].push(f)
       })
-      // Сортировка боёв внутри каждого татами: сначала по раунду (ascending), потом по id
       Object.keys(grouped).forEach(key => {
         grouped[key].sort((a, b) => {
           if (a.round !== b.round) return (a.round || 999) - (b.round || 999)
@@ -246,234 +244,307 @@ export default {
 </script>
 
 <style scoped>
-/* Стили полностью сохранены из предыдущей версии */
+/* Основной контейнер — унифицирован с остальными страницами */
 .fights-overview {
+  width: 100%;
   min-height: 100vh;
-  background: #f9f9fb;
-  padding: 90px 1.5rem 4rem;
-  font-family: 'SF Pro Display', -apple-system, sans-serif;
+  background: #ffffff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
   color: #1a1a1a;
+  box-sizing: border-box;
+  max-width: calc(100vw - var(--sidebar-width, 120px) - 20px);
+  margin-left: 0;
+  padding-left: 20px;
+  padding-right: 100px;
+  padding-top: 80px;
+  padding-bottom: 40px;
 }
+
+.fights-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
 .fights-header h1 {
   font-size: 2.4rem;
   font-weight: 900;
   background: linear-gradient(90deg, #c89b3c, #f4d03f);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-align: center;
 }
+
 .subtitle {
   font-size: 1.15rem;
   color: #666;
-  text-align: center;
   margin-top: 0.4rem;
 }
+
+/* Фильтры */
 .filters-section {
   display: flex;
   gap: 1.5rem;
-  margin: 2.5rem auto;
-  max-width: 800px;
-  padding: 1rem 1.2rem;
+  margin: 0 auto 3rem;
+  max-width: 900px;
+  padding: 1.2rem 1.5rem;
   background: white;
   border-radius: 18px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   flex-wrap: wrap;
   justify-content: center;
 }
+
 .filter-group {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  min-width: 280px;
 }
+
 .filter-group label {
   font-weight: 600;
   color: #333;
   white-space: nowrap;
   font-size: 0.95rem;
 }
+
 .filter-group select {
-  padding: 0.65rem 0.9rem;
+  flex: 1;
+  padding: 0.75rem 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
   font-weight: 600;
-  min-width: 220px;
   font-size: 0.95rem;
   background: white;
   cursor: pointer;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s ease;
 }
+
 .filter-group select:hover:not(:disabled) {
   border-color: #c89b3c;
 }
+
 .filter-group select:disabled {
   background: #f5f5f5;
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+/* Секции татами */
 .tatami-sections {
-  max-width: 1300px;
+  max-width: 1400px;
   margin: 0 auto;
 }
+
 .tatami-section {
   background: white;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(0,0,0,0.09);
   margin-bottom: 2.5rem;
-  border-top: 5px solid #c89b3c;
+  border-top: 6px solid #c89b3c;
+  transition: all 0.3s ease;
 }
+
+.tatami-section:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+}
+
 .tatami-header {
   display: flex;
   align-items: center;
-  padding: 1.4rem 1.6rem;
-  background: white;
+  padding: 1.6rem 2rem;
+  background: linear-gradient(135deg, #fffdf7 0%, #ffffff 100%);
   border-bottom: 1px solid #eee;
 }
+
 .tatami-number {
-  font-size: 3.5rem;
+  font-size: 3.8rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-right: 1rem;
+  margin-right: 1.2rem;
   line-height: 1;
 }
+
 .tatami-title {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 900;
   margin: 0;
   color: #c89b3c;
 }
-.fights-rows {}
+
 .fight-row {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 1.4rem 1.6rem;
+  padding: 1.6rem 2rem;
   border-bottom: 1px solid #eee;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s ease;
 }
+
 .fight-row:hover {
   background: #fdfdfb;
 }
+
 .fight-row:last-child {
   border-bottom: none;
 }
+
 .status-bar {
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 10px;
-  background: linear-gradient(135deg, #c89b3c, #f4d03f);
+  width: 12px;
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
 }
+
 .status-corner {
   position: absolute;
-  top: 10px;
-  right: 14px;
+  top: 12px;
+  right: 18px;
   background: white;
-  padding: 5px 10px;
-  border-radius: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   z-index: 10;
   color: #c89b3c;
+  border: 2px solid #c89b3c;
 }
+
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #c89b3c;
   animation: pulse 1.8s infinite;
 }
+
 .row-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-right: 140px;
+  padding-right: 160px;
 }
+
 .category-weight {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  min-width: 110px;
+  min-width: 120px;
   color: #c89b3c;
 }
+
 .fighters-matchup {
   flex: 1;
   display: flex;
   justify-content: space-between;
-  padding: 0 2rem;
+  padding: 0 3rem;
 }
+
 .fighter {
   display: flex;
   flex-direction: column;
-  min-width: 240px;
+  min-width: 260px;
 }
+
 .fighter.left {
   align-items: flex-start;
   text-align: left;
 }
+
 .fighter.right {
   align-items: flex-end;
   text-align: right;
 }
+
 .club-code {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #c89b3c;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.3rem;
 }
+
 .fighter-name {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: #000;
 }
+
 .round-or-timer {
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   font-weight: 900;
   font-family: 'SF Pro Display', monospace;
-  min-width: 140px;
+  min-width: 160px;
   text-align: center;
   color: #1a1a1a;
 }
+
 .live-timer {
   color: #c89b3c;
-  font-size: 2.2rem;
+  font-size: 2.4rem;
+  animation: pulse 2s infinite;
 }
+
+/* Пустое состояние */
 .empty-state {
   text-align: center;
-  padding: 4rem;
+  padding: 100px 20px 60px;
   color: #666;
 }
+
 .empty-icon {
-  font-size: 4rem;
+  font-size: 5rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
+
+.empty-state h3 {
+  font-size: 1.6rem;
+  margin-bottom: 1.5rem;
+  color: #444;
+}
+
 .reset-filters-btn {
-  background: linear-gradient(135deg, #c89b3c, #f4d03f);
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
   color: white;
-  padding: 0.8rem 2rem;
+  padding: 0.9rem 2.2rem;
   border: none;
   border-radius: 14px;
   font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
   margin-top: 1rem;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
 }
+
 .reset-filters-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(200, 155, 60, 0.4);
 }
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .fights-overview {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
 @media (max-width: 992px) {
   .row-content {
     flex-direction: column;
@@ -481,53 +552,76 @@ export default {
     padding-right: 0;
   }
   .fighters-matchup {
-    padding: 0.8rem 0;
+    padding: 1rem 0;
     width: 100%;
     justify-content: space-between;
   }
   .round-or-timer {
-    margin: 0.8rem 0;
+    margin: 1rem 0;
     text-align: left;
   }
   .category-weight {
-    margin-bottom: 0.8rem;
+    margin-bottom: 1rem;
   }
   .tatami-header {
     flex-direction: column;
     text-align: center;
+    padding: 1.4rem 1.6rem;
   }
   .tatami-number {
     margin-right: 0;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
   }
   .status-corner {
     right: 50%;
     transform: translateX(50%);
-    top: 6px;
+    top: 8px;
   }
 }
+
 @media (max-width: 768px) {
+  .fights-overview {
+    padding-top: 70px;
+  }
   .fighters-matchup {
     flex-direction: column;
     align-items: center;
-    gap: 0.8rem;
+    gap: 1rem;
   }
   .fighter.left,
   .fighter.right {
     align-items: center;
     text-align: center;
+    min-width: auto;
   }
   .tatami-number {
-    font-size: 3rem;
+    font-size: 3.2rem;
   }
   .tatami-title {
-    font-size: 1.8rem;
-  }
-  .filter-group select {
-    min-width: 100%;
+    font-size: 1.9rem;
   }
   .filters-section {
     flex-direction: column;
+    padding: 1rem;
+  }
+  .filter-group {
+    min-width: auto;
+    width: 100%;
+  }
+  .filter-group select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .fights-overview {
+    padding-top: 65px;
+  }
+  .fights-header h1 {
+    font-size: 2rem;
+  }
+  .tatami-number {
+    font-size: 2.8rem;
   }
 }
 </style>

@@ -1,15 +1,51 @@
 <template>
   <div class="tournament-bracket">
-    <div class="page">
+    <!-- Лоадер категорий -->
+    <div v-if="isLoadingCategories" class="categories-loading">
+      <div class="spinner"></div>
+      <p>Загрузка весовых категорий...</p>
+    </div>
+
+    <!-- Если нет категорий -->
+    <div v-else-if="!categories.length" class="no-categories">
+      <p>В этом турнире пока нет весовых категорий</p>
+    </div>
+
+    <!-- Селектор категорий (весов) -->
+    <div v-else class="weight-categories-bar">
+      <button
+          v-for="cat in categories"
+          :key="cat.id"
+          class="weight-tab"
+          :class="{ active: selectedCategory?.id === cat.id }"
+          @click="selectedCategory = cat"
+      >
+        {{ cat.name }}
+      </button>
+    </div>
+
+    <!-- Контент выбранной категории -->
+    <div v-if="selectedCategory" class="page">
       <div class="group-section">
-        <span class="group-label">ГРУППА</span>
-        <span class="group-letter">{{ groupLetter }}</span>
-        <span class="group-weight">{{ groupWeight }}</span>
+        <span class="group-label">ВЕСОВАЯ КАТЕГОРИЯ</span>
+        <span class="group-weight">{{ selectedCategory.name }}</span>
       </div>
 
-      <div id="bracket-root" ref="bracketRoot">
+      <!-- Лоадер сетки -->
+      <div v-if="isLoadingBracket" class="bracket-loading">
+        <div class="spinner"></div>
+        <p>Загрузка турнирной сетки...</p>
+      </div>
+
+      <!-- Если нет схваток -->
+      <div v-else-if="!rounds.length" class="no-fights">
+        <p>В этой категории пока нет схваток</p>
+      </div>
+
+      <!-- Сетка -->
+      <div v-else id="bracket-root" ref="bracketRoot">
         <div class="rounds-row">
-          <!-- Rounds -->
+          <!-- Раунды (кроме финала) -->
           <div
               v-for="(round, ri) in rounds"
               :key="ri"
@@ -23,7 +59,7 @@
                   class="match-slot"
               >
                 <div class="match-card" :data-round="ri" :data-match="mi">
-                  <!-- Contestant 1 -->
+                  <!-- Участник 1 (white) -->
                   <div
                       :class="[
                       'contestant',
@@ -32,23 +68,22 @@
                       { tbd: !match.p1 }
                     ]"
                   >
-                    <div class="c-country">{{ getContestant(match.p1)?.country || '—' }}</div>
                     <div class="c-name-wrap">
                       <span v-if="getContestant(match.p1)" class="c-first">{{ getContestant(match.p1).first }}</span>
                       <span class="c-name">{{ getContestant(match.p1)?.last || 'TBD' }}</span>
                     </div>
                   </div>
 
-                  <!-- Contestant 2 -->
+                  <!-- Участник 2 (blue) -->
                   <div
                       :class="[
                       'contestant',
+                      'blue-side',
                       { winner: match.winner === match.p2 && match.p2 },
                       { loser: match.winner !== null && match.winner !== match.p2 && match.p2 },
                       { tbd: !match.p2 }
                     ]"
                   >
-                    <div class="c-country">{{ getContestant(match.p2)?.country || '—' }}</div>
                     <div class="c-name-wrap">
                       <span v-if="getContestant(match.p2)" class="c-first">{{ getContestant(match.p2).first }}</span>
                       <span class="c-name">{{ getContestant(match.p2)?.last || 'TBD' }}</span>
@@ -59,16 +94,20 @@
             </div>
           </div>
 
-          <!-- Champion column -->
+          <!-- Финал (чемпион) -->
           <div class="round-col champion-col">
             <div class="round-header">Final</div>
             <div class="champion-body">
               <div class="match-card champion-card">
                 <div v-if="championContestant" class="contestant winner">
-                  <div class="c-country">{{ championContestant.country }}</div>
                   <div class="c-name-wrap">
                     <span class="c-first">{{ championContestant.first }}</span>
                     <span class="c-name">{{ championContestant.last }}</span>
+                  </div>
+                </div>
+                <div v-else class="contestant tbd">
+                  <div class="c-name-wrap">
+                    <span class="c-name">TBD</span>
                   </div>
                 </div>
               </div>
@@ -76,93 +115,154 @@
           </div>
         </div>
 
-        <!-- SVG connector lines -->
+        <!-- Линии соединения -->
         <svg ref="connectorSvg" id="connector-svg" width="1" height="1"></svg>
       </div>
+    </div>
+
+    <!-- Если категории есть, но ничего не выбрано -->
+    <div v-else-if="categories.length && !selectedCategory" class="placeholder">
+      <p>Выберите весовую категорию выше</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
-// ══════════════════════════════════════════════════════
-//  PROPS
-// ══════════════════════════════════════════════════════
-const props = defineProps({
-  groupLetter: {
-    type: String,
-    default: 'A'
-  },
-  groupWeight: {
-    type: String,
-    default: '−66 kg'
-  }
-})
+// (script без изменений)
+import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { fetchGetCategoryByTournament } from "@/components/View/Brackets/fetchBrackets.js"
+import {fetchBrackets} from "@/components/View/Brackets/fetchBrackets.js";
 
-// ══════════════════════════════════════════════════════
-//  REFS
-// ══════════════════════════════════════════════════════
-const bracketRoot = ref(null)
-const connectorSvg = ref(null)
+const route = useRoute()
+const tournamentId = computed(() => Number(route.params.id))
 
-// ══════════════════════════════════════════════════════
-//  MOCK DATA
-// ══════════════════════════════════════════════════════
-const contestants = ref([
-  { id: 1, country: 'GEO', first: 'Vazha', last: 'MARGVELASHVILI' },
-  { id: 2, country: 'FRA', first: 'Romaric Wend-Yam', last: 'BOUDA' },
-  { id: 3, country: 'USA', first: 'Isaiah', last: 'RAMIREZ' },
-  { id: 4, country: 'CAN', first: 'Julien', last: 'FRASCADORE' },
-  { id: 5, country: 'MGL', first: 'Kherlen', last: 'GANBOLD' },
-  { id: 6, country: 'AZE', first: 'Rashad', last: 'YELKIYEV' },
-  { id: 7, country: 'MNE', first: 'Jusuf', last: 'NURKOVIC' }
-])
+const categories = ref([])
+const selectedCategory = ref(null)
+const isLoadingCategories = ref(true)
 
-const rounds = ref([
-  {
-    label: 'Elimination Round',
-    matches: [
-      { p1: 1, p2: 2, winner: 1, score: [null, null] },
-      { p1: 3, p2: 4, winner: 4, score: [null, null] },
-      { p1: 5, p2: 6, winner: 5, score: [null, null] },
-      { p1: 7, p2: null, winner: 7, score: [null, null] }
-    ]
-  },
-  {
-    label: 'Quarter-Finals',
-    matches: [
-      { p1: 1, p2: 4, winner: 1, score: [null, null] },
-      { p1: 5, p2: 7, winner: 5, score: [null, null] }
-    ]
-  },
-  {
-    label: 'Semi-Finals',
-    matches: [
-      { p1: 1, p2: 5, winner: null, score: [null, null] }
-    ]
-  }
-])
+const contestants = ref([])
+const rounds = ref([])
+const championId = ref(null)
+const isLoadingBracket = ref(false)
 
-const championId = ref(1)
-
-// ══════════════════════════════════════════════════════
-//  COMPUTED
-// ══════════════════════════════════════════════════════
 const championContestant = computed(() => {
+  if (!championId.value) return null
   return contestants.value.find(c => c.id === championId.value)
 })
 
-// ══════════════════════════════════════════════════════
-//  METHODS
-// ══════════════════════════════════════════════════════
 const getContestant = (id) => {
   if (!id) return null
   return contestants.value.find(c => c.id === id)
 }
 
-// ══════════════════════════════════════════════════════
-//  DRAW CONNECTOR LINES
-// ══════════════════════════════════════════════════════
+const loadCategories = async () => {
+  if (!tournamentId.value) return
+
+  isLoadingCategories.value = true
+  try {
+    const data = await fetchGetCategoryByTournament(tournamentId.value)
+    categories.value = Array.isArray(data) ? data : []
+
+    if (categories.value.length > 0) {
+      selectedCategory.value = categories.value[0]
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки категорий:', err)
+    categories.value = []
+  } finally {
+    isLoadingCategories.value = false
+  }
+}
+
+const loadBracket = async (catId) => {
+  if (!catId) return
+
+  isLoadingBracket.value = true
+  contestants.value = []
+  rounds.value = []
+  championId.value = null
+
+  try {
+    const data = await fetchBrackets(tournamentId.value, catId)
+
+    if (data.success && data.fights) {
+      processBracketData(data.fights)
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки схваток:', err)
+  } finally {
+    isLoadingBracket.value = false
+  }
+}
+
+const processBracketData = (fights) => {
+  const athletesMap = new Map()
+  fights.forEach(fight => {
+    ;[fight.white_athlete, fight.blue_athlete].forEach(athlete => {
+      if (athlete) {
+        athletesMap.set(athlete.id, {
+          id: athlete.id,
+          first: athlete.first_name,
+          last: athlete.last_name.toUpperCase(),
+        })
+      }
+    })
+  })
+  contestants.value = Array.from(athletesMap.values())
+
+  const maxRound = fights.length ? Math.max(...fights.map(f => f.round)) : 0
+  if (maxRound === 0) return
+
+  const stageLabels = ['Round of 32', 'Round of 16', 'Quarter-Finals', 'Semi-Finals']
+  let labelIndex = stageLabels.length - (maxRound - 1)
+
+  const bracketRounds = []
+  for (let r = 1; r < maxRound; r++) {
+    const roundFights = fights
+        .filter(f => f.round === r)
+        .sort((a, b) => a.id - b.id)
+
+    const matches = roundFights.map(f => ({
+      p1: f.white_athlete?.id || null,
+      p2: f.blue_athlete?.id || null,
+      winner: null
+    }))
+
+    const label = stageLabels[labelIndex++] || `Раунд ${r}`
+    bracketRounds.push({ label, matches })
+  }
+
+  rounds.value = bracketRounds
+  championId.value = null
+}
+
+watch(
+    selectedCategory,
+    async (newCat) => {
+      if (newCat) {
+        await loadBracket(newCat.id)
+        nextTick(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(drawConnectors)
+          })
+        })
+      }
+    },
+    { immediate: true }
+)
+
+watch(rounds, () => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(drawConnectors)
+    })
+  })
+}, { deep: true })
+
+const bracketRoot = ref(null)
+const connectorSvg = ref(null)
+
 const drawConnectors = () => {
   if (!bracketRoot.value || !connectorSvg.value) return
 
@@ -173,13 +273,9 @@ const drawConnectors = () => {
   svg.setAttribute('width', root.offsetWidth)
   svg.setAttribute('height', root.offsetHeight)
 
-  // Clear old paths
-  while (svg.firstChild) {
-    svg.removeChild(svg.firstChild)
-  }
+  while (svg.firstChild) svg.removeChild(svg.firstChild)
 
   const C_LINE = '#d1d5db'
-  const C_LIVE = '#e8b84b'
   const SW = 1.5
 
   const rel = (r) => ({
@@ -227,11 +323,7 @@ const drawConnectors = () => {
       const bridgeX = (x1 + xt) / 2
       const bridgeY = r2 ? (y1 + y2) / 2 : y1
 
-      // Determine if live match
-      const nextRound = rounds.value[ri + 1]
-      const matchAtTgt = nextRound ? nextRound.matches[pi] : null
-      const isLive = matchAtTgt && matchAtTgt.winner === null
-      const color = isLive ? C_LIVE : C_LINE
+      const color = C_LINE
 
       const parts = [`M ${x1} ${y1} H ${bridgeX}`]
       if (r2) {
@@ -249,7 +341,6 @@ const drawConnectors = () => {
       path.setAttribute('stroke-linejoin', 'round')
       svg.appendChild(path)
 
-      // Junction dots
       const dots = [[bridgeX, y1], [bridgeX, bridgeY]]
       if (r2) dots.push([bridgeX, y2])
       dots.forEach(([cx, cy]) => {
@@ -264,15 +355,8 @@ const drawConnectors = () => {
   })
 }
 
-// ══════════════════════════════════════════════════════
-//  LIFECYCLE
-// ══════════════════════════════════════════════════════
 onMounted(() => {
-  nextTick(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(drawConnectors)
-    })
-  })
+  loadCategories()
 
   window.addEventListener('resize', () => {
     requestAnimationFrame(drawConnectors)
@@ -295,18 +379,16 @@ onMounted(() => {
   overflow-x: auto;
 }
 
-/* ── Page ── */
 .page {
   padding: 28px 32px 60px;
 }
 
-/* ── Group category section ── */
 .group-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 24px;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
@@ -314,26 +396,50 @@ onMounted(() => {
   color: #1a1a2e;
 }
 
-.group-letter {
-  background: #1a1a2e;
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.85rem;
-  width: 26px;
-  height: 26px;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .group-weight {
-  font-weight: 400;
-  color: #6b7280;
-  font-size: 0.9rem;
+  font-weight: 700;
+  color: #c89b3c;
+  font-size: 1.2rem;
 }
 
-/* ── Root ── */
+.weight-categories-bar {
+  padding: 1rem 2rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  display: flex;
+  gap: 1rem;
+}
+
+.weight-categories-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.weight-tab {
+  padding: 0.75rem 1.8rem;
+  border-radius: 50px;
+  background: white;
+  border: none;
+  color: #333;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.weight-tab:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.weight-tab.active {
+  background: #c89b3c;
+  color: white;
+}
+
 #bracket-root {
   position: relative;
   display: inline-flex;
@@ -367,7 +473,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 52px;
+  padding: 0 40px;
   white-space: nowrap;
 }
 
@@ -376,22 +482,20 @@ onMounted(() => {
   flex-direction: column;
   justify-content: space-around;
   flex: 1;
-  gap: 16px; /* Вертикальный отступ между матчами */
+  gap: 12px;
 }
 
-/* ── Match slot ── */
 .match-slot {
   display: flex;
   align-items: center;
-  padding: 0 52px;
+  padding: 0 40px;
   position: relative;
 }
 
-/* ── Match card ── */
 .match-card {
-  width: 300px;
+  width: 240px;
   background: #ffffff;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   flex-shrink: 0;
@@ -402,35 +506,45 @@ onMounted(() => {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13), 0 2px 6px rgba(0, 0, 0, 0.07);
 }
 
-/* ── Contestant row ── */
 .contestant {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  padding: 10px 16px; /* увеличил горизонтальные отступы, т.к. убрали левый блок */
   position: relative;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.contestant + .contestant {
-  border-top: 1px solid #f3f4f6;
-}
-
 .contestant:hover {
-  background: #fafafa;
+  background: #f5f5f5;
 }
 
-/* Blue winner stripe */
+.blue-side {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.blue-side:hover {
+  background-color: #2563eb;
+}
+
+.blue-side .c-first {
+  color: #bfdbfe;
+}
+
+.blue-side .c-name {
+  color: #ffffff;
+}
+
 .contestant.winner::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 4px;
   border-radius: 0 2px 2px 0;
-  background: #3b82f6;
+  background: #c89b3c;
 }
 
 .contestant.loser .c-name-wrap {
@@ -442,39 +556,37 @@ onMounted(() => {
   text-decoration-color: #9ca3af;
 }
 
+.blue-side.loser .c-name {
+  text-decoration-color: #93c5fd;
+}
+
 .contestant.tbd .c-name-wrap {
   opacity: 0.35;
 }
 
-/* Country code vertical */
-.c-country {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #9ca3af;
-  width: 14px;
-  flex-shrink: 0;
-  text-align: center;
+.contestant.tbd .c-name {
+  font-style: italic;
+  font-weight: 400;
 }
 
-/* Name */
+.blue-side.tbd .c-name {
+  color: #93c5fd;
+}
+
 .c-name-wrap {
   flex: 1;
   min-width: 0;
 }
 
 .c-first {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 400;
   color: #6b7280;
   display: block;
 }
 
 .c-name {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #111827;
   display: block;
@@ -483,13 +595,6 @@ onMounted(() => {
   text-overflow: ellipsis;
 }
 
-.contestant.tbd .c-name {
-  font-style: italic;
-  font-weight: 400;
-  color: #9ca3af;
-}
-
-/* ── Champion column ── */
 .champion-col .round-header {
   padding: 0 40px;
 }
@@ -502,17 +607,50 @@ onMounted(() => {
 }
 
 .champion-card {
-  width: 260px;
+  width: 220px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.09), 0 0 0 2px rgba(232, 184, 75, 0.35);
 }
 
-/* ── Responsive ── */
+.categories-loading,
+.no-categories,
+.bracket-loading,
+.no-fights,
+.placeholder {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #c89b3c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 700px) {
   .match-card {
-    width: 230px;
+    width: 200px;
+  }
+  .champion-card {
+    width: 180px;
   }
   .page {
     padding: 18px 14px 40px;
+  }
+  .round-header,
+  .match-slot,
+  .champion-body {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 }
 </style>

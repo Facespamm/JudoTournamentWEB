@@ -88,6 +88,7 @@ const getStatusText = (status) => {
 }
 </script>
 
+<!--
 <style scoped>
 .overview-wrapper {
   padding: 0 1rem;
@@ -168,4 +169,4 @@ const getStatusText = (status) => {
     grid-template-columns: 1fr;
   }
 }
-</style>
+</style>-->

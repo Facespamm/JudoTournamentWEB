@@ -45,7 +45,7 @@
       <!-- Сетка -->
       <div v-else id="bracket-root" ref="bracketRoot">
         <div class="rounds-row">
-          <!-- Раунды (кроме финала) -->
+          <!-- Обычные раунды (включая финал) -->
           <div
               v-for="(round, ri) in rounds"
               :key="ri"
@@ -94,20 +94,25 @@
             </div>
           </div>
 
-          <!-- Финал (чемпион) -->
+          <!-- Отдельная колонка для победителя (чемпиона) -->
           <div class="round-col champion-col">
-            <div class="round-header">Final</div>
+            <div class="round-header">Champion</div>
             <div class="champion-body">
-              <div class="match-card champion-card">
-                <div v-if="championContestant" class="contestant winner">
-                  <div class="c-name-wrap">
-                    <span class="c-first">{{ championContestant.first }}</span>
-                    <span class="c-name">{{ championContestant.last }}</span>
+              <div class="match-slot">
+                <div class="match-card champion-card">
+                  <div
+                      v-if="championContestant"
+                      class="contestant winner champion-contestant"
+                  >
+                    <div class="c-name-wrap">
+                      <span class="c-first">{{ championContestant.first }}</span>
+                      <span class="c-name">{{ championContestant.last }}</span>
+                    </div>
                   </div>
-                </div>
-                <div v-else class="contestant tbd">
-                  <div class="c-name-wrap">
-                    <span class="c-name">TBD</span>
+                  <div v-else class="contestant tbd">
+                    <div class="c-name-wrap">
+                      <span class="c-name">TBD</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -128,11 +133,10 @@
 </template>
 
 <script setup>
-// (script без изменений)
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchGetCategoryByTournament } from "@/components/View/Brackets/fetchBrackets.js"
-import {fetchBrackets} from "@/components/View/Brackets/fetchBrackets.js";
+import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js";
 
 const route = useRoute()
 const tournamentId = computed(() => Number(route.params.id))
@@ -218,7 +222,7 @@ const processBracketData = (fights) => {
   let labelIndex = stageLabels.length - (maxRound - 1)
 
   const bracketRounds = []
-  for (let r = 1; r < maxRound; r++) {
+  for (let r = 1; r <= maxRound; r++) {
     const roundFights = fights
         .filter(f => f.round === r)
         .sort((a, b) => a.id - b.id)
@@ -226,15 +230,24 @@ const processBracketData = (fights) => {
     const matches = roundFights.map(f => ({
       p1: f.white_athlete?.id || null,
       p2: f.blue_athlete?.id || null,
-      winner: null
+      winner: f.winner_athlete?.id || null
     }))
 
-    const label = stageLabels[labelIndex++] || `Раунд ${r}`
+    const label = r === maxRound ? 'Final' : stageLabels[labelIndex++] || `Раунд ${r}`
+
     bracketRounds.push({ label, matches })
   }
 
   rounds.value = bracketRounds
-  championId.value = null
+
+  // Определяем победителя финала (если финал уже сыгран)
+  if (maxRound > 0) {
+    const finalFights = fights.filter(f => f.round === maxRound)
+    if (finalFights.length > 0) {
+      const finalFight = finalFights.find(f => f.winner_athlete) || finalFights[0]
+      championId.value = finalFight.winner_athlete?.id || null
+    }
+  }
 }
 
 watch(
@@ -277,6 +290,7 @@ const drawConnectors = () => {
 
   const C_LINE = '#d1d5db'
   const SW = 1.5
+  const color = C_LINE
 
   const rel = (r) => ({
     right: r.right - rRect.left,
@@ -284,17 +298,15 @@ const drawConnectors = () => {
     midY: r.top + r.height / 2 - rRect.top
   })
 
-  const roundCols = root.querySelectorAll('.round-col:not(.champion-col)')
+  const roundCols = root.querySelectorAll('.round-col')
   const roundColsArr = Array.from(roundCols)
 
   roundColsArr.forEach((col, ri) => {
-    const tgtCol = ri < roundColsArr.length - 1
-        ? roundColsArr[ri + 1]
-        : root.querySelector('.champion-col')
+    const tgtCol = roundColsArr[ri + 1]
     if (!tgtCol) return
 
     const srcSlots = Array.from(col.querySelectorAll('.match-slot'))
-    const tgtSlots = Array.from(tgtCol.querySelectorAll('.match-slot, .champion-body'))
+    const tgtSlots = Array.from(tgtCol.querySelectorAll('.match-slot'))
 
     const pairCount = Math.ceil(srcSlots.length / 2)
 
@@ -322,8 +334,6 @@ const drawConnectors = () => {
 
       const bridgeX = (x1 + xt) / 2
       const bridgeY = r2 ? (y1 + y2) / 2 : y1
-
-      const color = C_LINE
 
       const parts = [`M ${x1} ${y1} H ${bridgeX}`]
       if (r2) {
@@ -365,6 +375,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Стили без изменений + небольшие дополнения для чемпиона */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -485,6 +496,14 @@ onMounted(() => {
   gap: 12px;
 }
 
+.champion-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  padding: 0 40px;
+}
+
 .match-slot {
   display: flex;
   align-items: center;
@@ -506,10 +525,27 @@ onMounted(() => {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13), 0 2px 6px rgba(0, 0, 0, 0.07);
 }
 
+.champion-card {
+  width: 260px;
+  min-height: 80px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.09), 0 0 0 3px rgba(232, 184, 75, 0.5);
+  background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+}
+
+.champion-contestant {
+  padding: 20px 16px;
+  justify-content: center;
+}
+
+.champion-contestant::before {
+  width: 6px;
+  background: #c89b3c;
+}
+
 .contestant {
   display: flex;
   align-items: center;
-  padding: 10px 16px; /* увеличил горизонтальные отступы, т.к. убрали левый блок */
+  padding: 10px 16px;
   position: relative;
   cursor: pointer;
   transition: background 0.15s;
@@ -576,39 +612,24 @@ onMounted(() => {
 .c-name-wrap {
   flex: 1;
   min-width: 0;
+  text-align: center;
 }
 
 .c-first {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 400;
   color: #6b7280;
   display: block;
 }
 
 .c-name {
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #111827;
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.champion-col .round-header {
-  padding: 0 40px;
-}
-
-.champion-body {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 40px;
-}
-
-.champion-card {
-  width: 220px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.09), 0 0 0 2px rgba(232, 184, 75, 0.35);
 }
 
 .categories-loading,
@@ -641,7 +662,7 @@ onMounted(() => {
     width: 200px;
   }
   .champion-card {
-    width: 180px;
+    width: 220px;
   }
   .page {
     padding: 18px 14px 40px;

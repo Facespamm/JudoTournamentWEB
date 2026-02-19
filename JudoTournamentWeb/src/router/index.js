@@ -24,6 +24,7 @@ import ManageRole from "@/components/View/Authentication/SelectRoleView/ManageRo
 import Weighings from "@/components/View/Weighings/Weighings.vue";
 import RegistrationModal from "@/components/View/RegistrationAthletesTournament/RegistrationModal.vue";
 import Clubs from "@/components/View/Clubs/Clubs.vue";
+import RefereeManagement from "@/components/View/RefereeManagement/RefereeManagement.vue";
 import RefereeDetail from "@/components/View/RefereeDetail/RefereeDetail.vue";
 const routes = [
     { path: '/', redirect: '/login' },
@@ -76,6 +77,10 @@ const routes = [
         path: '/home',
         name: 'home',
         component: HomePage
+    },{
+        path: '/refereeManagement',
+        name: 'refereeManagement',
+        component: RefereeManagement
     },
     {
         path: '/athletes',

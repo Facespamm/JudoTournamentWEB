@@ -8,6 +8,7 @@
           Татами {{ fight?.tatami || '—' }} • Раунд {{ fight?.round_number || '—' }} • <span :class="statusClass">{{ statusText }}</span>
         </div>
       </div>
+      <button class="forward" @click="goToFight(1)" :disabled="!hasNext">→</button>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -118,6 +119,9 @@
         <div class="info-row">Категория: <strong>{{ fight?.category || '—' }}</strong></div>
         <div class="info-row">Весовая: <strong>{{ fight?.weight_class || '—' }}</strong></div>
         <div class="info-row">Время: <strong>{{ formatTime(fightDurationPreset) }}</strong></div>
+        <div class="info-row" v-if="fightIds.length > 1">
+          Бой: <strong>{{ currentIndex + 1 }} из {{ fightIds.length }}</strong>
+        </div>
       </div>
       <div class="info-card">
         <h4>Журнал событий</h4>
@@ -160,7 +164,9 @@ export default {
       victoryType: null,
       winnerColor: null,
       eventLog: [],
-      fightDurationPreset: 240
+      fightDurationPreset: 240,
+      fightIds: [],
+      currentIndex: -1
     }
   },
 
@@ -186,6 +192,52 @@ export default {
         DECISION: 'Решение судей'
       }
       return map[this.victoryType] || this.victoryType || '—'
+    },
+    hasPrev() {
+      return this.currentIndex > 0
+    },
+    hasNext() {
+      return this.currentIndex !== -1 && this.currentIndex < this.fightIds.length - 1
+    }
+  },
+
+  watch: {
+    '$route.params.id': {
+      async handler(newId) {
+        if (!newId) return
+        clearInterval(this.timerInterval)
+        clearInterval(this.osaekomiInterval)
+
+        // Сохраняем список перед сбросом
+        const savedFightIds = [...this.fightIds]
+
+        // Сброс состояния
+        this.fight = null
+        this.loading = true
+        this.scores = {
+          white: { ippon: 0, wazaari: 0, penalty_count: 0 },
+          blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
+        }
+        this.osaekomi = { active: false, athlete_color: null, time: 0 }
+        this.osaekomiInterval = null
+        this.timerSeconds = 240
+        this.gsSeconds = 0
+        this.isRunning = false
+        this.timerInterval = null
+        this.fightStatus = 'SCHEDULED'
+        this.isGoldenScore = false
+        this.victoryType = null
+        this.winnerColor = null
+        this.eventLog = []
+        this.fightDurationPreset = 240
+
+        // Восстанавливаем список и обновляем индекс
+        this.fightIds = savedFightIds
+        this.fightId = Number(newId) || newId
+        this.currentIndex = this.fightIds.indexOf(this.fightId)
+
+        await this.loadFight()
+      }
     }
   },
 
@@ -195,38 +247,20 @@ export default {
       rawId = rawId.id || rawId.fight_number || '???'
     }
     this.fightId = Number(rawId) || rawId || '???'
-    this.loading = true
 
+    // Читаем список ID из sessionStorage
     try {
-      const res = await fetchGetDetailFight(this.fightId)
-
-      if (res && (res.id || res.fight_number)) {
-        this.fight = res
-        this.fightStatus = res.status || 'SCHEDULED'
-        this.fightDurationPreset = res.timer_seconds || 240
-        this.timerSeconds = this.fightDurationPreset
-
-        console.log('Загруженный fight:', this.fight)
-        if (!this.fight.white_athlete?.id || !this.fight.blue_athlete?.id) {
-          this.addEvent('warning', 'Внимание: ID атлетов отсутствуют в данных! Победитель будет отправлен как null.')
-        }
-      } else {
-        throw new Error('Нет данных или неверный формат ответа')
+      const saved = sessionStorage.getItem('fightIds')
+      if (saved) {
+        this.fightIds = JSON.parse(saved)
+        this.currentIndex = this.fightIds.indexOf(this.fightId)
       }
-    } catch (err) {
-      console.error('Ошибка загрузки деталей боя:', err)
-      alert('Не удалось загрузить данные схватки')
-
-      this.fight = {
-        fight_number: this.fightId,
-        tatami: '—',
-        round_number: '—',
-        white_athlete: { first_name: 'Белый', last_name: 'атлет' },
-        blue_athlete: { first_name: 'Синий', last_name: 'атлет' }
-      }
-    } finally {
-      this.loading = false
+    } catch (e) {
+      this.fightIds = []
     }
+
+    this.loading = true
+    await this.loadFight()
   },
 
   beforeUnmount() {
@@ -235,6 +269,46 @@ export default {
   },
 
   methods: {
+    async loadFight() {
+      try {
+        const res = await fetchGetDetailFight(this.fightId)
+
+        if (res && (res.id || res.fight_number)) {
+          this.fight = res
+          this.fightStatus = res.status || 'SCHEDULED'
+          this.fightDurationPreset = res.timer_seconds || 240
+          this.timerSeconds = this.fightDurationPreset
+
+          console.log('Загруженный fight:', this.fight)
+          if (!this.fight.white_athlete?.id || !this.fight.blue_athlete?.id) {
+            this.addEvent('warning', 'Внимание: ID атлетов отсутствуют в данных! Победитель будет отправлен как null.')
+          }
+        } else {
+          throw new Error('Нет данных или неверный формат ответа')
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки деталей боя:', err)
+        alert('Не удалось загрузить данные схватки')
+
+        this.fight = {
+          fight_number: this.fightId,
+          tatami: '—',
+          round_number: '—',
+          white_athlete: { first_name: 'Белый', last_name: 'атлет' },
+          blue_athlete: { first_name: 'Синий', last_name: 'атлет' }
+        }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    goToFight(direction) {
+      const newIndex = this.currentIndex + direction
+      if (newIndex < 0 || newIndex >= this.fightIds.length) return
+      const newId = this.fightIds[newIndex]
+      this.$router.push(`/fights/${newId}`)
+    },
+
     getAthleteName(a) {
       if (!a) return 'TBD'
       const surname = a.middle_name || ''
@@ -496,7 +570,6 @@ export default {
   max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
   padding-left: 20px;
   padding-right: 100px;
-
 }
 
 .header {
@@ -520,9 +593,33 @@ export default {
   color: #c89b3c;
   padding: 0.4rem 0.8rem;
   z-index: 10;
+  transition: color 0.2s;
 }
 
 .back:hover { color: #e0b456; }
+
+/* Кнопка вперёд — полное зеркало кнопки назад */
+.forward {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: #c89b3c;
+  padding: 0.4rem 0.8rem;
+  z-index: 10;
+  transition: color 0.2s;
+}
+
+.forward:hover:not(:disabled) { color: #e0b456; }
+
+.forward:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
 
 .header-content {
   flex: 1;
@@ -889,6 +986,12 @@ export default {
   font-style: italic;
   padding: 1rem;
   font-size: 0.85rem;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
 }
 
 @keyframes pulse {

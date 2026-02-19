@@ -1,28 +1,20 @@
-export const fetchGetFights = async () => {
+export const fetchGetScheduledFight = async (tournament_id, category_id) => {
+    const url = `/api/brackets/${tournament_id}/fights?category=${category_id}`;
     try {
-        const response = await fetch('/api/fights/?tournament_id&status&tatami', {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': 'mobile_app_2024'
-            }
+        const response = await fetch(url, {
+            headers: { 'X-API-Key': 'mobile_app_2024' }
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const result = await response.json();
-        return { success: true, data: result };
+        const data = await response.json();
 
+        return data;
     } catch (error) {
-        console.error('Ошибка при загрузке турниров:', error);
-        return {
-            success: false,
-            error: error.message || 'Произошла неизвестная ошибка'
-        };
+        console.error('Ошибка загрузки сеток:', error);
+        return { success: false, error: error.message };
     }
-}
+};
 
 export const fetchGetDetailFight = async (id) => {
     try {

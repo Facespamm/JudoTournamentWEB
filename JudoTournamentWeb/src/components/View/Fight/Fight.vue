@@ -90,8 +90,7 @@
 <script>
 import { fetchTournaments } from "@/components/View/Tournaments/fetchTournaments.js"
 import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
-import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"
-import {fetchGetDetailFight} from "@/components/View/Fight/fetchFights.js";
+import { fetchGetScheduledFight } from "@/components/View/Fight/fetchFights.js"
 import "./Fight.css"
 
 export default {
@@ -132,6 +131,15 @@ export default {
         })
       })
       return grouped
+    },
+    // Все ID боёв в порядке их отображения
+    allFightIds() {
+      const ids = []
+      this.availableTatamis.forEach(tatami => {
+        const group = this.groupedFights[tatami] || []
+        group.forEach(f => ids.push(f.id))
+      })
+      return ids
     }
   },
   async mounted() {
@@ -169,9 +177,7 @@ export default {
       this.fights = []
       this.currentCategoryName = ''
 
-      if (!this.selectedTournament) {
-        return
-      }
+      if (!this.selectedTournament) return
 
       this.categoriesLoading = true
       try {
@@ -190,13 +196,11 @@ export default {
       this.fights = []
       this.currentCategoryName = ''
 
-      if (!this.selectedTournament || this.selectedCategory === null) {
-        return
-      }
+      if (!this.selectedTournament || this.selectedCategory === null) return
 
       try {
         console.log('Загрузка боёв для турнира:', this.selectedTournament, 'категория:', this.selectedCategory)
-        const res = await fetchBrackets(this.selectedTournament, this.selectedCategory)
+        const res = await fetchGetScheduledFight(this.selectedTournament, this.selectedCategory)
 
         if (res?.success && res.fights?.length) {
           this.currentCategoryName = res.category?.weight_range || res.category?.name || '—'
@@ -235,15 +239,16 @@ export default {
         default: return 'Неизвестно'
       }
     },
-    viewFightDetail(id) {
-      this.$router.push(`/fights/${id}`)
+    viewFightDetail(fightId) {
+      // Сохраняем список всех ID в sessionStorage — чистый URL без query params
+      sessionStorage.setItem('fightIds', JSON.stringify(this.allFightIds))
+      this.$router.push(`/fights/${fightId}`)
     }
   }
 }
 </script>
 
 <style scoped>
-/* Основной контейнер — унифицирован с остальными страницами */
 .fights-overview {
   width: 100%;
   min-height: 100vh;
@@ -278,7 +283,6 @@ export default {
   margin-top: 0.4rem;
 }
 
-/* Фильтры */
 .filters-section {
   display: flex;
   gap: 1.5rem;
@@ -328,7 +332,6 @@ export default {
   cursor: not-allowed;
 }
 
-/* Секции татами */
 .tatami-sections {
   max-width: 1400px;
   margin: 0 auto;
@@ -492,7 +495,6 @@ export default {
   animation: pulse 2s infinite;
 }
 
-/* Пустое состояние */
 .empty-state {
   text-align: center;
   padding: 80px 20px 50px;
@@ -529,7 +531,6 @@ export default {
   50% { opacity: 0.6; }
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
   .fights-overview {
     padding-left: 1rem;

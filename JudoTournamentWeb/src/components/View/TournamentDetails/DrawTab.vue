@@ -42,10 +42,10 @@
         <p>В этой категории пока нет схваток</p>
       </div>
 
-      <!-- Сетка -->
+      <!-- Сетка — div на всё пространство -->
       <div v-else id="bracket-root" ref="bracketRoot">
         <div class="rounds-row">
-          <!-- Обычные раунды (включая финал) -->
+          <!-- Обычные раунды -->
           <div
               v-for="(round, ri) in rounds"
               :key="ri"
@@ -59,7 +59,7 @@
                   class="match-slot"
               >
                 <div class="match-card" :data-round="ri" :data-match="mi">
-                  <!-- Участник 1 (white) -->
+                  <!-- Участник 1 (белый) -->
                   <div
                       :class="[
                       'contestant',
@@ -74,7 +74,7 @@
                     </div>
                   </div>
 
-                  <!-- Участник 2 (blue) -->
+                  <!-- Участник 2 (синий) -->
                   <div
                       :class="[
                       'contestant',
@@ -94,9 +94,9 @@
             </div>
           </div>
 
-          <!-- Отдельная колонка для победителя (чемпиона) -->
+          <!-- Колонка чемпиона -->
           <div class="round-col champion-col">
-            <div class="round-header">Champion</div>
+            <div class="round-header">Чемпион</div>
             <div class="champion-body">
               <div class="match-slot">
                 <div class="match-card champion-card">
@@ -136,7 +136,7 @@
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchGetCategoryByTournament } from "@/components/View/Brackets/fetchBrackets.js"
-import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js";
+import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"
 
 const route = useRoute()
 const tournamentId = computed(() => Number(route.params.id))
@@ -162,12 +162,10 @@ const getContestant = (id) => {
 
 const loadCategories = async () => {
   if (!tournamentId.value) return
-
   isLoadingCategories.value = true
   try {
     const data = await fetchGetCategoryByTournament(tournamentId.value)
     categories.value = Array.isArray(data) ? data : []
-
     if (categories.value.length > 0) {
       selectedCategory.value = categories.value[0]
     }
@@ -181,15 +179,12 @@ const loadCategories = async () => {
 
 const loadBracket = async (catId) => {
   if (!catId) return
-
   isLoadingBracket.value = true
   contestants.value = []
   rounds.value = []
   championId.value = null
-
   try {
     const data = await fetchBrackets(tournamentId.value, catId)
-
     if (data.success && data.fights) {
       processBracketData(data.fights)
     }
@@ -218,7 +213,8 @@ const processBracketData = (fights) => {
   const maxRound = fights.length ? Math.max(...fights.map(f => f.round)) : 0
   if (maxRound === 0) return
 
-  const stageLabels = ['Round of 32', 'Round of 16', 'Quarter-Finals', 'Semi-Finals']
+  // Русские названия раундов
+  const stageLabels = ['1/32 финала', '1/16 финала', '1/4 финала', 'Полуфинал']
   let labelIndex = stageLabels.length - (maxRound - 1)
 
   const bracketRounds = []
@@ -233,14 +229,12 @@ const processBracketData = (fights) => {
       winner: f.winner_athlete?.id || null
     }))
 
-    const label = r === maxRound ? 'Final' : stageLabels[labelIndex++] || `Раунд ${r}`
-
+    const label = r === maxRound ? 'Финал' : stageLabels[labelIndex++] || `Раунд ${r}`
     bracketRounds.push({ label, matches })
   }
 
   rounds.value = bracketRounds
 
-  // Определяем победителя финала (если финал уже сыгран)
   if (maxRound > 0) {
     const finalFights = fights.filter(f => f.round === maxRound)
     if (finalFights.length > 0) {
@@ -256,9 +250,7 @@ watch(
       if (newCat) {
         await loadBracket(newCat.id)
         nextTick(() => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(drawConnectors)
-          })
+          requestAnimationFrame(() => requestAnimationFrame(drawConnectors))
         })
       }
     },
@@ -267,9 +259,7 @@ watch(
 
 watch(rounds, () => {
   nextTick(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(drawConnectors)
-    })
+    requestAnimationFrame(() => requestAnimationFrame(drawConnectors))
   })
 }, { deep: true })
 
@@ -288,9 +278,8 @@ const drawConnectors = () => {
 
   while (svg.firstChild) svg.removeChild(svg.firstChild)
 
-  const C_LINE = '#d1d5db'
+  const C_LINE = '#d4aa5a'
   const SW = 1.5
-  const color = C_LINE
 
   const rel = (r) => ({
     right: r.right - rRect.left,
@@ -307,7 +296,6 @@ const drawConnectors = () => {
 
     const srcSlots = Array.from(col.querySelectorAll('.match-slot'))
     const tgtSlots = Array.from(tgtCol.querySelectorAll('.match-slot'))
-
     const pairCount = Math.ceil(srcSlots.length / 2)
 
     for (let pi = 0; pi < pairCount; pi++) {
@@ -330,8 +318,6 @@ const drawConnectors = () => {
       const x2 = r2 ? r2.right : x1
       const y2 = r2 ? r2.midY : y1
       const xt = rt.left
-      const yt = rt.midY
-
       const bridgeX = (x1 + xt) / 2
       const bridgeY = r2 ? (y1 + y2) / 2 : y1
 
@@ -345,7 +331,7 @@ const drawConnectors = () => {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
       path.setAttribute('d', parts.join(' '))
       path.setAttribute('fill', 'none')
-      path.setAttribute('stroke', color)
+      path.setAttribute('stroke', C_LINE)
       path.setAttribute('stroke-width', SW)
       path.setAttribute('stroke-linecap', 'round')
       path.setAttribute('stroke-linejoin', 'round')
@@ -357,8 +343,8 @@ const drawConnectors = () => {
         const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
         c.setAttribute('cx', cx)
         c.setAttribute('cy', cy)
-        c.setAttribute('r', '2.2')
-        c.setAttribute('fill', color)
+        c.setAttribute('r', '2.5')
+        c.setAttribute('fill', C_LINE)
         svg.appendChild(c)
       })
     }
@@ -367,94 +353,119 @@ const drawConnectors = () => {
 
 onMounted(() => {
   loadCategories()
-
-  window.addEventListener('resize', () => {
-    requestAnimationFrame(drawConnectors)
-  })
+  window.addEventListener('resize', () => requestAnimationFrame(drawConnectors))
 })
 </script>
 
 <style scoped>
-/* Стили без изменений + небольшие дополнения для чемпиона */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* Компонент прозрачный — фон берётся из родителя TournamentDetails */
 .tournament-bracket {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #f0f4f8 0%, #dde8f0 40%, #d4e8e0 100%);
-  min-height: 100vh;
+  background: transparent;
   color: #1a1a2e;
-  overflow-x: auto;
 }
 
+/* ===== PAGE — внешние отступы ===== */
 .page {
-  padding: 28px 32px 60px;
+  padding: 12px 0 32px;
 }
 
 .group-section {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .group-label {
-  color: #1a1a2e;
+  color: #9ca3af;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .group-weight {
   font-weight: 700;
   color: #c89b3c;
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
+/* ===== ТАБЫ КАТЕГОРИЙ ===== */
 .weight-categories-bar {
-  padding: 1rem 2rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem 0 0.75rem;
   overflow-x: auto;
   scrollbar-width: none;
   display: flex;
-  gap: 1rem;
+  gap: 0.6rem;
 }
 
-.weight-categories-bar::-webkit-scrollbar {
-  display: none;
-}
+.weight-categories-bar::-webkit-scrollbar { display: none; }
 
 .weight-tab {
-  padding: 0.75rem 1.8rem;
+  padding: 0.5rem 1.3rem;
   border-radius: 50px;
-  background: white;
-  border: none;
-  color: #333;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
   font-weight: 600;
-  font-size: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-size: 0.875rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
-  min-width: fit-content;
 }
 
 .weight-tab:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-color: #c89b3c;
+  color: #c89b3c;
 }
 
 .weight-tab.active {
   background: #c89b3c;
-  color: white;
+  border-color: #c89b3c;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(200,155,60,0.3);
 }
 
+/* =====================================================
+   ГЛАВНЫЙ ДИВ СЕТКИ
+   — width: 100%  (вся доступная ширина)
+   — min-height даёт объём даже при малом контенте
+   — белый фон + золотая рамка отличают от белой страницы
+   — overflow-x: auto — горизонтальный скролл внутри
+===================================================== */
 #bracket-root {
   position: relative;
-  display: inline-flex;
+  /* Растягиваем на всю ширину */
+  width: 100%;
+  min-height: 520px;
+  /* Белый фон с визуальным выделением */
+  background: #ffffff;
+  border: 2px solid #e0b456;
+  border-radius: 14px;
+  box-shadow:
+      0 0 0 1px rgba(224,180,86,0.10),
+      0 6px 32px rgba(200,155,60,0.09),
+      inset 0 1px 0 rgba(255,255,255,0.9);
+  /* Скролл только внутри блока */
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 20px 16px 28px;
+  /* Стилизованный скроллбар */
+  scrollbar-width: thin;
+  scrollbar-color: #e0b456 #fafafa;
 }
+
+#bracket-root::-webkit-scrollbar { height: 5px; }
+#bracket-root::-webkit-scrollbar-track { background: #fafafa; border-radius: 3px; }
+#bracket-root::-webkit-scrollbar-thumb { background: #e0b456; border-radius: 3px; }
 
 #connector-svg {
   position: absolute;
@@ -464,36 +475,53 @@ onMounted(() => {
   overflow: visible;
 }
 
+/* ===== РАУНДЫ — растянуть по ширине контейнера ===== */
 .rounds-row {
   display: flex;
   align-items: stretch;
+  /* justify-content: space-evenly равномерно разбрасывает колонки */
+  justify-content: space-evenly;
+  min-width: 100%;
 }
 
 .round-col {
   display: flex;
   flex-direction: column;
+  /* flex: 1 — каждая колонка берёт равную долю ширины */
+  flex: 1;
+  min-width: 0;
 }
 
+/* ===== ЗАГОЛОВОК РАУНДА ===== */
 .round-header {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #9ca3af;
+  color: #c89b3c;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 40px;
+  padding: 0 8px;
   white-space: nowrap;
+  border-bottom: 1px solid rgba(224,180,86,0.25);
+  margin-bottom: 16px;
 }
 
+.champion-col .round-header {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: #a07830;
+}
+
+/* ===== ТЕЛО РАУНДА ===== */
 .round-body {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
   flex: 1;
-  gap: 12px;
+  gap: 8px;
 }
 
 .champion-body {
@@ -501,177 +529,145 @@ onMounted(() => {
   flex-direction: column;
   justify-content: center;
   flex: 1;
-  padding: 0 40px;
+  padding: 0 12px;
 }
 
+/* ===== СЛОТ ===== */
 .match-slot {
   display: flex;
   align-items: center;
-  padding: 0 40px;
+  justify-content: center;
+  padding: 0 12px;
   position: relative;
 }
 
+/* ===== КАРТОЧКА — компактная ===== */
 .match-card {
-  width: 240px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 172px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   overflow: hidden;
   flex-shrink: 0;
-  transition: box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .match-card:hover {
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13), 0 2px 6px rgba(0, 0, 0, 0.07);
+  border-color: #e0b456;
+  box-shadow: 0 3px 14px rgba(200,155,60,0.18);
 }
 
+/* Чемпион */
 .champion-card {
-  width: 260px;
-  min-height: 80px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.09), 0 0 0 3px rgba(232, 184, 75, 0.5);
-  background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+  width: 184px;
+  border: 2px solid #c89b3c;
+  box-shadow: 0 2px 18px rgba(200,155,60,0.22);
+  background: linear-gradient(135deg, #fffdf5 0%, #fef9e4 100%);
 }
 
 .champion-contestant {
-  padding: 20px 16px;
+  padding: 12px 10px;
   justify-content: center;
+  min-height: 42px;
 }
 
-.champion-contestant::before {
-  width: 6px;
-  background: #c89b3c;
-}
-
+/* ===== УЧАСТНИК — компактный ===== */
 .contestant {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 6px 9px;
   position: relative;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.12s;
+  min-height: 32px;
 }
 
-.contestant:hover {
-  background: #f5f5f5;
+.contestant:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.blue-side {
-  background-color: #3b82f6;
-  color: #ffffff;
-}
+.contestant:hover { background: #fdfcf8; }
 
-.blue-side:hover {
-  background-color: #2563eb;
-}
-
-.blue-side .c-first {
-  color: #bfdbfe;
-}
-
-.blue-side .c-name {
-  color: #ffffff;
-}
+.blue-side { background-color: #2563eb; }
+.blue-side:hover { background-color: #1d4ed8; }
+.blue-side .c-first { color: #93c5fd; }
+.blue-side .c-name  { color: #fff; }
 
 .contestant.winner::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
   border-radius: 0 2px 2px 0;
   background: #c89b3c;
 }
 
-.contestant.loser .c-name-wrap {
-  opacity: 0.45;
-}
+.contestant.loser .c-name-wrap { opacity: 0.4; }
+.contestant.loser .c-name { text-decoration: line-through; text-decoration-color: #9ca3af; }
+.blue-side.loser .c-name { text-decoration-color: #93c5fd; }
 
-.contestant.loser .c-name {
-  text-decoration: line-through;
-  text-decoration-color: #9ca3af;
-}
+.contestant.tbd .c-name-wrap { opacity: 0.28; }
+.contestant.tbd .c-name { font-style: italic; font-weight: 400; }
+.blue-side.tbd .c-name { color: #bfdbfe; }
 
-.blue-side.loser .c-name {
-  text-decoration-color: #93c5fd;
-}
-
-.contestant.tbd .c-name-wrap {
-  opacity: 0.35;
-}
-
-.contestant.tbd .c-name {
-  font-style: italic;
-  font-weight: 400;
-}
-
-.blue-side.tbd .c-name {
-  color: #93c5fd;
-}
-
+/* ===== ИМЕНА ===== */
 .c-name-wrap {
   flex: 1;
   min-width: 0;
-  text-align: center;
+  text-align: left;
 }
 
 .c-first {
-  font-size: 0.8rem;
+  font-size: 0.58rem;
   font-weight: 400;
-  color: #6b7280;
+  color: #9ca3af;
   display: block;
+  line-height: 1;
+  margin-bottom: 1px;
 }
 
 .c-name {
-  font-size: 1rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #111827;
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
+/* ===== ЛОАДЕРЫ ===== */
 .categories-loading,
 .no-categories,
 .bracket-loading,
 .no-fights,
 .placeholder {
   text-align: center;
-  padding: 4rem 2rem;
-  color: #666;
-  font-size: 1.1rem;
+  padding: 3rem 2rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #c89b3c;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #c89b3c;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
+  animation: spin 0.85s linear infinite;
+  margin: 0 auto 0.75rem;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
+/* ===== МОБИЛКА ===== */
 @media (max-width: 700px) {
-  .match-card {
-    width: 200px;
-  }
-  .champion-card {
-    width: 220px;
-  }
-  .page {
-    padding: 18px 14px 40px;
-  }
-  .round-header,
-  .match-slot,
-  .champion-body {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
+  .match-card    { width: 140px; }
+  .champion-card { width: 152px; }
+  .page          { padding: 10px 0 20px; }
+  .match-slot, .champion-body { padding-left: 6px; padding-right: 6px; }
+  #bracket-root  { border-radius: 10px; padding: 14px 6px 20px; }
 }
 </style>

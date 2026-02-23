@@ -1,7 +1,17 @@
-<!-- TournamentDetails.vue (финальная версия: только хедер, таб-бар и переключение табов) -->
+<!-- TournamentDetails.vue -->
 <template>
   <div class="tournament-details">
-    <!-- ЗАГОЛОВОК И КНОПКА НАЗАД -->
+
+    <!-- КНОПКА НАЗАД — только стрелка -->
+    <div class="tournament-detail-header">
+      <button class="back-button" @click="goBack" title="Назад">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5"/>
+          <path d="M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+    </div>
+
     <!-- ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ ТАБОВ -->
     <div v-if="tournament" class="tab-bar">
       <button
@@ -115,10 +125,12 @@
 
 <script setup>
 import { ref, onMounted, defineAsyncComponent, provide } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'   // ← добавили useRouter
 import { fetchTournamentDetail } from '@/components/View/TournamentDetails/fetchTournamentDetail.js'
 import "./TournamentDetails.css"
+
 const route = useRoute()
+const router = useRouter()   // ← добавили
 
 const tournament = ref(null)
 const isLoading = ref(true)
@@ -127,7 +139,7 @@ const error = ref('')
 // По умолчанию открывается Обзор
 const selectedTab = ref('overview')
 
-// Ленивая загрузка всех табов
+// Ленивая загрузка табов
 const tabComponents = {
   overview: defineAsyncComponent(() => import('@/components/View/TournamentDetails/OverviewTab.vue')),
   draw: defineAsyncComponent(() => import('@/components/View/TournamentDetails/DrawTab.vue')),
@@ -139,6 +151,11 @@ const tabComponents = {
 
 // Делаем tournament доступным во всех табах
 provide('tournament', tournament)
+
+// Функция назад
+const goBack = () => {
+  router.back()   // или router.go(-1)
+}
 
 const loadTournamentDetail = async () => {
   isLoading.value = true
@@ -167,4 +184,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Можно добавить свои стили, если нужно */
 </style>

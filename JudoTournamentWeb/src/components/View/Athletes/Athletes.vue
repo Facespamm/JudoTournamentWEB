@@ -22,8 +22,10 @@
             @click="goToAthleteDetail(athlete.id)"
         >
           <div class="rank">#{{ index + 1 }}</div>
-          <h3 class="athlete-name">{{ getFullName(athlete) }}</h3>
-          <p class="category">{{ athlete.rank || 'Разряд не указан' }}</p>
+          <div class="card-info">
+            <h3 class="athlete-name">{{ getFullName(athlete) }}</h3>
+            <p class="category">{{ athlete.rank || 'Разряд не указан' }}</p>
+          </div>
         </article>
 
         <div v-if="athletes.length === 0" class="no-data">
@@ -52,13 +54,11 @@ const athletes = ref([])
 const isLoading = ref(true)
 const error = ref('')
 
-// Функция для получения полного имени
 const getFullName = (athlete) => {
   if (athlete.full_name) return athlete.full_name
   return `${athlete.last_name || ''} ${athlete.first_name || ''} ${athlete.middle_name || ''}`.trim()
 }
 
-// Функция перехода на детальную страницу атлета
 const goToAthleteDetail = (athleteId) => {
   router.push(`/athlete/${athleteId}`)
 }
@@ -66,7 +66,6 @@ const goToAthleteDetail = (athleteId) => {
 const loadAthletes = async () => {
   isLoading.value = true
   const result = await fetchAthletes()
-
   if (result.success) {
     athletes.value = result.athletes
   } else {
@@ -89,71 +88,82 @@ onMounted(() => {
 .judo-list h2 {
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 3rem;
+  margin: 0 0 2rem;
   color: #1a1a1a;
   text-align: center;
 }
 
-/* === КОНТЕЙНЕР КАРТОЧЕК === */
+/* === КОНТЕЙНЕР === */
 .judo_form-athletes_info {
-  padding-top: 40px;
-  padding-left: 0;          /* Максимально левее */
-  padding-right: 6rem;      /* Больше отступ справа */
+  padding-top: 32px;
+  padding-left: 0;
+  padding-right: 6rem;
 }
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(3, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 0.75rem;
   justify-content: start;
   margin-left: 0;
   max-width: none;
 }
 
-/* === КАРТОЧКИ (компактнее по высоте) === */
+/* === КАРТОЧКА — горизонтальная, компактная === */
 .judo-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  gap: 1rem;
   background: white;
   border: 2px solid #c89b3c;
-  border-radius: 24px;
-  padding: 1.5rem 1.2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  padding: 0.65rem 1.1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.25s ease;
   cursor: pointer;
-  text-align: center;
-  gap: 0.8rem;
-  min-height: 160px;
+  min-height: 0;
 }
 
 .judo-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.11);
+  border-color: #b8873a;
 }
 
 /* Ранг */
 .rank {
-  align-self: flex-start;
-  font-size: 1.8rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #c89b3c;
-  margin: 0;
+  min-width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Инфо */
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 /* Имя */
 .athlete-name {
-  font-size: 1.35rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Разряд */
 .category {
-  font-size: 1rem;
-  color: #333;
+  font-size: 0.78rem;
+  color: #6b7280;
   margin: 0;
   font-weight: 500;
 }
@@ -167,10 +177,10 @@ onMounted(() => {
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #c89b3c;
+  width: 36px;
+  height: 36px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #c89b3c;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -183,17 +193,17 @@ onMounted(() => {
 /* === КНОПКА === */
 .judo-tournament_button_pagination {
   text-align: center;
-  margin: 4rem 0 2rem 0;
+  margin: 2.5rem 0 2rem 0;
 }
 
 .judo-tournament_button_pagination_next {
   background: white;
   border: 2px solid #c89b3c;
   color: #c89b3c;
-  padding: 1rem 3rem;
+  padding: 0.75rem 2.5rem;
   border-radius: 50px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -208,9 +218,8 @@ onMounted(() => {
 /* === АДАПТИВ === */
 @media (max-width: 1200px) {
   .cards-container {
-    grid-template-columns: repeat(2, minmax(320px, 1fr));
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
-
   .judo_form-athletes_info {
     padding-right: 4rem;
   }
@@ -219,14 +228,8 @@ onMounted(() => {
 @media (max-width: 768px) {
   .cards-container {
     grid-template-columns: 1fr;
-  }
-
-  .judo-card {
-    padding: 1.3rem 1rem;
-    min-height: 140px;
     gap: 0.6rem;
   }
-
   .judo_form-athletes_info {
     padding-right: 2rem;
   }
@@ -236,13 +239,11 @@ onMounted(() => {
   .judo-list h2 {
     font-size: 1.6rem;
   }
-
   .athlete-name {
-    font-size: 1.25rem;
+    font-size: 0.9rem;
   }
-
   .rank {
-    font-size: 1.6rem;
+    font-size: 1.1rem;
   }
 }
 </style>

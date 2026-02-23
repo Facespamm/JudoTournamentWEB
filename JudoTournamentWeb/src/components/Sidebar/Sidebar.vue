@@ -1,5 +1,4 @@
 <template>
-  <!-- Верхняя полоса -->
   <div class="top-bar"></div>
 
   <div class="sidebar">
@@ -23,13 +22,10 @@
         <img :src="TrophyIcon" class="nav-icon" alt="Турниры" />
         <span class="nav-text">Турниры</span>
       </button>
-
-      <!-- НОВАЯ КНОПКА: Клубы -->
       <button type="button" name="clubs_page" @click="RedirectToClubs" title="Клубы">
         <img :src="ClubIcon" class="nav-icon" alt="Клубы" />
         <span class="nav-text">Клубы</span>
       </button>
-
       <button type="button" name="referee_page" @click="RedirectToReferee" title="Рефери">
         <img :src="RefereeIcon" class="nav-icon" alt="Рефери" />
         <span class="nav-text">Рефери</span>
@@ -40,7 +36,6 @@
       </button>
     </nav>
 
-    <!-- Язык внизу -->
     <div class="footer-nav">
       <button
           type="button"
@@ -53,7 +48,6 @@
         <span class="lang-text">{{ currentLanguage }}</span>
       </button>
 
-      <!-- Выпадающее меню языков (выезжает вправо от сайдбара) -->
       <transition name="slide-right">
         <div v-if="isLanguageMenuOpen" class="language-menu">
           <button
@@ -91,7 +85,6 @@ import {
   RedirectToClubs,
 } from "@/router/redirect.js"
 
-// Языки
 const languages = [
   { code: 'ru', name: 'Русский', flag: 'RU' },
   { code: 'kk', name: 'Қазақша', flag: 'KZ' },
@@ -101,23 +94,14 @@ const languages = [
 const currentLanguage = ref('Русский')
 const isLanguageMenuOpen = ref(false)
 
-const toggleLanguageMenu = () => {
-  isLanguageMenuOpen.value = !isLanguageMenuOpen.value
-}
-
-const selectLanguage = (lang) => {
-  currentLanguage.value = lang.name
-  isLanguageMenuOpen.value = false
-  console.log('Выбран язык:', lang.code)
-}
+const toggleLanguageMenu = () => { isLanguageMenuOpen.value = !isLanguageMenuOpen.value }
+const selectLanguage = (lang) => { currentLanguage.value = lang.name; isLanguageMenuOpen.value = false }
 </script>
 
 <style scoped>
-/* === ВЕРХНЯЯ ПОЛОСА === */
 .top-bar {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   height: 4px;
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
@@ -125,29 +109,37 @@ const selectLanguage = (lang) => {
   z-index: 1002;
 }
 
-/* === САЙДБАР === */
 .sidebar {
   position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
+  top: 0; left: 0; bottom: 0;
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
-  padding: 2rem 0.8rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   z-index: 1001;
   box-shadow: var(--shadow);
-}
+  overflow: hidden;
 
-.sidebar-header {
+  /* Ключевое: flex колонка, пространство распределяется равномерно */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 3rem;
+
+  /* Отступы сверху и снизу — небольшие */
+  padding: 1.2rem 0.8rem 1rem;
+  box-sizing: border-box;
+}
+
+/* === ХЕДЕР === */
+.sidebar-header {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Небольшой фиксированный отступ снизу от лого */
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--sidebar-border);
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .sidebar-header h1 {
@@ -155,28 +147,32 @@ const selectLanguage = (lang) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
 }
 
 .logo-icon {
-  width: 42px;
-  height: 42px;
+  width: clamp(28px, 3.5vh, 42px);
+  height: clamp(28px, 3.5vh, 42px);
   object-fit: contain;
 }
 
 .header-text {
-  font-size: 0.85rem;
+  font-size: clamp(0.6rem, 1vh, 0.82rem);
   font-weight: 700;
   color: var(--text-color);
   white-space: nowrap;
 }
 
+/* === НАВИГАЦИЯ — занимает всё свободное пространство между хедером и футером === */
 .nav-buttons {
+  flex: 1;                      /* растягивается на всё доступное место */
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
   align-items: center;
-  width: 100%;
+  /* space-evenly равномерно раскидывает кнопки по всей высоте */
+  justify-content: space-evenly;
+  padding: 0.4rem 0;
 }
 
 .nav-buttons button,
@@ -186,11 +182,11 @@ const selectLanguage = (lang) => {
   color: var(--text-color);
   cursor: pointer;
   border-radius: 12px;
-  padding: 0.9rem 0.5rem;
+  padding: clamp(0.4rem, 0.9vh, 0.8rem) 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.2rem, 0.5vh, 0.45rem);
   transition: all 0.25s ease;
   width: 100%;
 }
@@ -199,7 +195,7 @@ const selectLanguage = (lang) => {
 .language-button:hover {
   background-color: var(--hover-bg);
   color: var(--active-color);
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .nav-buttons button:active,
@@ -209,32 +205,32 @@ const selectLanguage = (lang) => {
 }
 
 .nav-icon {
-  width: 36px;
-  height: 36px;
+  width: clamp(22px, 3vh, 36px);
+  height: clamp(22px, 3vh, 36px);
   object-fit: contain;
 }
 
 .nav-text,
 .lang-text {
-  font-size: 0.78rem;
+  font-size: clamp(0.58rem, 0.95vh, 0.76rem);
   font-weight: 500;
   text-align: center;
   line-height: 1.2;
-  white-space: normal;
-  word-wrap: break-word;
-  max-width: 100%;
+  white-space: nowrap;
 }
 
+/* === ФУТЕР: ЯЗЫК === */
 .footer-nav {
-  margin-top: auto;
-  margin-bottom: 1rem;
+  flex-shrink: 0;
   position: relative;
   width: 100%;
   display: flex;
   justify-content: center;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--sidebar-border);
 }
 
-/* Меню языков — выезжает вправо */
+/* Меню языков */
 .language-menu {
   position: absolute;
   left: 100%;
@@ -243,7 +239,7 @@ const selectLanguage = (lang) => {
   width: 210px;
   background: white;
   border-radius: 12px;
-  box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 4px 4px 20px rgba(0,0,0,0.15);
   overflow: hidden;
   border: 1px solid var(--sidebar-border);
   z-index: 1003;
@@ -251,14 +247,14 @@ const selectLanguage = (lang) => {
 
 .language-option {
   width: 100%;
-  padding: 0.9rem 1.2rem;
+  padding: 0.85rem 1.2rem;
   background: white;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-color);
   transition: all 0.2s ease;
@@ -269,19 +265,23 @@ const selectLanguage = (lang) => {
 .language-option:hover { background-color: var(--hover-bg); color: var(--active-color); }
 .language-option.active { background-color: #fff8e1; color: var(--active-color); font-weight: 600; }
 
-.lang-flag { font-size: 1.8rem; }
-.lang-name { flex: 1; font-size: 1.05rem; }
+.lang-flag { font-size: 1.4rem; }
+.lang-name { flex: 1; font-size: 0.95rem; }
 
-/* Анимация появления меню вправо */
-.slide-right-enter-active, .slide-right-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-right-enter-from {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-.slide-right-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
+/* Анимация меню */
+.slide-right-enter-active, .slide-right-leave-active { transition: all 0.3s ease; }
+.slide-right-enter-from { opacity: 0; transform: translateX(-20px); }
+.slide-right-leave-to   { opacity: 0; transform: translateX(-20px); }
+
+/* =============================================
+   АДАПТИВНОСТЬ ПО ВЫСОТЕ
+   На маленькой высоте текст скрывается
+============================================= */
+@media (max-height: 700px) {
+  .header-text { display: none; }
+  .nav-text, .lang-text { display: none; }
+  .sidebar { padding: 0.8rem 0.6rem 0.8rem; }
+  .sidebar-header { padding-bottom: 0.5rem; }
+  .footer-nav { padding-top: 0.4rem; }
 }
 </style>

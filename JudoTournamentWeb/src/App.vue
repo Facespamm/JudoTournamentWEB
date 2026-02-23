@@ -1,9 +1,17 @@
 <template>
   <div id="app">
-    <!-- Сайдбар: скрыт на login и registration -->
+    <!-- Сайдбар и хедер скрыты на страницах без сайдбара -->
     <Header v-if="route.meta.hideSidebar !== true" />
     <Sidebar v-if="route.meta.hideSidebar !== true" />
-    <div class="main-content" :class="{ 'with-sidebar': route.meta.hideSidebar !== true }">
+
+    <!-- Основной контент -->
+    <div
+        class="main-content"
+        :class="{
+        'with-sidebar': route.meta.hideSidebar !== true,
+        'centered-layout': route.meta.align === 'center'
+      }"
+    >
       <router-view />
     </div>
   </div>
@@ -28,7 +36,6 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-
 }
 
 #app {
@@ -48,15 +55,33 @@ body {
   min-height: 100vh;
 }
 
-/* Когда есть сайдбар - сдвигаем контент вправо */
+/* Когда есть сайдбар — сдвигаем вправо */
 .main-content.with-sidebar {
   margin-left: 220px;
 }
 
-/* На мобильных убираем отступ */
+/* === ЦЕНТРИРОВАНИЕ КОНТЕНТА (когда align: 'center') === */
+.main-content.centered-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 16px;
+  min-height: 100vh;
+}
+
+/* Ограничиваем ширину контента — выглядит красиво и не растягивается на весь экран */
+.main-content.centered-layout :deep(*) {
+  max-width: 1100px;   /* можешь поменять на 1000px / 1200px / 1280px */
+  width: 100%;
+}
+
+/* Мобильная адаптация */
 @media (max-width: 768px) {
   .main-content.with-sidebar {
     margin-left: 0;
+  }
+  .main-content.centered-layout {
+    padding: 16px 12px;
   }
 }
 </style>

@@ -48,6 +48,30 @@ export const CreateReferee = async (refereeData) => {
     }
 };
 
+export const assignRefereeFight = async (refereeData,tournament_id,category_id) => {
+    try {
+        const response = await fetch(`/api/referee/${tournament_id}/assign_to-fights?category=${category_id}
+`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(refereeData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка при назначении рефери:', error);
+        throw error;
+    }
+};
+
+
 
 export const DeleteReferee = async (refereeId) => {
     try {

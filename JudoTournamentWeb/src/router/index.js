@@ -24,7 +24,7 @@ import RegistrationModal from "@/components/View/RegistrationAthletesTournament/
 import Clubs from "@/components/View/Clubs/Clubs.vue"
 import RefereeManagement from "@/components/View/RefereeManagement/RefereeManagement.vue"
 import RefereeDetail from "@/components/View/RefereeDetail/RefereeDetail.vue"
-
+import AdminRegistrationAthletes from "@/components/View/AdminRegistrationAthletes/AdminRegistrationAthletes.vue";
 // TournamentDetails импортируем только для lazy-loading (прямой импорт не нужен)
 const routes = [
     { path: '/', redirect: '/login' },
@@ -81,6 +81,7 @@ const routes = [
     },
 
     { path: '/home', name: 'home', component: HomePage },
+    { path: '/adminregistration', name: 'adminregistration', component: AdminRegistrationAthletes },
     { path: '/refereeManagement', name: 'refereeManagement', component: RefereeManagement },
     { path: '/athletes', name: 'athletes', component: Athletes },
     { path: '/registrationathlete', name: 'registrationathlete', component: RegistrationModal },

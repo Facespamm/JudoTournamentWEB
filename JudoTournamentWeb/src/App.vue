@@ -57,7 +57,7 @@ body {
 
 /* Когда есть сайдбар — сдвигаем вправо */
 .main-content.with-sidebar {
-  margin-left: 220px;
+  margin-left: 130px;
 }
 
 /* === ЦЕНТРИРОВАНИЕ КОНТЕНТА (когда align: 'center') === */

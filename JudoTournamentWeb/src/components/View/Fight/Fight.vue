@@ -259,7 +259,6 @@ export default {
   max-width: calc(100vw - var(--sidebar-width, 120px) - 20px);
   margin-left: 0;
   padding-left: 20px;
-  padding-right: 100px;
   padding-top: 80px;
   padding-bottom: 40px;
 }

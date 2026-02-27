@@ -1,79 +1,57 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="close">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Редактировать судью</h2>
-        <button class="modal-close-btn" @click="close">×</button>
+  <div v-if="isOpen" class="overlay" @click="emitClose">
+    <div class="modal" @click.stop>
+      <h3>Редактировать судью</h3>
+
+      <!-- ФИО — только просмотр -->
+      <div class="referee-info">
+        <strong>Судья:</strong><br>
+        {{ fullName }}
       </div>
 
       <form @submit.prevent="handleSubmit" class="referee-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Фамилия <span class="required">*</span></label>
-            <input
-                v-model.trim="form.last_name"
-                type="text"
-                required
-                :class="{ 'input-error': errors.last_name }"
-            />
-            <div v-if="errors.last_name" class="error-text">{{ errors.last_name }}</div>
-          </div>
 
-          <div class="form-group">
-            <label>Имя <span class="required">*</span></label>
-            <input
-                v-model.trim="form.first_name"
-                type="text"
-                required
-                :class="{ 'input-error': errors.first_name }"
-            />
-            <div v-if="errors.first_name" class="error-text">{{ errors.first_name }}</div>
-          </div>
-        </div>
-
+        <!-- Категория судьи (редактируемое) -->
         <div class="form-group">
-          <label>Отчество</label>
-          <input v-model.trim="form.middle_name" type="text" />
+          <label for="certification_level">Категория судьи</label>
+          <input
+              id="certification_level"
+              v-model="formData.certification_level"
+              type="text"
+              class="modal-input"
+              placeholder="Например: Национальный 3 категории"
+          />
         </div>
 
+        <!-- Телефон (редактируемое) -->
         <div class="form-group">
-          <label>Категория судейства <span class="required">*</span></label>
-          <select
-              v-model="form.certification_level"
-              required
-              :class="{ 'input-error': errors.certification_level }"
-              :disabled="categoriesLoading"
-          >
-            <option value="" disabled>
-              {{ categoriesLoading ? 'Загрузка...' : 'Выберите категорию' }}
-            </option>
-            <option
-                v-for="cat in certificationCategories"
-                :key="cat"
-                :value="cat"
-            >
-              {{ cat }}
-            </option>
-          </select>
-          <div v-if="errors.certification_level" class="error-text">{{ errors.certification_level }}</div>
+          <label for="phone">Телефон</label>
+          <input
+              id="phone"
+              v-model="formData.phone"
+              type="tel"
+              class="modal-input"
+              placeholder="+7 (___) ___-__-__"
+          />
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Телефон</label>
-            <input v-model.trim="form.phone" type="tel" />
-          </div>
-
-          <div class="form-group">
-            <label>Email</label>
-            <input v-model.trim="form.email" type="email" />
-          </div>
+        <!-- Email (редактируемое) -->
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+              id="email"
+              v-model="formData.email"
+              type="email"
+              class="modal-input"
+          />
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" @click="close">Отмена</button>
-          <button type="submit" class="btn-save" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Сохранение...' : 'Сохранить' }}
+          <button type="button" class="btn-ghost" @click="emitClose">
+            Отмена
+          </button>
+          <button type="submit" class="btn-primary" :disabled="loading">
+            {{ loading ? 'Сохранение...' : 'Сохранить изменения' }}
           </button>
         </div>
       </form>
@@ -82,165 +60,174 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { UpdateReferee } from '@/components/View/RefereeManagement/fetchRefereeManagement.js'
-import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
 
 const props = defineProps({
-  isOpen:   { type: Boolean, required: true },
-  referee:  { type: Object, default: () => ({}) }
+  isOpen: { type: Boolean, default: false },
+  referee: { type: Object, default: () => ({}) }
 })
 
 const emit = defineEmits(['close', 'submit'])
 
-const form                    = ref({ ...props.referee })
-const errors                  = ref({})
-const isSubmitting            = ref(false)
-const certificationCategories = ref([])
-const categoriesLoading       = ref(false)
+const formData = ref({
+  email: '',
+  phone: '',
+  certification_level: ''
+})
 
-const FALLBACK_CATEGORIES = [
-  'Международный',
-  'Национальный 1 категории',
-  'Национальный 2 категории',
-  'Национальный 3 категории',
-  'Региональный',
-]
+const loading = ref(false)
 
-async function loadCertificationCategories() {
-  categoriesLoading.value = true
-  try {
-    const result = await fetchCategories()
-    if (result.success && Array.isArray(result.data?.categories)) {
-      const names = [...new Set(result.data.categories.map(c => c.name).filter(Boolean))]
-      certificationCategories.value = names.length ? names : FALLBACK_CATEGORIES
-    } else {
-      certificationCategories.value = FALLBACK_CATEGORIES
+// Вычисляем полное ФИО для отображения
+const fullName = computed(() => {
+  const r = props.referee || {}
+  return `${r.last_name || ''} ${r.first_name || ''} ${r.middle_name || ''}`.trim() || '—'
+})
+
+// Заполняем только редактируемые поля
+onMounted(() => {
+  if (props.referee && props.isOpen) {
+    formData.value = {
+      email: props.referee.email || '',
+      phone: props.referee.phone || '',
+      certification_level: props.referee.certification_level || ''
     }
-  } catch {
-    certificationCategories.value = FALLBACK_CATEGORIES
-  } finally {
-    categoriesLoading.value = false
-  }
-}
-
-watch(() => props.referee, (newReferee) => {
-  if (newReferee && props.isOpen) {
-    form.value = { ...newReferee }
-  }
-}, { deep: true })
-
-watch(() => props.isOpen, (open) => {
-  if (open) {
-    form.value = { ...props.referee }
-    errors.value = {}
-    loadCertificationCategories()
   }
 })
 
-const validateForm = () => {
-  errors.value = {}
-  let isValid = true
-  if (!form.value.last_name?.trim())      { errors.value.last_name = 'Обязательное поле'; isValid = false }
-  if (!form.value.first_name?.trim())     { errors.value.first_name = 'Обязательное поле'; isValid = false }
-  if (!form.value.certification_level)   { errors.value.certification_level = 'Выберите категорию'; isValid = false }
-  return isValid
-}
+watch(() => props.referee, (newVal) => {
+  if (newVal && props.isOpen) {
+    formData.value = {
+      email: newVal.email || '',
+      phone: newVal.phone || '',
+      certification_level: newVal.certification_level || ''
+    }
+  }
+}, { deep: true })
 
 const handleSubmit = async () => {
-  if (!validateForm() || !form.value.id) return
-  isSubmitting.value = true
+  if (!props.referee?.id) return
+
+  loading.value = true
+
   try {
-    await UpdateReferee(form.value.id, form.value)
-    emit('submit', { success: true })
-    close()
+    const result = await UpdateReferee(props.referee.id, formData.value)
+
+    if (result.success !== false) {
+      emit('submit', { success: true })
+      emit('close')
+    } else {
+      alert('Ошибка сохранения: ' + (result.error || 'Неизвестная ошибка'))
+    }
   } catch (err) {
-    console.error('Ошибка обновления судьи:', err)
-    alert('Не удалось сохранить изменения\n' + (err.message || 'Неизвестная ошибка'))
+    console.error(err)
+    alert('Не удалось сохранить данные судьи')
   } finally {
-    isSubmitting.value = false
+    loading.value = false
   }
 }
 
-const close = () => { emit('close') }
+const emitClose = () => {
+  emit('close')
+}
 </script>
 
 <style scoped>
-.modal-overlay {
+/* Стили остаются в едином стиле вашего приложения */
+.overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.42);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1200;
+  z-index: 1100;
+  padding: 16px;
+  backdrop-filter: blur(2px);
 }
-.modal-content {
-  background: white;
-  border-radius: 12px;
+
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 28px 24px;
   width: 100%;
-  max-width: 540px;
-  max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
-.modal-header {
+
+.modal h3 {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.referee-info {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #374151;
+  border-left: 4px solid #c89b3c;
+}
+
+.referee-form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #eee;
+  flex-direction: column;
+  gap: 16px;
 }
-.modal-header h2 { margin: 0; font-size: 1.4rem; }
-.modal-close-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  line-height: 1;
-  cursor: pointer;
-  color: #888;
+
+.form-group label {
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
 }
-.modal-close-btn:hover { color: #333; }
-.referee-form { padding: 20px 24px 24px; }
-.form-row { display: flex; gap: 16px; }
-.form-group { flex: 1; margin-bottom: 18px; }
-.form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.95rem; }
-.required { color: #e53e3e; }
-input, select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
+
+.modal-input {
+  padding: 10px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.15s;
 }
-input:focus, select:focus {
+
+.modal-input:focus {
   outline: none;
   border-color: #c89b3c;
-  box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.15);
 }
-select:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
-.input-error { border-color: #e53e3e; }
-.error-text { color: #e53e3e; font-size: 0.82rem; margin-top: 4px; }
+
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 12px;
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
-.btn-cancel, .btn-save {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 0.95rem;
+
+.btn-primary {
+  background: #c89b3c;
+  color: #fff;
   border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
 }
-.btn-cancel { background: #f1f5f9; color: #334155; }
-.btn-save { background: #c89b3c; color: white; }
-.btn-save:hover:not(:disabled) { background: #b5892e; }
-.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  padding: 10px 20px;
+  border: 1.5px solid #d1d5db;
+  background: #fff;
+  border-radius: 8px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
 </style>

@@ -5,7 +5,7 @@
     max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
     margin-left: 0;
     padding-left: 20px;
-    padding-right: 100px;
+    padding-right: 0;
 }
 .view-header { text-align: center; margin-bottom: 3rem; }
 .view-header h1 { font-size: 2.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.5rem; }

@@ -8,7 +8,6 @@
     <!-- СПИСОК -->
     <div class="judo_form-referees_info">
       <section class="judo-list">
-        <h2>Судьи</h2>
 
         <!-- Лоадер -->
         <div v-if="isLoading" class="loading">

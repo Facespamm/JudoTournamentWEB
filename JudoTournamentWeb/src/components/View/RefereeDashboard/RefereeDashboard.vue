@@ -80,6 +80,16 @@
           </span>
           <span class="action-text">Турниры</span>
         </button>
+
+        <button class="action-btn" @click="navigateToReferees">
+          <span class="action-icon referees">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+              <path d="M17 8L19 10L23 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="action-text">Судьи</span>
+        </button>
       </div>
     </div>
 
@@ -140,7 +150,7 @@ const activeTournaments = ref([])
 const toast = ref({
   visible: false,
   message: '',
-  type: 'success' // success | error
+  type: 'success'
 })
 
 const showToast = (message, type = 'success', duration = type === 'success' ? 3000 : 5000) => {
@@ -152,36 +162,23 @@ const showToast = (message, type = 'success', duration = type === 'success' ? 30
 
 const loadDashboardData = async () => {
   try {
-    // 1. Статистика
     const statsData = await GetRefereeStatistics()
-    console.log('GetRefereeStatistics → полный ответ:', statsData)
-
     if (statsData?.success && statsData?.data) {
       stats.value = statsData.data
-      console.log('Статистика успешно загружена:', stats.value)
     } else {
-      console.warn('Некорректный формат статистики')
       showToast('Не удалось загрузить статистику', 'error')
       stats.value = {}
     }
 
-    // 2. Активные турниры — исправлено под реальную структуру ответа
     const tournamentsData = await GetLiveTournamentReferee()
-    console.log('GetLiveTournamentReferee → полный ответ:', tournamentsData)
-
     if (tournamentsData?.success) {
-      // Турниры приходят напрямую в поле data как массив объектов
       activeTournaments.value = Array.isArray(tournamentsData.data)
           ? tournamentsData.data
           : tournamentsData.data?.tournaments || tournamentsData.data?.active_tournaments || []
-
-      console.log('Активные турниры загружены:', activeTournaments.value)
     } else {
-      console.warn('Не удалось загрузить активные турниры')
       showToast('Не удалось загрузить список турниров', 'error')
       activeTournaments.value = []
     }
-
   } catch (error) {
     console.error('Ошибка загрузки данных панели судьи:', error)
     showToast('Не удалось загрузить данные панели. Попробуйте позже.', 'error')
@@ -190,7 +187,6 @@ const loadDashboardData = async () => {
   }
 }
 
-// Вспомогательные функции
 const getStatusClass = (status) => {
   const statusMap = {
     'LIVE': 'status-live',
@@ -213,15 +209,14 @@ const getStatusText = (status) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('ru-RU')
+  return new Date(dateString).toLocaleDateString('ru-RU')
 }
 
-// Навигация
 const navigateToBrackets = () => router.push('/brackets')
 const navigateToTatami = () => router.push('/tatami')
 const navigateToTournaments = () => router.push('/tournament')
 const navigateToTournament = (id) => router.push(`/tournament/${id}`)
+const navigateToReferees = () => router.push('/referee')
 
 onMounted(() => {
   loadDashboardData()
@@ -229,7 +224,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Базовые стили для иконок */
 .stat-icon {
   width: 56px;
   height: 56px;
@@ -245,7 +239,6 @@ onMounted(() => {
   height: 28px;
 }
 
-/* Цветовые схемы для карточек статистики */
 .stat-icon.active {
   background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
   color: #fff;
@@ -266,15 +259,10 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(231, 76, 60, 0.5);
-  }
+  0%, 100% { box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(231, 76, 60, 0.5); }
 }
 
-/* Стили для кнопок быстрых действий */
 .action-icon {
   width: 48px;
   height: 48px;
@@ -306,12 +294,16 @@ onMounted(() => {
   color: #fff;
 }
 
+.action-icon.referees {
+  background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+  color: #fff;
+}
+
 .action-btn:hover .action-icon {
   transform: translateY(-4px) scale(1.05);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Hover эффекты для карточек статистики */
 .stat-card:hover .stat-icon {
   transform: scale(1.1) rotate(5deg);
 }

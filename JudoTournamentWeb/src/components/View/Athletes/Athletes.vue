@@ -2,7 +2,7 @@
   <!-- СПИСОК -->
   <div class="judo_form-athletes_info">
     <section class="judo-list">
-      <h2>Лучшие дзюдоисты</h2>
+      <h2>Дзюдоисты</h2>
 
       <!-- Лоадер -->
       <div v-if="isLoading" class="loading">
@@ -95,21 +95,18 @@ onMounted(() => {
 
 /* === КОНТЕЙНЕР === */
 .judo_form-athletes_info {
-  padding-top: 32px;
+  padding-top: 100px;
   padding-left: 0;
-  padding-right: 6rem;
+  padding-right: 0;
 }
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(3, minmax(280px, 1fr));
-  gap: 0.75rem;
-  justify-content: start;
-  margin-left: 0;
-  max-width: none;
-}
-
-/* === КАРТОЧКА — горизонтальная, компактная === */
+  grid-template-columns: repeat(3, minmax(200px, 380px));
+  gap: 1.25rem;
+  justify-content: center;
+  margin: 0 auto;
+}/* === КАРТОЧКА — горизонтальная, компактная === */
 .judo-card {
   display: flex;
   flex-direction: row;

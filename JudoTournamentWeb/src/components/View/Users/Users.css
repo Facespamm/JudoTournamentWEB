@@ -5,8 +5,6 @@
     max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
     margin-left: auto; /* Центрируем/прижимаем к правой части после sidebar */
     margin-right: auto;
-    padding-left: 40px;  /* Увеличил немного для симметрии и дыхания */
-    padding-right: 100px; /* Уменьшил с 100px — 100px было слишком много */
     box-sizing: border-box; /* Чтобы padding не ломал ширину */
 }
 .page-header {

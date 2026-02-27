@@ -149,6 +149,16 @@
           </span>
           <span class="action-text">Панель рефери</span>
         </button>
+
+        <!-- НОВАЯ КНОПКА -->
+        <button class="action-btn" @click="navigateToRegisterAthlete">
+          <span class="action-icon register-athlete">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 12C17.21 12 19 10.21 19 8C19 5.79 17.21 4 15 4C12.79 4 11 5.79 11 8C11 10.21 12.79 12 15 12ZM6 10V7H4V10H1V12H4V15H6V12H9V10H6ZM15 14C12.33 14 7 15.34 7 18V20H23V18C23 15.34 17.67 14 15 14Z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="action-text">Регистрация участника</span>
+        </button>
       </div>
     </div>
 
@@ -214,42 +224,26 @@ const activeTournaments = ref([])
 const toast = ref({
   visible: false,
   message: '',
-  type: 'success' // success | error
+  type: 'success'
 })
 
 const showToast = (message, type = 'success', duration = type === 'success' ? 3000 : 5000) => {
   toast.value = { visible: true, message, type }
-  setTimeout(() => {
-    toast.value.visible = false
-  }, duration)
+  setTimeout(() => { toast.value.visible = false }, duration)
 }
 
 const loadDashboardData = async () => {
   try {
-    // 1. Статистика — гибкая обработка разных форматов
     console.log('=== Запрос GetAdminStatistics ===')
     const statsData = await GetAdminStatistics()
     console.log('GetAdminStatistics → полный ответ:', statsData)
 
     let statsObj = {}
-
     if (statsData) {
-      // Стандарт: { success: true, data: { ... } }
-      if (statsData.success && statsData.data) {
-        statsObj = statsData.data
-      }
-      // Вариант: { data: { success: true, ... } }
-      else if (statsData.data?.success) {
-        statsObj = statsData.data
-      }
-      // Вариант: просто объект со статистикой
-      else if (typeof statsData === 'object' && !Array.isArray(statsData)) {
-        statsObj = statsData
-      }
-      // Вариант: { success: true, result: { ... } }
-      else if (statsData.success && (statsData.result || statsData.results)) {
-        statsObj = statsData.result || statsData.results
-      }
+      if (statsData.success && statsData.data) statsObj = statsData.data
+      else if (statsData.data?.success) statsObj = statsData.data
+      else if (typeof statsData === 'object' && !Array.isArray(statsData)) statsObj = statsData
+      else if (statsData.success && (statsData.result || statsData.results)) statsObj = statsData.result || statsData.results
     }
 
     if (Object.keys(statsObj).length > 0) {
@@ -260,37 +254,25 @@ const loadDashboardData = async () => {
       showToast('Получены некорректные данные статистики', 'error')
     }
 
-    // 2. Активные турниры — исправленная обработка
     console.log('=== Запрос GetLiveTournamentAdmin ===')
     const tournamentsData = await GetLiveTournamentAdmin()
     console.log('GetLiveTournamentAdmin → полный ответ:', tournamentsData)
-    console.log('tournamentsData.success:', tournamentsData?.success)
-    console.log('tournamentsData.data:', tournamentsData?.data)
-    console.log('tournamentsData.athletes:', tournamentsData?.athletes)
 
     let tournamentsList = []
-
     if (tournamentsData && tournamentsData.success) {
-      console.log('✓ success === true')
-
-      // ИСПРАВЛЕНИЕ: В вашем API данные приходят в поле 'athletes', а не 'data'!
       tournamentsList =
-          tournamentsData.data ||           // Стандартный вариант
-          tournamentsData.athletes ||       // ВАШ API возвращает в этом поле!
+          tournamentsData.data ||
+          tournamentsData.athletes ||
           tournamentsData.tournaments ||
           tournamentsData.active_tournaments ||
           tournamentsData.items ||
           tournamentsData.result ||
           []
-
-      console.log('tournamentsList после парсинга:', tournamentsList)
     } else {
       console.warn('✗ success !== true или нет данных')
     }
 
     activeTournaments.value = Array.isArray(tournamentsList) ? tournamentsList : []
-    console.log('✅ activeTournaments.value:', activeTournaments.value)
-    console.log('✅ Количество турниров:', activeTournaments.value.length)
 
   } catch (error) {
     console.error('❌ Ошибка загрузки данных дашборда:', error)
@@ -300,31 +282,19 @@ const loadDashboardData = async () => {
   }
 }
 
-// Вспомогательные функции
 const getStatusClass = (status) => {
-  const statusMap = {
-    'LIVE': 'status-live',
-    'BRACKETS': 'status-brackets',
-    'REGISTRATION': 'status-registration',
-    'WEIGHING': 'status-weighing'
-  }
+  const statusMap = { 'LIVE': 'status-live', 'BRACKETS': 'status-brackets', 'REGISTRATION': 'status-registration', 'WEIGHING': 'status-weighing' }
   return statusMap[status] || 'status-default'
 }
 
 const getStatusText = (status) => {
-  const statusMap = {
-    'LIVE': 'LIVE',
-    'BRACKETS': 'Сетки',
-    'REGISTRATION': 'Регистрация',
-    'WEIGHING': 'Взвешивание'
-  }
+  const statusMap = { 'LIVE': 'LIVE', 'BRACKETS': 'Сетки', 'REGISTRATION': 'Регистрация', 'WEIGHING': 'Взвешивание' }
   return statusMap[status] || status
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('ru-RU')
+  return new Date(dateString).toLocaleDateString('ru-RU')
 }
 
 // Навигация
@@ -336,15 +306,13 @@ const navigateToClubs = () => router.push('/admin/clubsAdmin')
 const navigateToAthletes = () => router.push('/registrationathletes')
 const navigateToTournaments = () => router.push('/tournament')
 const navigateToTournament = (id) => router.push(`/tournament/${id}`)
-const navigateToReferee = () => router.push('/referee')
+const navigateToReferee = () => router.push('/refereeManagement')
+const navigateToRegisterAthlete = () => router.push('/adminregistration')   // НОВОЕ
 
-onMounted(() => {
-  loadDashboardData()
-})
+onMounted(() => { loadDashboardData() })
 </script>
 
 <style scoped>
-/* Базовые стили для иконок */
 .stat-icon {
   width: 56px;
   height: 56px;
@@ -355,12 +323,8 @@ onMounted(() => {
   transition: all 0.3s ease;
 }
 
-.stat-icon svg {
-  width: 28px;
-  height: 28px;
-}
+.stat-icon svg { width: 28px; height: 28px; }
 
-/* Цветовые схемы для карточек статистики */
 .stat-icon.trophy {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   color: #fff;
@@ -399,15 +363,10 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(231, 76, 60, 0.5);
-  }
+  0%, 100% { box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(231, 76, 60, 0.5); }
 }
 
-/* Стили для кнопок быстрых действий */
 .action-icon {
   width: 48px;
   height: 48px;
@@ -419,44 +378,20 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
-.action-icon svg {
-  width: 24px;
-  height: 24px;
-}
+.action-icon svg { width: 24px; height: 24px; }
 
-.action-icon.create {
-  background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-  color: #fff;
-}
+.action-icon.create { background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%); color: #fff; }
+.action-icon.weighing { background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%); color: #fff; }
+.action-icon.brackets { background: linear-gradient(135deg, #E67E22 0%, #D35400 100%); color: #fff; }
+.action-icon.manage-users { background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); color: #fff; }
+.action-icon.manage-clubs { background: linear-gradient(135deg, #34495E 0%, #2C3E50 100%); color: #fff; }
+.action-icon.manage-athletes { background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); color: #fff; }
+.action-icon.referee { background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); color: #fff; }
 
-.action-icon.weighing {
-  background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
-  color: #fff;
-}
-
-.action-icon.brackets {
-  background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
-  color: #fff;
-}
-
-.action-icon.manage-users {
-  background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%);
-  color: #fff;
-}
-
-.action-icon.manage-clubs {
-  background: linear-gradient(135deg, #34495E 0%, #2C3E50 100%);
-  color: #fff;
-}
-
-.action-icon.manage-athletes {
-  background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
-  color: #fff;
-}
-
-.action-icon.referee {
-  background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
-  color: #fff;
+/* НОВЫЙ СТИЛЬ */
+.action-icon.register-athlete {
+  background: linear-gradient(135deg, #c89b3c 0%, #f4d03f 100%);
+  color: #1a1a1a;
 }
 
 .action-btn:hover .action-icon {
@@ -464,7 +399,6 @@ onMounted(() => {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Адаптация под существующие стили */
 .stat-card:hover .stat-icon {
   transform: scale(1.1) rotate(5deg);
 }

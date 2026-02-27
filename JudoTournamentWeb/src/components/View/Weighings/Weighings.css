@@ -4,7 +4,6 @@
     max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
     margin-left: 0;
     padding-left: 20px;
-    padding-right: 100px;
 
 }
 

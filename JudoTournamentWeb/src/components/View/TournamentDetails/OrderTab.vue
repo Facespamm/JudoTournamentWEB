@@ -50,38 +50,104 @@
           class="tatami-section"
       >
         <div class="tatami-header">
-          <div class="tatami-number">{{ tatami > 0 ? tatami : '—' }}</div>
-          <h2 class="tatami-title">{{ tatami > 0 ? `Татами ${tatami}` : 'Не назначено' }}</h2>
+          <div class="tatami-badge">
+            <span class="tatami-label">ТАТАМИ</span>
+            <span class="tatami-num">{{ tatami > 0 ? tatami : '—' }}</span>
+          </div>
+          <div class="tatami-meta">
+            <span class="fights-count">{{ groupedFights[tatami]?.length || 0 }} схваток</span>
+          </div>
         </div>
-        <div class="fights-rows">
+
+        <div class="fights-grid">
           <div
               v-for="fight in groupedFights[tatami]"
               :key="fight.id"
-              class="fight-row"
+              class="fight-card"
+              :class="{
+                'fight-live': getLiveStatus(fight) === 'IN_PROGRESS',
+                'fight-done': getLiveStatus(fight) === 'COMPLETED'
+              }"
           >
-            <div class="status-bar"></div>
-            <div class="status-corner">
-              <span v-if="fight.status === 'IN_PROGRESS'" class="dot"></span>
-              {{ statusText(fight.status) }}
+            <!-- Статус-бейдж -->
+            <div class="fight-status-badge">
+              <span v-if="getLiveStatus(fight) === 'IN_PROGRESS'" class="pulse-dot"></span>
+              <span class="status-text" :class="getLiveStatus(fight)">{{ statusText(getLiveStatus(fight)) }}</span>
             </div>
-            <div class="row-content">
-              <div class="category-weight">
-                {{ fight.category || '—' }}
-              </div>
-              <div class="fighters-matchup">
-                <div class="fighter left">
-                  <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
-                  <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
+
+            <!-- Мета инфо -->
+            <div class="fight-meta">
+              <span class="fight-category">{{ fight.category }}</span>
+              <span class="fight-round">{{ fight.round_info }}</span>
+            </div>
+
+            <!-- Табло -->
+            <div class="scoreboard">
+              <!-- Боец 1 (белый) -->
+              <div class="fighter-row white-side">
+                <div class="fighter-info">
+                  <div class="fighter-color-dot white-dot"></div>
+                  <div class="fighter-details">
+                    <span class="fighter-club">{{ fight.fighter1?.club || '' }}</span>
+                    <span class="fighter-name">{{ fight.fighter1?.name || 'TBD' }}</span>
+                  </div>
                 </div>
-                <div class="fighter right">
-                  <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
-                  <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
+                <div class="scores">
+                  <div class="score-block">
+                    <span class="score-label">I</span>
+                    <span class="score-val">{{ getScore(fight.id, 'white', 'ippon') }}</span>
+                  </div>
+                  <div class="score-block">
+                    <span class="score-label">W</span>
+                    <span class="score-val">{{ getScore(fight.id, 'white', 'wazaari') }}</span>
+                  </div>
+                  <div class="score-block">
+                    <span class="score-label">Y</span>
+                    <span class="score-val">{{ getScore(fight.id, 'white', 'yuko') }}</span>
+                  </div>
+                  <div class="score-block shido-block">
+                    <span class="score-label">S</span>
+                    <span class="score-val shido">{{ getScore(fight.id, 'white', 'shido') }}</span>
+                  </div>
                 </div>
               </div>
-              <div class="round-or-timer" :class="{ 'live-timer': fight.status === 'IN_PROGRESS' }">
-                {{ fight.round_info || '—' }}
+
+              <div class="vs-divider">
+                <div class="divider-line"></div>
+                <span class="vs-text">VS</span>
+                <div class="divider-line"></div>
+              </div>
+
+              <!-- Боец 2 (синий) -->
+              <div class="fighter-row blue-side">
+                <div class="fighter-info">
+                  <div class="fighter-color-dot blue-dot"></div>
+                  <div class="fighter-details">
+                    <span class="fighter-club">{{ fight.fighter2?.club || '' }}</span>
+                    <span class="fighter-name">{{ fight.fighter2?.name || 'TBD' }}</span>
+                  </div>
+                </div>
+                <div class="scores">
+                  <div class="score-block">
+                    <span class="score-label">I</span>
+                    <span class="score-val">{{ getScore(fight.id, 'blue', 'ippon') }}</span>
+                  </div>
+                  <div class="score-block">
+                    <span class="score-label">W</span>
+                    <span class="score-val">{{ getScore(fight.id, 'blue', 'wazaari') }}</span>
+                  </div>
+                  <div class="score-block">
+                    <span class="score-label">Y</span>
+                    <span class="score-val">{{ getScore(fight.id, 'blue', 'yuko') }}</span>
+                  </div>
+                  <div class="score-block shido-block">
+                    <span class="score-label">S</span>
+                    <span class="score-val shido">{{ getScore(fight.id, 'blue', 'shido') }}</span>
+                  </div>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -92,8 +158,8 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchGetCategoryByTournament } from "@/components/View/Brackets/fetchBrackets.js"
-import { fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"
+import { fetchGetCategoryByTournament, fetchBrackets } from "@/components/View/Brackets/fetchBrackets.js"
+import { fightScores, initFight } from "@/stores/fightScoresStore.js"
 
 const route = useRoute()
 const router = useRouter()
@@ -106,6 +172,16 @@ const isLoadingCategories = ref(true)
 
 const fights = ref([])
 const isLoadingFights = ref(false)
+
+// Читаем очко из стора (реактивно обновляется)
+const getScore = (fightId, color, field) => {
+  return fightScores[fightId]?.[color]?.[field] ?? 0
+}
+
+// Статус из стора или из данных боя
+const getLiveStatus = (fight) => {
+  return fightScores[fight.id]?.status || fight.status
+}
 
 const loadCategories = async () => {
   if (!tournamentId.value) {
@@ -144,16 +220,19 @@ const loadFights = async () => {
           const res = await fetchBrackets(tournamentId.value, cat.id)
           if (res?.success && res.fights?.length) {
             const catName = `${cat.name} ${cat.gender ? `(${cat.gender === 'MALE' ? 'М' : 'Ж'})` : ''}`
-            const catFights = res.fights.map(fight => ({
-              id: fight.id,
-              tatami: fight.tatami_number ?? 0,
-              status: fight.status_fight || 'SCHEDULED',
-              category: catName,
-              fighter1: formatAthlete(fight.white_athlete),
-              fighter2: formatAthlete(fight.blue_athlete),
-              round: fight.round || null,
-              round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
-            }))
+            const catFights = res.fights.map(fight => {
+              initFight(fight.id)
+              return {
+                id: fight.id,
+                tatami: fight.tatami_number ?? 0,
+                status: fight.status_fight || 'SCHEDULED',
+                category: catName,
+                fighter1: formatAthlete(fight.white_athlete),
+                fighter2: formatAthlete(fight.blue_athlete),
+                round: fight.round || null,
+                round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
+              }
+            })
             allFights.push(...catFights)
           }
         } catch (err) {
@@ -164,16 +243,19 @@ const loadFights = async () => {
     } else {
       const res = await fetchBrackets(tournamentId.value, selectedCategory.value.id)
       if (res?.success && res.fights?.length) {
-        fights.value = res.fights.map(fight => ({
-          id: fight.id,
-          tatami: fight.tatami_number ?? 0,
-          status: fight.status_fight || 'SCHEDULED',
-          category: selectedCategory.value.name,
-          fighter1: formatAthlete(fight.white_athlete),
-          fighter2: formatAthlete(fight.blue_athlete),
-          round: fight.round || null,
-          round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
-        }))
+        fights.value = res.fights.map(fight => {
+          initFight(fight.id)
+          return {
+            id: fight.id,
+            tatami: fight.tatami_number ?? 0,
+            status: fight.status_fight || 'SCHEDULED',
+            category: selectedCategory.value.name,
+            fighter1: formatAthlete(fight.white_athlete),
+            fighter2: formatAthlete(fight.blue_athlete),
+            round: fight.round || null,
+            round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
+          }
+        })
       }
     }
   } catch (err) {
@@ -185,12 +267,8 @@ const loadFights = async () => {
 }
 
 const formatAthlete = (athlete) => {
-  if (!athlete) {
-    return { name: 'Ожидает победителя', club: '' }
-  }
-  const name = [athlete.last_name, athlete.first_name, athlete.middle_name]
-      .filter(Boolean)
-      .join(' ')
+  if (!athlete) return { name: 'Ожидает победителя', club: '' }
+  const name = [athlete.last_name, athlete.first_name, athlete.middle_name].filter(Boolean).join(' ')
   return { name, club: athlete.club_name || '' }
 }
 
@@ -226,26 +304,21 @@ const statusText = (s) => {
   }
 }
 
-const viewFightDetail = (id) => {
-  router.push(`/fights/${id}`)
-}
-
 watch(selectedCategory, loadFights)
-
-onMounted(() => {
-  loadCategories()
-})
+onMounted(() => { loadCategories() })
 </script>
 
 <style scoped>
+/* ===================== ОСНОВА ===================== */
 .fights-overview {
   min-height: 100vh;
-  background: #ffffff;
-  padding: 40px 1.5rem 4rem;
+  background: #f4f5f7;
+  padding: 40px 2rem 4rem;
   font-family: 'SF Pro Display', -apple-system, sans-serif;
   color: #1a1a1a;
 }
 
+/* ===================== ЗАГОЛОВОК ===================== */
 .fights-header h1 {
   font-size: 2.4rem;
   font-weight: 900;
@@ -253,19 +326,21 @@ onMounted(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-align: center;
+  margin-bottom: 0.3rem;
 }
 
 .subtitle {
-  font-size: 1.15rem;
-  color: #666;
+  font-size: 1.1rem;
+  color: #888;
   text-align: center;
-  margin-top: 0.4rem;
+  margin-bottom: 2rem;
 }
 
+/* ===================== ДРОПДАУН ===================== */
 .weight-categories-dropdown {
   display: flex;
   justify-content: center;
-  margin: 1.5rem 0 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .category-dropdown {
@@ -274,7 +349,7 @@ onMounted(() => {
   border: 2px solid #c89b3c;
   background: white;
   color: #333;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   min-width: 340px;
   cursor: pointer;
@@ -282,276 +357,374 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
-.category-dropdown:hover {
-  box-shadow: 0 6px 16px rgba(200, 155, 60, 0.15);
-}
-
 .category-dropdown:focus {
   outline: none;
   box-shadow: 0 0 0 4px rgba(200, 155, 60, 0.2);
 }
 
+/* ===================== ГРУППА ===================== */
 .group-section {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 
-.group-label {
-  color: #1a1a1a;
-}
+.group-label { color: #888; }
+.group-weight { color: #c89b3c; font-size: 1.1rem; }
 
-.group-weight {
-  color: #c89b3c;
-  font-size: 1.2rem;
-}
-
+/* ===================== ТАТАМИ СЕКЦИЯ ===================== */
 .tatami-sections {
-  max-width: 95%;
+  max-width: 1300px;
   margin: 0 auto;
-  width: 100%;
 }
 
 .tatami-section {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-  margin-bottom: 1.5rem;
-  border-top: 3px solid #c89b3c;
+  margin-bottom: 2.5rem;
 }
 
 .tatami-header {
   display: flex;
   align-items: center;
-  padding: 0.7rem 1.2rem;
-  background: white;
-  border-bottom: 1px solid #eee;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
 }
 
-.tatami-number {
-  font-size: 2.2rem;
+.tatami-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a1a2e;
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border-radius: 30px;
+}
+
+.tatami-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.tatami-num {
+  font-size: 1.4rem;
   font-weight: 900;
   color: #c89b3c;
-  margin-right: 0.6rem;
   line-height: 1;
 }
 
-.tatami-title {
-  font-size: 1.3rem;
-  font-weight: 900;
-  margin: 0;
-  color: #c89b3c;
-}
-
-.fight-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 0.8rem 1.2rem;
-  border-bottom: 1px solid #eee;
-  transition: background 0.3s;
-}
-
-.fight-row:hover {
-  background: #fafafa;
-}
-
-.fight-row:last-child {
-  border-bottom: none;
-}
-
-.status-bar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: linear-gradient(135deg, #c89b3c, #f4d03f);
-}
-
-.status-corner {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  background: white;
-  padding: 5px 10px;
-  border-radius: 10px;
+.fights-count {
   font-size: 0.85rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  z-index: 10;
-  color: #c89b3c;
+  color: #888;
+  font-weight: 500;
 }
 
-.dot {
+/* ===================== СЕТКА КАРТОЧЕК ===================== */
+.fights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  gap: 1rem;
+}
+
+/* ===================== КАРТОЧКА БОЯ ===================== */
+.fight-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1.5px solid #e8e8e8;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.fight-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #e8e8e8;
+}
+
+.fight-card.fight-live {
+  border-color: #c89b3c;
+  box-shadow: 0 4px 20px rgba(200, 155, 60, 0.15);
+}
+
+.fight-card.fight-live::before {
+  background: linear-gradient(90deg, #c89b3c, #f4d03f);
+}
+
+.fight-card.fight-done {
+  opacity: 0.7;
+}
+
+.fight-card.fight-done::before {
+  background: #10b981;
+}
+
+/* ===================== СТАТУС БЕЙДЖ ===================== */
+.fight-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0.6rem;
+}
+
+.pulse-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #c89b3c;
-  animation: pulse 1.8s infinite;
+  animation: pulse 1.5s infinite;
+  flex-shrink: 0;
 }
 
-.row-content {
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+.status-text {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.status-text.IN_PROGRESS { color: #c89b3c; }
+.status-text.SCHEDULED { color: #64748b; }
+.status-text.COMPLETED { color: #10b981; }
+
+/* ===================== МЕТА ===================== */
+.fight-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  padding-right: 140px;
+  margin-bottom: 1rem;
 }
 
-.category-weight {
-  font-size: 1.3rem;
-  font-weight: 800;
-  min-width: 110px;
+.fight-category {
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #c89b3c;
+  background: rgba(200, 155, 60, 0.1);
+  padding: 3px 10px;
+  border-radius: 20px;
 }
 
-.fighters-matchup {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 2rem;
+.fight-round {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #888;
 }
 
-.fighter {
+/* ===================== ТАБЛО ===================== */
+.scoreboard {
   display: flex;
   flex-direction: column;
-  min-width: 240px;
+  gap: 0;
 }
 
-.fighter.left {
-  align-items: flex-start;
-  text-align: left;
+.fighter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  gap: 0.5rem;
 }
 
-.fighter.right {
-  align-items: flex-end;
-  text-align: right;
+.white-side {
+  background: #f8f9fa;
+  border: 1px solid #e8e8e8;
 }
 
-.club-code {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #c89b3c;
-  margin-bottom: 0.2rem;
+.blue-side {
+  background: #1a3a6e;
 }
+
+.fighter-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+}
+
+.fighter-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.white-dot {
+  background: white;
+  border: 2px solid #ccc;
+}
+
+.blue-dot {
+  background: #4a9eff;
+  border: 2px solid #3b7fd4;
+}
+
+.fighter-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fighter-club {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.white-side .fighter-club { color: #c89b3c; }
+.blue-side .fighter-club { color: rgba(200, 155, 60, 0.9); }
 
 .fighter-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.white-side .fighter-name { color: #1a1a1a; }
+.blue-side .fighter-name { color: white; }
+
+/* ===================== ОЧКИ ===================== */
+.scores {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.score-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 36px;
+  border-radius: 6px;
+  padding: 4px 0;
+}
+
+.white-side .score-block {
+  background: white;
+  border: 1px solid #e0e0e0;
+}
+
+.blue-side .score-block {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.score-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.white-side .score-label { color: #999; }
+.blue-side .score-label { color: rgba(255, 255, 255, 0.5); }
+
+.score-val {
   font-size: 1.2rem;
-  font-weight: 600;
-  color: #000;
-}
-
-.round-or-timer {
-  font-size: 1.8rem;
   font-weight: 900;
-  font-family: 'SF Pro Display', monospace;
-  min-width: 140px;
-  text-align: center;
-  color: #1a1a1a;
+  line-height: 1;
 }
 
-.live-timer {
-  color: #c89b3c;
-  font-size: 2.2rem;
+.white-side .score-val { color: #1a1a1a; }
+.blue-side .score-val { color: white; }
+
+.shido-block .score-val.shido { color: white; }
+.blue-side .shido-block .score-val.shido { color: white; }
+
+/* ===================== РАЗДЕЛИТЕЛЬ ===================== */
+.vs-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0.9rem;
 }
 
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e8e8e8;
+}
+
+.vs-text {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #bbb;
+  letter-spacing: 1px;
+}
+
+/* ===================== СОСТОЯНИЯ ===================== */
 .categories-loading,
 .fights-loading,
 .no-categories,
 .no-fights {
   text-align: center;
   padding: 4rem 2rem;
-  color: #666;
-  font-size: 1.1rem;
+  color: #888;
+  font-size: 1rem;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #c89b3c;
+  width: 36px;
+  height: 36px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #c89b3c;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-@media (max-width: 992px) {
-  .row-content {
-    flex-direction: column;
-    align-items: flex-start;
-    padding-right: 0;
-  }
-  .fighters-matchup {
-    padding: 0.8rem 0;
-    width: 100%;
-    justify-content: space-between;
-  }
-  .round-or-timer {
-    margin: 0.8rem 0;
-    text-align: left;
-  }
-  .category-weight {
-    margin-bottom: 0.8rem;
-  }
-  .tatami-header {
-    flex-direction: column;
-    text-align: center;
-  }
-  .tatami-number {
-    margin-right: 0;
-    margin-bottom: 0.4rem;
-  }
-  .status-corner {
-    right: 50%;
-    transform: translateX(50%);
-    top: 6px;
-  }
-}
-
+/* ===================== АДАПТИВ ===================== */
 @media (max-width: 768px) {
-  .fighters-matchup {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.8rem;
+  .fights-grid {
+    grid-template-columns: 1fr;
   }
-  .fighter.left,
-  .fighter.right {
-    align-items: center;
-    text-align: center;
-  }
-  .tatami-number {
-    font-size: 3rem;
-  }
-  .tatami-title {
-    font-size: 1.8rem;
-  }
+
   .category-dropdown {
     min-width: 100%;
+  }
+
+  .fights-header h1 {
+    font-size: 1.8rem;
   }
 }
 
 @media (max-width: 480px) {
-  .fights-header h1 {
-    font-size: 2rem;
+  .score-block {
+    width: 30px;
+  }
+
+  .score-val {
+    font-size: 1rem;
+  }
+
+  .fighter-name {
+    font-size: 0.82rem;
   }
 }
 </style>

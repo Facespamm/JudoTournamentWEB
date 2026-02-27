@@ -569,7 +569,6 @@ export default {
   padding-top: 80px;
   max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
   padding-left: 20px;
-  padding-right: 100px;
 }
 
 .header {

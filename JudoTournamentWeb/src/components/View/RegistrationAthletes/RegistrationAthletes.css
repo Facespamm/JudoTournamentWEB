@@ -8,8 +8,6 @@
     box-sizing: border-box;
     padding-top: 80px;
     padding-bottom: 2rem;
-    padding-left: 40px;
-    padding-right: 100px;
     max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
     margin-left: auto;
     margin-right: auto;

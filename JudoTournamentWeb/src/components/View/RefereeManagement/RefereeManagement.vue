@@ -366,7 +366,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.referees-management { padding: 80px 28px 60px; max-width: 1200px; font-family: 'Segoe UI', system-ui, sans-serif; color: #1a1a1a; }
+.referees-management {
+  padding: 80px 28px 60px;
+  max-width: 1200px;
+  margin: 0 auto;           /* ← Это центрирует блок на странице */
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #1a1a1a;
+}
+
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .page-header h1 { font-size: 1.7rem; font-weight: 700; margin: 0 0 4px; line-height: 1.2; }
 .page-header p { margin: 0; color: #6b7280; font-size: 0.93rem; }
@@ -443,17 +450,14 @@ onMounted(() => {
   max-width: 520px;
   padding: 32px 28px 28px;
 }
-
 .modal-header {
   margin-bottom: 24px;
 }
-
 .modal-subtitle {
   margin: 4px 0 0;
   color: #6b7280;
   font-size: 0.93rem;
 }
-
 .error-container {
   background: #fef2f2;
   border: 1.5px solid #fecaca;
@@ -464,7 +468,6 @@ onMounted(() => {
   min-height: 20px;
   transition: all 0.2s ease;
 }
-
 .error-container:not(.visible) {
   opacity: 0;
   height: 0;
@@ -472,13 +475,11 @@ onMounted(() => {
   margin: 0;
   overflow: hidden;
 }
-
 .error-text {
   color: #ef4444;
   font-size: 0.95rem;
   font-weight: 500;
 }
-
 .form-group label {
   display: block;
   margin-bottom: 7px;
@@ -486,7 +487,6 @@ onMounted(() => {
   color: #374151;
   font-size: 0.9rem;
 }
-
 .modal-select {
   width: 100%;
   padding: 12px 14px;
@@ -496,19 +496,16 @@ onMounted(() => {
   background: #fff;
   transition: all 0.2s ease;
 }
-
 .modal-select:focus {
   outline: none;
   border-color: #c89b3c;
   box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.15);
 }
-
 .modal-select:disabled {
   background: #f9fafb;
   color: #9ca3af;
   cursor: not-allowed;
 }
-
 .modal-actions {
   display: flex;
   gap: 12px;
@@ -517,7 +514,6 @@ onMounted(() => {
   padding-top: 20px;
   border-top: 1px solid #f1f5f9;
 }
-
 .assign-btn {
   display: flex;
   justify-content: center;
@@ -525,7 +521,6 @@ onMounted(() => {
   min-width: 180px;
   text-align: center;
 }
-
 @media (max-width: 600px) {
   .assign-modal {
     margin: 12px;

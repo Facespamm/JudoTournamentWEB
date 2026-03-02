@@ -28,6 +28,71 @@ export const createBracket = async (bracketData, tournament_id, categoryId, tata
         return { success: false, error: error.message }
     }
 };
+// Исправленная версия createBasketSemiFinals
+export const createBasketSemiFinals = async (bracketData, tournament_id, categoryId, tatami_number = null) => {
+    try {
+        // Базовый URL — только обязательный параметр category
+        let url = `/api/brackets/${tournament_id}/semifinals-consalation?category=${categoryId}`;
+
+        // Добавляем tatami_number ТОЛЬКО если он валиден
+        if (tatami_number !== null
+            && tatami_number !== undefined
+            && Number.isInteger(Number(tatami_number))
+            && Number(tatami_number) >= 1) {
+
+            url += `&tatami_number=${tatami_number}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            },
+            body: JSON.stringify(bracketData)
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Ошибка при создании сетки');
+        }
+
+        return { success: true, data: await response.json() };
+    } catch (error) {
+        console.error('Ошибка при создании сетки:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+export const createBasketFinals = async (bracketData, tournament_id, categoryId, tatami_number = null) => {
+    try {
+        // Формируем URL динамически — добавляем tatami_number только если он указан и валиден
+        let url = `/api/brackets/${tournament_id}/finals-consalation?category=${categoryId}&tatami_number=${tatami_number}`
+
+        if (tatami_number !== null && tatami_number !== undefined && Number.isInteger(tatami_number) && tatami_number >= 1) {
+            url += `&tatami_number=${tatami_number}`
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            },
+            body: JSON.stringify(bracketData)
+        })
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}))
+            throw new Error(err.message || 'Ошибка при создании сетки')
+        }
+
+        return { success: true, data: await response.json() }
+    } catch (error) {
+        console.error('Ошибка при создании сетки:', error)
+        return { success: false, error: error.message }
+    }
+};
 
 export const fetchBrackets = async (tournament_id, category_id) => {
     const url = `/api/brackets/${tournament_id}/fights?category=${category_id}`;
@@ -48,6 +113,62 @@ export const fetchBrackets = async (tournament_id, category_id) => {
         return { success: false, error: error.message };
     }
 };
+
+export const getResultTournament = async (tournament_id, category_id) => {
+    const url = `/api/results/?tournament_id=${tournament_id}&category_id=${category_id}`;
+    try {
+        const response = await fetch(url, {
+            headers: { 'X-API-Key': 'mobile_app_2024' }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        return data;
+    } catch (error) {
+        console.error('Ошибка загрузки результатов:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+export const getSemifinalists = async (tournament_id, category_id) => {
+    const url = `/api/fights/${tournament_id}/consolation/semifinalists?category=${category_id}`;
+    try {
+        const response = await fetch(url, {
+            headers: { 'X-API-Key': 'mobile_app_2024' }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        return data;
+    } catch (error) {
+        console.error('Ошибка загрузки утешительных боев:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+export const getFinalists = async (tournament_id, category_id) => {
+    const url = `/api/fights/${tournament_id}/consolation/finalists?category=${category_id}`;
+    try {
+        const response = await fetch(url, {
+            headers: { 'X-API-Key': 'mobile_app_2024' }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        return data;
+    } catch (error) {
+        console.error('Ошибка загрузки утешительных боев:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+
 export const fetchBracketDetail = async (id) => {
     try {
         const response = await fetch(`/api/brackets/${id}/fights

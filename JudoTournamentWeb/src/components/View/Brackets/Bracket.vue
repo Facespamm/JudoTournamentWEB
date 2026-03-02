@@ -8,7 +8,14 @@
             :class="{ active: activeTab === 'create' }"
             @click="activeTab = 'create'"
         >
-          Создать сетку
+          Создать основную сетку
+        </button>
+        <button
+            class="nav-tab"
+            :class="{ active: activeTab === 'consolation' }"
+            @click="activeTab = 'consolation'"
+        >
+          Создать утешительную сетку
         </button>
         <button
             class="nav-tab"
@@ -21,10 +28,18 @@
     </section>
 
     <section class="management-content">
-      <!-- Создание сетки -->
+      <!-- Создание основной сетки -->
       <BracketCreation
           v-if="activeTab === 'create'"
           :tournaments="tournaments"
+          @bracket-created="handleBracketCreated"
+      />
+
+      <!-- Создание утешительной сетки -->
+      <ConsolationBracketCreation
+          v-if="activeTab === 'consolation'"
+          :tournaments="tournaments"
+          :existingBrackets="brackets"
           @bracket-created="handleBracketCreated"
       />
 
@@ -46,9 +61,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fetchTournaments } from '@/components/View/Tournaments/fetchTournaments.js'
+
 import BracketCreation from './BracketsCreate.vue'
+import ConsolationBracketCreation from './../Brackets/ConsolationBracketCreation.vue'   // ← Новый компонент
 import BracketsView from './ViewBrackets.vue'
 import BracketsCreateFight from './BracketsCreateFight.vue'
+
 import "./Brackets.css"
 
 const activeTab = ref('create')
@@ -102,6 +120,7 @@ const deleteBracket = (id) => {
 </script>
 
 <style scoped>
+/* Все стили полностью сохранены из вашего оригинального кода */
 .bracket-management-page {
   width: 100%;
   min-height: 100vh;

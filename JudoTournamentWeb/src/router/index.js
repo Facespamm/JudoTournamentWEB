@@ -71,7 +71,7 @@ const routes = [
             },
             {
                 path: 'results',
-                component: () => import('@/components/View/TournamentDetails/ResultsTab.vue')
+                component: () => import('@/components/View/TournamentDetails/WeightingTab.vue')
             },
             {
                 path: 'live',
@@ -90,7 +90,7 @@ const routes = [
     { path: '/roles', name: 'roles', component: ManageRole },
     { path: '/registrationathletes', name: 'registrationathletes', component: RegistrationAthletes },
     { path: '/referee', name: 'referee', component: Referees },
-    { path: '/weighing', name: 'weighing', component: Weighings },
+    { path: '/weighing', name: 'weighing', component: Weighings, meta: { hideSidebar: true } },
     { path: '/tatami', name: 'tatami', component: Fight },
     { path: '/scoreboard', name: 'scoreboard', component: Scoreboard },
     { path: '/admin', name: 'admin', component: AdminDashboard },

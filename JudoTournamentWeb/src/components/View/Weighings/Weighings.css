@@ -1,15 +1,41 @@
 .weighings-management {
     min-height: 100vh;
     padding-top: 80px;
-    max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
-    margin-left: 0;
+    max-width: 1400px;
+    margin: 0 auto;
     padding-left: 20px;
-
+    padding-right: 20px;
 }
 
 .weighings-header {
     text-align: center;
     margin-bottom: 2rem;
+    position: relative;
+}
+
+.weighings-back-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.weighings-back-btn:hover {
+    background: #f0f0f0;
+    border-color: #bbb;
+    color: #333;
 }
 
 .weighings-header h1 {
@@ -85,6 +111,7 @@
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.3s ease;
+    box-sizing: border-box;
 }
 
 .weighings-search-input:focus {
@@ -167,7 +194,6 @@
     background: #f0f0f0;
     color: #333;
 }
-
 .weighings-btn-secondary:hover {
     background: #e0e0e0;
 }
@@ -383,7 +409,8 @@
     font-size: 0.9rem;
 }
 
-.weighings-form-group input {
+.weighings-form-group input,
+.weighings-form-group textarea {
     padding: 0.75rem;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -391,7 +418,8 @@
     transition: border-color 0.3s ease;
 }
 
-.weighings-form-group input:focus {
+.weighings-form-group input:focus,
+.weighings-form-group textarea:focus {
     outline: none;
     border-color: #007bff;
 }
@@ -465,6 +493,12 @@
 @media (max-width: 768px) {
     .weighings-management {
         padding: 80px 1rem 1rem;
+    }
+
+    .weighings-back-btn {
+        position: static;
+        transform: none;
+        margin-bottom: 1rem;
     }
 
     .weighings-filters {

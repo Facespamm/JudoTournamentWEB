@@ -2,6 +2,9 @@
   <div class="weighings-management">
     <!-- ЗАГОЛОВОК -->
     <div class="weighings-header">
+      <button class="weighings-back-btn" @click="router.back()">
+        ← Назад
+      </button>
       <h1>Управление взвешиваниями</h1>
       <p>Управление весом атлетов и статусами взвешивания</p>
     </div>
@@ -53,7 +56,6 @@
             </option>
           </select>
 
-          <!-- Подсказки под селектом категории -->
           <div class="weighings-filter-hint">
             <small v-if="isLoadingCategories" class="hint-loading">Загрузка категорий...</small>
             <small v-else-if="selectedTournamentId && tournamentCategories.length === 0" class="hint-no-data">
@@ -269,7 +271,6 @@
               <input :value="currentCategoryLabel" disabled />
             </div>
 
-            <!-- Выбор атлета через расширенную таблицу -->
             <div class="weighings-form-group athlete-selection-group">
               <label>Атлет <span class="required">*</span></label>
 
@@ -378,6 +379,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { fetchTournaments } from '@/components/View/Tournaments/fetchTournaments.js'
 import {
   fetchWeighings,
@@ -388,6 +390,8 @@ import {
 import { fetchCategoriesById } from '@/components/View/TournamentDetails/fetchTournamentDetail.js'
 
 import './Weighings.css'
+
+const router = useRouter()
 
 // Состояния
 const tournaments = ref([])
@@ -502,13 +506,11 @@ const formatCategoryLabel = cat => {
   return label
 }
 
-// Новые функции для таблицы атлетов
 const getFullName = (ath) => {
   if (ath.full_name) return ath.full_name
   const parts = []
   if (ath.last_name) parts.push(ath.last_name)
   if (ath.first_name) parts.push(ath.first_name)
-  // В примере данных last_name может быть отчеством, но обычно last_name — фамилия
   return parts.join(' ') || `Атлет #${ath.athlete_id || ath.id}`
 }
 
@@ -784,7 +786,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Оверлей с отступом слева для навбара */
 .weighings-modal-overlay {
   position: fixed;
   top: 0;
@@ -796,9 +797,6 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding-left: 280px;     /* Подгоните под ширину вашего навбара */
-  padding-right: 40px;
-  box-sizing: border-box;
 }
 
 .weighings-modal-content {
@@ -814,12 +812,10 @@ onMounted(async () => {
 }
 
 .weighings-modal-content.wide-modal {
-  width: 100%;
-  max-width: none;
-  min-width: 900px;
+  width: 95%;
+  max-width: 960px;
 }
 
-/* Заголовок, тело и футер модалки */
 .weighings-modal-header {
   padding: 20px 24px;
   border-bottom: 1px solid #e0e0e0;
@@ -849,7 +845,6 @@ onMounted(async () => {
   background: #f8f9fa;
 }
 
-/* Таблица атлетов с новыми столбцами */
 .weighings-athletes-table-wrapper {
   max-height: 500px;
   overflow-y: auto;
@@ -872,19 +867,19 @@ onMounted(async () => {
 }
 
 .weighings-athletes-table th:nth-child(2),
-.weighings-athletes-table td:nth-child(2) { width: 25%; } /* ФИО */
+.weighings-athletes-table td:nth-child(2) { width: 25%; }
 
 .weighings-athletes-table th:nth-child(3),
-.weighings-athletes-table td:nth-child(3) { width: 15%; } /* Дата рождения */
+.weighings-athletes-table td:nth-child(3) { width: 15%; }
 
 .weighings-athletes-table th:nth-child(4),
-.weighings-athletes-table td:nth-child(4) { width: 10%; } /* Возраст */
+.weighings-athletes-table td:nth-child(4) { width: 10%; }
 
 .weighings-athletes-table th:nth-child(5),
-.weighings-athletes-table td:nth-child(5) { width: 25%; } /* Клуб */
+.weighings-athletes-table td:nth-child(5) { width: 25%; }
 
 .weighings-athletes-table th:nth-child(6),
-.weighings-athletes-table td:nth-child(6) { width: 10%; } /* Пол */
+.weighings-athletes-table td:nth-child(6) { width: 10%; }
 
 .weighings-athletes-table th {
   background-color: #f8f9fa;
@@ -902,27 +897,15 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
   .weighings-athletes-table-wrapper {
     overflow-x: auto;
   }
-
   .weighings-athletes-table {
-    min-width: 900px;
-  }
-
-  .weighings-modal-overlay {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .weighings-modal-content.wide-modal {
-    min-width: auto;
+    min-width: 700px;
   }
 }
 
-/* Сообщения и подсказки */
 .no-athletes-message,
 .loading-message {
   text-align: center;

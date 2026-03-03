@@ -161,7 +161,7 @@ const tabComponents = {
   draw:      defineAsyncComponent(() => import('@/components/View/TournamentDetails/DrawTab.vue')),
   order:     defineAsyncComponent(() => import('@/components/View/TournamentDetails/OrderTab.vue')),
   athletes:  defineAsyncComponent(() => import('@/components/View/TournamentDetails/AthletesTab.vue')),
-  weighing:  defineAsyncComponent(() => import('@/components/View/TournamentDetails/ResultsTab.vue')),
+  weighing:  defineAsyncComponent(() => import('@/components/View/TournamentDetails/WeightingTab.vue')),
   results:   defineAsyncComponent(() => import('@/components/View/TournamentDetails/TournamentResultsTab.vue')),
   live:      defineAsyncComponent(() => import('@/components/View/TournamentDetails/LiveTab.vue'))
 }

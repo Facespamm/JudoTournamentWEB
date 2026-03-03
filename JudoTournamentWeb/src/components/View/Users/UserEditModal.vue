@@ -5,6 +5,7 @@
         <h2>Редактировать пользователя</h2>
         <button class="modal-close" @click="$emit('close')">×</button>
       </div>
+
       <form @submit.prevent="handleSave" class="user-form">
         <div class="form-grid">
           <div class="form-group">
@@ -21,13 +22,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Логин *</label>
-            <input
-                v-model="localForm.username"
-                type="text"
-                class="form-input"
-                required
-                readonly
-            />
+            <input v-model="localForm.username" type="text" class="form-input" required readonly />
           </div>
           <div class="form-group">
             <label class="form-label">Email</label>
@@ -45,6 +40,7 @@
             </select>
           </div>
         </div>
+
         <div class="form-actions">
           <button type="button" class="btn-cancel" @click="$emit('close')">Отмена</button>
           <button type="submit" class="btn-save" :disabled="saving">
@@ -54,6 +50,34 @@
       </form>
     </div>
   </div>
+
+  <!-- МОДАЛКА УСПЕХА (точно как в создании турнира) -->
+  <div v-if="showSuccessModal" class="admin-modal-overlay" @click.self="closeSuccessModal">
+    <div class="admin-modal-content success-modal">
+      <div class="success-icon">✅</div>
+      <h2>Успешно!</h2>
+      <p class="success-text">{{ successMessage }}</p>
+      <div class="admin-modal-actions">
+        <button class="admin-modal-button admin-modal-button-submit" @click="closeSuccessModal">
+          Отлично, продолжить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ОШИБКИ (точно как в создании турнира) -->
+  <div v-if="showErrorModal" class="admin-modal-overlay" @click.self="closeErrorModal">
+    <div class="admin-modal-content error-modal">
+      <div class="error-icon">❌</div>
+      <h2>Ошибка</h2>
+      <p class="error-text">{{ errorMessage }}</p>
+      <div class="admin-modal-actions">
+        <button class="admin-modal-button admin-modal-button-cancel" @click="closeErrorModal">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -61,14 +85,12 @@ import { UpdateUser } from "@/components/View/Users/fetchUsers.js"
 
 export default {
   name: 'UserEditModal',
-
   props: {
     user: {
       type: Object,
       required: true
     }
   },
-
   data() {
     return {
       localForm: {
@@ -82,10 +104,14 @@ export default {
         is_active: true,
         password: ''
       },
-      saving: false
+      saving: false,
+      // === НОВЫЕ ПОЛЯ ДЛЯ КРАСИВЫХ УВЕДОВ ===
+      showSuccessModal: false,
+      successMessage: '',
+      showErrorModal: false,
+      errorMessage: ''
     }
   },
-
   watch: {
     user: {
       immediate: true,
@@ -107,18 +133,16 @@ export default {
       }
     }
   },
-
   methods: {
     async handleSave() {
       if (!this.localForm?.id) {
-        console.error('Нет id пользователя при сохранении')
-        alert('Ошибка: идентификатор пользователя не найден')
+        this.errorMessage = 'Ошибка: идентификатор пользователя не найден'
+        this.showErrorModal = true
         return
       }
 
       this.saving = true
 
-      // Формируем тело запроса в том формате, который ожидает сервер
       const payload = {
         username: this.localForm.username.trim(),
         first_name: this.localForm.first_name.trim(),
@@ -129,33 +153,97 @@ export default {
         is_active: this.localForm.is_active
       }
 
-      // Если введён пароль — добавляем
       if (this.localForm.password?.trim()) {
         payload.password = this.localForm.password.trim()
       }
-
-      console.log('Отправляем на сервер (ID:', this.localForm.id, '):', payload)
 
       try {
         const response = await UpdateUser(this.localForm.id, payload)
 
         if (response?.success) {
-          console.log('Успешно обновлено:', response)
-          alert('Пользователь успешно обновлён')
-          this.$emit('save', { ...this.localForm, ...payload })
-          this.$emit('close')
+          this.successMessage = 'Пользователь успешно обновлён!'
+          this.showSuccessModal = true
         } else {
-          alert('Ошибка сохранения: ' + (response?.message || 'Неизвестная ошибка'))
+          this.errorMessage = response?.message || 'Не удалось сохранить изменения'
+          this.showErrorModal = true
         }
       } catch (err) {
         console.error('Ошибка при обновлении:', err)
-        alert('Не удалось сохранить изменения')
+        this.errorMessage = 'Произошла ошибка при сохранении данных'
+        this.showErrorModal = true
       } finally {
         this.saving = false
       }
+    },
+
+    // После нажатия «Отлично» — закрываем редактирование и обновляем список в родителе
+    closeSuccessModal() {
+      this.showSuccessModal = false
+      this.successMessage = ''
+      this.$emit('save')   // родитель вызовет loadUsers + loadStats
+      this.$emit('close')  // закрываем саму модалку редактирования
+    },
+
+    closeErrorModal() {
+      this.showErrorModal = false
+      this.errorMessage = ''
+      // остаёмся в модалке редактирования, чтобы пользователь мог исправить
     }
   }
 }
 </script>
 
-<style src="@/components/View/Users/Users.css" scoped></style>
+<style scoped>
+/* ==================== СТИЛИ МОДАЛОК УСПЕХА И ОШИБКИ (ТОЧЬ-В-ТОЧЬ КАК В ТУРНИРЕ) ==================== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000; /* выше основной модалки */
+}
+.admin-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 92vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  padding: 30px 24px;
+  text-align: center;
+}
+.success-icon, .error-icon {
+  font-size: 3.5rem;
+  margin-bottom: 10px;
+}
+.admin-modal-content h2 {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+}
+.success-text, .error-text {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+.admin-modal-button-submit {
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.admin-modal-button-cancel {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.error-modal .error-icon { color: #e53935; }
+.error-modal h2 { color: #e53935; }
+</style>

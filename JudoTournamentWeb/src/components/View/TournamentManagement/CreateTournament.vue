@@ -2,9 +2,40 @@
   <div class="create-tournament">
     <h3>Создать новый турнир</h3>
 
+    <!-- Индикатор загрузки -->
     <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner计算机"></div>
+      <div class="loading-spinner"></div>
       <p>Создание турнира...</p>
+    </div>
+
+    <!-- Модалка УСПЕХА -->
+    <div v-if="showSuccessModal" class="admin-modal-overlay" @click.self="closeSuccessModal">
+      <div class="admin-modal-content success-modal">
+        <div class="success-icon">✅</div>
+        <h2>Турнир успешно создан!</h2>
+        <p class="success-text">
+          Турнир «<strong>{{ successTournamentName }}</strong>» успешно создан!
+        </p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button admin-modal-button-submit" @click="closeSuccessModal">
+            Отлично, продолжить
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка ОШИБКИ -->
+    <div v-if="showErrorModal" class="admin-modal-overlay" @click.self="closeErrorModal">
+      <div class="admin-modal-content error-modal">
+        <div class="error-icon">❌</div>
+        <h2>Ошибка создания</h2>
+        <p class="error-text">{{ errorMessage }}</p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button admin-modal-button-cancel" @click="closeErrorModal">
+            Закрыть
+          </button>
+        </div>
+      </div>
     </div>
 
     <form @submit.prevent="submit">
@@ -16,13 +47,14 @@
           <span v-if="errors.name" class="error">{{ errors.name }}</span>
         </div>
 
-        <div class="form-group">
+        <!-- Даты рядом и компактно -->
+        <div class="form-group date-group">
           <label>Дата начала *</label>
           <input type="date" v-model="formData.start_date" />
           <span v-if="errors.start_date" class="error">{{ errors.start_date }}</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group date-group">
           <label>Дата окончания *</label>
           <input type="date" v-model="formData.end_date" />
           <span v-if="errors.end_date" class="error">{{ errors.end_date }}</span>
@@ -59,7 +91,7 @@
               v-else
               v-model="formData.list_category"
               multiple
-              size="10"
+              size="8"
               class="multi-select"
               :disabled="isLoading || isCategoriesLoading"
           >
@@ -85,7 +117,7 @@
               <tr>
                 <th>#</th>
                 <th>Название категории</th>
-                <th>Действие</th>
+                <th class="action-header">Действие</th>
               </tr>
               </thead>
               <tbody>
@@ -94,8 +126,8 @@
                   :key="catId"
               >
                 <td>{{ index + 1 }}</td>
-                <td>{{ getCategoryName(catId) }}</td>
-                <td>
+                <td class="category-name">{{ getCategoryName(catId) }}</td>
+                <td class="action-cell">
                   <button
                       type="button"
                       class="remove-btn"
@@ -113,7 +145,7 @@
         <!-- Описание -->
         <div class="form-group full-width">
           <label for="description">Описание турнира</label>
-          <textarea v-model="formData.description"></textarea>
+          <textarea v-model="formData.description" rows="3"></textarea>
         </div>
       </div>
 
@@ -137,6 +169,11 @@ const emit = defineEmits(['tournament-created'])
 
 const isLoading = ref(false)
 const isCategoriesLoading = ref(false)
+const showSuccessModal = ref(false)
+const successTournamentName = ref('')
+
+const showErrorModal = ref(false)
+const errorMessage = ref('')
 
 const formData = ref({
   name: '',
@@ -147,11 +184,10 @@ const formData = ref({
   city: '',
   country: 'Казахстан',
   tatami_count: 0,
-  list_category: [] // массив ID: [1, 2, 3, ...]
+  list_category: []
 })
 
 const categories = ref([])
-
 const errors = ref({})
 
 const loadCategories = async () => {
@@ -221,6 +257,16 @@ const validateForm = () => {
   return isValid
 }
 
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+  successTournamentName.value = ''
+}
+
+const closeErrorModal = () => {
+  showErrorModal.value = false
+  errorMessage.value = ''
+}
+
 const submit = async () => {
   if (!validateForm()) return
 
@@ -243,9 +289,11 @@ const submit = async () => {
     const result = await createTournament(payload)
 
     if (result.success) {
+      const tournamentName = formData.value.name.trim()
+      successTournamentName.value = tournamentName
+
       emit('tournament-created', result.data?.id)
 
-      // Сброс формы
       formData.value = {
         name: '',
         description: '',
@@ -257,12 +305,15 @@ const submit = async () => {
         tatami_count: 0,
         list_category: []
       }
+
+      showSuccessModal.value = true
     } else {
       throw new Error(result.error || 'Ошибка создания')
     }
   } catch (error) {
     console.error('Ошибка создания турнира:', error)
-    alert('Не удалось создать турнир: ' + (error.message || 'неизвестная ошибка'))
+    errorMessage.value = error.message || 'Не удалось создать турнир: неизвестная ошибка'
+    showErrorModal.value = true
   } finally {
     isLoading.value = false
   }
@@ -270,53 +321,78 @@ const submit = async () => {
 </script>
 
 <style scoped>
+/* ==================== КОМПАКТНЫЙ ГРИД ==================== */
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
 }
 
-.full-width {
-  grid-column: 1 / -1;
+.full-width { grid-column: 1 / -1; }
+.date-group { max-width: 260px; }
+
+.form-group label {
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+  display: block;
 }
 
-.multi-select {
+.form-group input,
+.form-group select,
+.form-group textarea {
   width: 100%;
-  padding: 8px;
+  padding: 9px 12px;
+  font-size: 0.96rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
+/* ==================== ТАБЛИЦА ==================== */
 .table-wrapper {
-  margin-top: 12px;
+  margin-top: 8px;
   overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
 }
 
 .selected-categories-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
 }
 
 .selected-categories-table th,
 .selected-categories-table td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   text-align: left;
   border-bottom: 1px solid #eee;
+  vertical-align: middle;
 }
 
 .selected-categories-table th {
-  background: #f5f5f5;
+  background: #f8f8f8;
   font-weight: 600;
+  font-size: 0.93rem;
+  color: #444;
+  white-space: nowrap;
 }
 
-.selected-categories-table tr:hover {
-  background: #f9f9f9;
-}
-
-.selected-categories-table td:last-child {
+.selected-categories-table th:nth-child(1) { width: 50px; }
+.selected-categories-table th:nth-child(2) { width: auto; }
+.selected-categories-table th:nth-child(3) {
+  width: 100px;
   text-align: center;
+  white-space: nowrap;
 }
+
+.category-name {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.action-cell { text-align: center; }
 
 .remove-btn {
   background: #e53935;
@@ -328,25 +404,98 @@ const submit = async () => {
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
-.remove-btn:hover {
-  background: #c62828;
-}
+.remove-btn:hover { background: #c62828; }
 
+/* ==================== ОСТАЛЬНЫЕ СТИЛИ ==================== */
 .error {
   color: #e53935;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  margin-top: 3px;
 }
 
 .form-actions {
-  margin-top: 24px;
+  margin-top: 20px;
   text-align: right;
 }
 
 .form-actions button {
-  padding: 10px 20px;
+  padding: 10px 24px;
   font-size: 1rem;
+  border-radius: 8px;
+}
+
+/* ====================== МОДАЛКИ ====================== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.admin-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 92vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  padding: 30px 24px;
+  text-align: center;
+}
+
+.success-icon, .error-icon { font-size: 3.5rem; margin-bottom: 10px; }
+.admin-modal-content h2 { margin: 0 0 10px; font-size: 1.4rem; }
+.success-text, .error-text { font-size: 1.05rem; line-height: 1.4; margin-bottom: 24px; }
+
+.admin-modal-button-submit {
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admin-modal-button-cancel {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.error-modal .error-icon { color: #e53935; }
+.error-modal h2 { color: #e53935; }
+
+/* Лоадер */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 46px;
+  height: 46px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #c89b3c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -38,25 +38,16 @@
           <input v-model.trim="form.middle_name" type="text" placeholder="Отчество" />
         </div>
 
+        <!-- Категория теперь как в редактировании — обычный input text -->
         <div class="form-group">
           <label>Категория судейства <span class="required">*</span></label>
-          <select
-              v-model="form.certification_level"
+          <input
+              v-model.trim="form.certification_level"
+              type="text"
               required
+              placeholder="Например: Национальный 3 категории"
               :class="{ 'input-error': errors.certification_level }"
-              :disabled="categoriesLoading"
-          >
-            <option value="" disabled>
-              {{ categoriesLoading ? 'Загрузка...' : 'Выберите категорию' }}
-            </option>
-            <option
-                v-for="cat in certificationCategories"
-                :key="cat"
-                :value="cat"
-            >
-              {{ cat }}
-            </option>
-          </select>
+          />
           <div v-if="errors.certification_level" class="error-text">{{ errors.certification_level }}</div>
         </div>
 
@@ -94,7 +85,6 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { CreateReferee } from '@/components/View/RefereeManagement/fetchRefereeManagement.js'
-import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true }
@@ -111,39 +101,8 @@ const form = ref({
   email: ''
 })
 
-const errors             = ref({})
-const isSubmitting       = ref(false)
-const certificationCategories = ref([])
-const categoriesLoading  = ref(false)
-
-// Судейские категории — отдельный список, не связан с категориями турниров.
-// Грузим с API и извлекаем уникальные certification_level из судей,
-// либо используем фиксированный список если API не вернул нужное.
-const FALLBACK_CATEGORIES = [
-  'Международный',
-  'Национальный 1 категории',
-  'Национальный 2 категории',
-  'Национальный 3 категории',
-  'Региональный',
-]
-
-async function loadCertificationCategories() {
-  categoriesLoading.value = true
-  try {
-    const result = await fetchCategories()
-    if (result.success && Array.isArray(result.data?.categories)) {
-      // Извлекаем уникальные названия из поля name
-      const names = [...new Set(result.data.categories.map(c => c.name).filter(Boolean))]
-      certificationCategories.value = names.length ? names : FALLBACK_CATEGORIES
-    } else {
-      certificationCategories.value = FALLBACK_CATEGORIES
-    }
-  } catch {
-    certificationCategories.value = FALLBACK_CATEGORIES
-  } finally {
-    categoriesLoading.value = false
-  }
-}
+const errors       = ref({})
+const isSubmitting = ref(false)
 
 const resetForm = () => {
   form.value = {
@@ -160,16 +119,29 @@ const resetForm = () => {
 const validateForm = () => {
   errors.value = {}
   let isValid = true
-  if (!form.value.last_name.trim())       { errors.value.last_name = 'Обязательное поле'; isValid = false }
-  if (!form.value.first_name.trim())      { errors.value.first_name = 'Обязательное поле'; isValid = false }
-  if (!form.value.certification_level)   { errors.value.certification_level = 'Выберите категорию'; isValid = false }
+
+  if (!form.value.last_name.trim()) {
+    errors.value.last_name = 'Обязательное поле'
+    isValid = false
+  }
+  if (!form.value.first_name.trim()) {
+    errors.value.first_name = 'Обязательное поле'
+    isValid = false
+  }
+  if (!form.value.certification_level.trim()) {
+    errors.value.certification_level = 'Обязательное поле'
+    isValid = false
+  }
+
   return isValid
 }
 
 const handleSubmit = async () => {
   if (!validateForm()) return
+
   isSubmitting.value = true
   try {
+    // Отправляем ровно те поля, которые указаны в JSON-примере
     await CreateReferee(form.value)
     emit('submit', { success: true })
     close()
@@ -189,12 +161,12 @@ const close = () => {
 watch(() => props.isOpen, (val) => {
   if (val) {
     resetForm()
-    loadCertificationCategories()
   }
 })
 </script>
 
 <style scoped>
+/* Стили без изменений — оставлены точно как в оригинальной модалке добавления */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -244,12 +216,11 @@ input, select {
   transition: border-color 0.2s;
   box-sizing: border-box;
 }
-input:focus, select:focus {
+input:focus {
   outline: none;
   border-color: #c89b3c;
   box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.15);
 }
-select:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
 .input-error { border-color: #e53e3e; }
 .error-text { color: #e53e3e; font-size: 0.82rem; margin-top: 4px; }
 .modal-actions {

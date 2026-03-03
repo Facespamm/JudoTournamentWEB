@@ -63,7 +63,7 @@ import { ref, onMounted } from 'vue'
 import { fetchTournaments } from '@/components/View/Tournaments/fetchTournaments.js'
 
 import BracketCreation from './BracketsCreate.vue'
-import ConsolationBracketCreation from './../Brackets/ConsolationBracketCreation.vue'   // ← Новый компонент
+import ConsolationBracketCreation from './../Brackets/ConsolationBracketCreation.vue'
 import BracketsView from './ViewBrackets.vue'
 import BracketsCreateFight from './BracketsCreateFight.vue'
 
@@ -101,9 +101,10 @@ const loadBrackets = async () => {
   ]
 }
 
+// Обработчик создания сетки — БЕЗ авто-переключения вкладки
 const handleBracketCreated = (newBracket) => {
   brackets.value.push(newBracket)
-  activeTab.value = 'view'
+  // activeTab.value = 'view'   ← УДАЛЕНО
 }
 
 const viewBracket = (id) => {
@@ -120,7 +121,7 @@ const deleteBracket = (id) => {
 </script>
 
 <style scoped>
-/* Все стили полностью сохранены из вашего оригинального кода */
+/* Все стили полностью сохранены без изменений */
 .bracket-management-page {
   width: 100%;
   min-height: 100vh;
@@ -193,7 +194,6 @@ const deleteBracket = (id) => {
   min-height: 60vh;
 }
 
-/* Адаптивность — унифицирована с другими страницами */
 @media (max-width: 1200px) {
   .bracket-management-page {
     padding-left: 1rem;

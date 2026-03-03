@@ -74,8 +74,8 @@
 
       <button
           class="tab-button"
-          :class="{ active: selectedTab === 'results' }"
-          @click="selectedTab = 'results'"
+          :class="{ active: selectedTab === 'weighing' }"
+          @click="selectedTab = 'weighing'"
       >
         <span class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -86,6 +86,24 @@
           </svg>
         </span>
         <span class="label">Взвешивание</span>
+      </button>
+
+      <button
+          class="tab-button"
+          :class="{ active: selectedTab === 'results' }"
+          @click="selectedTab = 'results'"
+      >
+        <span class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+          </svg>
+        </span>
+        <span class="label">Результаты</span>
       </button>
 
       <button
@@ -125,36 +143,33 @@
 
 <script setup>
 import { ref, onMounted, defineAsyncComponent, provide } from 'vue'
-import { useRoute, useRouter } from 'vue-router'   // ← добавили useRouter
+import { useRoute, useRouter } from 'vue-router'
 import { fetchTournamentDetail } from '@/components/View/TournamentDetails/fetchTournamentDetail.js'
 import "./TournamentDetails.css"
 
 const route = useRoute()
-const router = useRouter()   // ← добавили
+const router = useRouter()
 
 const tournament = ref(null)
 const isLoading = ref(true)
 const error = ref('')
 
-// По умолчанию открывается Обзор
 const selectedTab = ref('overview')
 
-// Ленивая загрузка табов
 const tabComponents = {
-  overview: defineAsyncComponent(() => import('@/components/View/TournamentDetails/OverviewTab.vue')),
-  draw: defineAsyncComponent(() => import('@/components/View/TournamentDetails/DrawTab.vue')),
-  order: defineAsyncComponent(() => import('@/components/View/TournamentDetails/OrderTab.vue')),
-  athletes: defineAsyncComponent(() => import('@/components/View/TournamentDetails/AthletesTab.vue')),
-  results: defineAsyncComponent(() => import('@/components/View/TournamentDetails/ResultsTab.vue')),
-  live: defineAsyncComponent(() => import('@/components/View/TournamentDetails/LiveTab.vue'))
+  overview:  defineAsyncComponent(() => import('@/components/View/TournamentDetails/OverviewTab.vue')),
+  draw:      defineAsyncComponent(() => import('@/components/View/TournamentDetails/DrawTab.vue')),
+  order:     defineAsyncComponent(() => import('@/components/View/TournamentDetails/OrderTab.vue')),
+  athletes:  defineAsyncComponent(() => import('@/components/View/TournamentDetails/AthletesTab.vue')),
+  weighing:  defineAsyncComponent(() => import('@/components/View/TournamentDetails/ResultsTab.vue')),
+  results:   defineAsyncComponent(() => import('@/components/View/TournamentDetails/TournamentResultsTab.vue')),
+  live:      defineAsyncComponent(() => import('@/components/View/TournamentDetails/LiveTab.vue'))
 }
 
-// Делаем tournament доступным во всех табах
 provide('tournament', tournament)
 
-// Функция назад
 const goBack = () => {
-  router.back()   // или router.go(-1)
+  router.back()
 }
 
 const loadTournamentDetail = async () => {
@@ -184,5 +199,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Можно добавить свои стили, если нужно */
 </style>

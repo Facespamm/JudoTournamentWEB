@@ -8,6 +8,36 @@
       <p>Создание категории...</p>
     </div>
 
+    <!-- Модалка УСПЕХА -->
+    <div v-if="showSuccessModal" class="admin-modal-overlay" @click.self="closeSuccessModal">
+      <div class="admin-modal-content success-modal">
+        <div class="success-icon">✅</div>
+        <h2>Категория успешно создана!</h2>
+        <p class="success-text">
+          Новая категория добавлена в систему
+        </p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button admin-modal-button-submit" @click="closeSuccessModal">
+            Отлично, продолжить
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка ОШИБКИ -->
+    <div v-if="showErrorModal" class="admin-modal-overlay" @click.self="closeErrorModal">
+      <div class="admin-modal-content error-modal">
+        <div class="error-icon">❌</div>
+        <h2>Ошибка создания</h2>
+        <p class="error-text">{{ errorMessage }}</p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button admin-modal-button-cancel" @click="closeErrorModal">
+            Закрыть
+          </button>
+        </div>
+      </div>
+    </div>
+
     <form @submit.prevent="submit">
       <div class="form-grid">
         <div class="form-group">
@@ -21,11 +51,11 @@
             <option value="мужской">Мужской</option>
             <option value="женский">Женский</option>
           </select>
-          <span v-if="errors.gender" class="error">{{ errors.gender }}</span>
         </div>
 
-        <div class="form-group">
-          <label for="min_age">Минимальный возраст</label>
+        <!-- Числовые поля теперь компактные -->
+        <div class="form-group number-group">
+          <label for="min_age">Минимальный год рождения</label>
           <input
               v-model.number="formData.min_age"
               type="number"
@@ -36,8 +66,8 @@
           />
         </div>
 
-        <div class="form-group">
-          <label for="max_age">Максимальный возраст</label>
+        <div class="form-group number-group">
+          <label for="max_age">Максимальный год рождения</label>
           <input
               v-model.number="formData.max_age"
               type="number"
@@ -49,7 +79,7 @@
           <span v-if="errors.max_age" class="error">{{ errors.max_age }}</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group number-group">
           <label for="min_weight">Минимальный вес (кг)</label>
           <input
               v-model.number="formData.min_weight"
@@ -62,7 +92,7 @@
           />
         </div>
 
-        <div class="form-group">
+        <div class="form-group number-group">
           <label for="max_weight">Максимальный вес (кг)</label>
           <input
               v-model.number="formData.max_weight"
@@ -75,12 +105,6 @@
           />
           <span v-if="errors.max_weight" class="error">{{ errors.max_weight }}</span>
         </div>
-      </div>
-
-      <!-- Предпросмотр сгенерированного названия -->
-      <div class="preview-section">
-        <label>Название категории (автоматически):</label>
-        <p class="generated-name"><strong>{{ generatedName }}</strong></p>
       </div>
 
       <div class="form-actions">
@@ -99,9 +123,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { createCategory } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
-import "./TournamentManagement.css"
 
 const isLoading = ref(false)
+const showSuccessModal = ref(false)
+const showErrorModal = ref(false)
+const errorMessage = ref('')
 
 const formData = ref({
   gender: 'мужской',
@@ -117,7 +143,6 @@ const generateCategoryName = (data) => {
   const genderTitle = data.gender === 'мужской' ? 'Мужская' : 'Женская'
   const parts = [genderTitle]
 
-  // Возраст
   let agePart = ''
   if (data.min_age > 0 || data.max_age > 0) {
     if (data.min_age > 0 && data.max_age > 0) {
@@ -130,7 +155,6 @@ const generateCategoryName = (data) => {
   }
   if (agePart) parts.push(agePart)
 
-  // Вес
   let weightPart = ''
   if (data.min_weight > 0 || data.max_weight > 0) {
     const minW = data.min_weight.toString().replace('.', ',')
@@ -167,6 +191,15 @@ const validateForm = () => {
   return isValid
 }
 
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+}
+
+const closeErrorModal = () => {
+  showErrorModal.value = false
+  errorMessage.value = ''
+}
+
 const submit = async () => {
   if (!validateForm()) return
 
@@ -185,7 +218,8 @@ const submit = async () => {
     const result = await createCategory(payload)
 
     if (result.success) {
-      // Сброс формы
+      showSuccessModal.value = true
+
       formData.value = {
         gender: 'мужской',
         min_age: 0,
@@ -194,15 +228,13 @@ const submit = async () => {
         max_weight: 0
       }
       errors.value = {}
-
-      alert('Категория успешно создана!')
-      console.log('Категория успешно создана!', result.data)
     } else {
       throw new Error(result.error || 'Неизвестная ошибка')
     }
   } catch (error) {
     console.error('Ошибка при создании категории:', error)
-    alert('Ошибка при создании категории: ' + (error.message || 'Неизвестная ошибка'))
+    errorMessage.value = error.message || 'Неизвестная ошибка при создании категории'
+    showErrorModal.value = true
   } finally {
     isLoading.value = false
   }
@@ -210,21 +242,138 @@ const submit = async () => {
 </script>
 
 <style scoped>
-.preview-section {
-  margin: 20px 0;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+.manage-categories {
+  position: relative; /* обязательно для loading-overlay */
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border-radius: 12px;
 }
 
-.preview-section label {
+/* ==================== КОМПАКТНЫЙ ГРИД ==================== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.form-group label {
+  font-size: 0.95rem;
+  margin-bottom: 5px;
   display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
 }
 
-.generated-name {
-  font-size: 1.2em;
-  color: #333;
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 0.96rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Узкие поля для чисел */
+.number-group input[type="number"] {
+  max-width: 165px;
+}
+
+/* ==================== КНОПКА И ОШИБКИ ==================== */
+.form-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.submit-button {
+  padding: 10px 24px;
+  font-size: 1rem;
+  border-radius: 8px;
+  background: #2c8f3c;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.submit-button:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #e53935;
+  font-size: 0.82rem;
+  margin-top: 3px;
+}
+
+/* ====================== МОДАЛКИ ====================== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.admin-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 92vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  padding: 30px 24px;
+  text-align: center;
+}
+
+.success-icon, .error-icon { font-size: 3.5rem; margin-bottom: 10px; }
+.admin-modal-content h2 { margin: 0 0 10px; font-size: 1.4rem; }
+.success-text, .error-text { font-size: 1.05rem; line-height: 1.4; margin-bottom: 24px; }
+
+.admin-modal-button-submit {
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admin-modal-button-cancel {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.error-modal .error-icon { color: #e53935; }
+.error-modal h2 { color: #e53935; }
+
+/* Лоадер */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.loading-spinner {
+  width: 46px;
+  height: 46px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #c89b3c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

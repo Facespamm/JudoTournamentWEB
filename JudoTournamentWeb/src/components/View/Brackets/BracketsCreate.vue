@@ -2,6 +2,42 @@
   <div class="bracket-selection">
     <h3>Создание сетки</h3>
 
+    <!-- Индикатор загрузки -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>Создание сетки...</p>
+    </div>
+
+    <!-- Модалка УСПЕХА -->
+    <div v-if="showSuccessModal" class="admin-modal-overlay" @click.self="closeSuccessModal">
+      <div class="admin-modal-content success-modal">
+        <div class="success-icon">✅</div>
+        <h2>Сетка успешно создана!</h2>
+        <p class="success-text">
+          Сетка «<strong>{{ successBracketName }}</strong>» успешно создана!
+        </p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button admin-modal-button-submit" @click="closeSuccessModal">
+            Отлично, продолжить
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка ОШИБКИ -->
+    <div v-if="showErrorModal" class="admin-modal-overlay" @click.self="closeErrorModal">
+      <div class="admin-modal-content error-modal">
+        <div class="error-icon">❌</div>
+        <h2>Ошибка создания</h2>
+        <p class="error-text">{{ errorMessage }}</p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button admin-modal-button-cancel" @click="closeErrorModal">
+            Закрыть
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="selection-form">
       <div class="form-grid">
         <!-- Турнир -->
@@ -80,6 +116,12 @@ const isLoading = ref(false)
 const categoriesLoading = ref(false)
 const categories = ref([])
 
+const showSuccessModal = ref(false)
+const successBracketName = ref('')
+
+const showErrorModal = ref(false)
+const errorMessage = ref('')
+
 const formData = ref({
   tournament_id: null,
   category_id: null,
@@ -90,7 +132,6 @@ const isFormValid = computed(() =>
     formData.value.tournament_id && formData.value.category_id
 )
 
-// Функция для корректного отображения пола (поддержка русских строк и английских констант)
 const getGenderLabel = (gender) => {
   if (!gender) return '?'
   const lower = gender.toString().toLowerCase().trim()
@@ -99,7 +140,6 @@ const getGenderLabel = (gender) => {
   return '?'
 }
 
-// Загрузка категорий при выборе турнира
 watch(() => formData.value.tournament_id, async (id) => {
   formData.value.category_id = null
   categories.value = []
@@ -112,14 +152,11 @@ watch(() => formData.value.tournament_id, async (id) => {
   categoriesLoading.value = true
   try {
     const res = await fetchCategories(id)
-
     let cats = []
 
-    // Поддержка разных форматов ответа API
     if (res.success && (res.categories || res.data?.categories)) {
       cats = res.categories || res.data?.categories || []
     } else if (Array.isArray(res)) {
-      // Если API возвращает напрямую массив (как в вашем примере JSON)
       cats = res
     } else if (res.data && Array.isArray(res.data)) {
       cats = res.data
@@ -135,13 +172,21 @@ watch(() => formData.value.tournament_id, async (id) => {
   }
 })
 
-// Получение имени категории для названия сетки
 const getCategoryName = () => {
   const c = categories.value.find(c => c.id === formData.value.category_id)
   return c ? `${c.name} (${getGenderLabel(c.gender)})` : 'Сетка'
 }
 
-// Создание сетки
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+  successBracketName.value = ''
+}
+
+const closeErrorModal = () => {
+  showErrorModal.value = false
+  errorMessage.value = ''
+}
+
 const submit = async () => {
   if (!isFormValid.value) return
 
@@ -160,6 +205,8 @@ const submit = async () => {
     const result = await createBracket(payload, tournamentId, categoryId, tatamiNumber)
 
     if (result.success) {
+      const bracketName = getCategoryName()
+
       emit('bracket-created', {
         ...payload,
         category_id: categoryId,
@@ -170,14 +217,16 @@ const submit = async () => {
       })
 
       formData.value.category_id = null
-      // tatami_number остаётся для удобства
 
-      alert('Сетка успешно создана!')
+      successBracketName.value = bracketName
+      showSuccessModal.value = true
     } else {
       throw new Error(result.error || 'Неизвестная ошибка')
     }
   } catch (err) {
-    alert('Ошибка создания сетки: ' + err.message)
+    console.error(err)
+    errorMessage.value = err.message || 'Неизвестная ошибка при создании сетки'
+    showErrorModal.value = true
   } finally {
     isLoading.value = false
   }
@@ -185,16 +234,14 @@ const submit = async () => {
 </script>
 
 <style scoped>
-/* Стили без изменений */
 .bracket-selection {
+  position: relative;
   padding: 1.5rem;
   background: #f9f9f9;
   border-radius: 12px;
 }
 
-.selection-form {
-  margin-top: 1rem;
-}
+.selection-form { margin-top: 1rem; }
 
 .form-grid {
   display: grid;
@@ -203,10 +250,7 @@ const submit = async () => {
   margin-bottom: 2rem;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
+.form-group { display: flex; flex-direction: column; }
 
 .form-group label {
   margin-bottom: 0.5rem;
@@ -214,19 +258,7 @@ const submit = async () => {
   color: #2c3e50;
 }
 
-.form-group select {
-  padding: 0.8rem;
-  font-size: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
-}
-
-.form-group select:disabled {
-  background: #f0f0f0;
-  color: #888;
-}
-
+.form-group select,
 .tatami-input {
   padding: 0.8rem;
   font-size: 1rem;
@@ -235,10 +267,13 @@ const submit = async () => {
   background: white;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
+.form-group select:disabled,
+.tatami-input:disabled {
+  background: #f0f0f0;
+  color: #888;
 }
+
+.form-actions { display: flex; justify-content: flex-end; }
 
 .submit-button {
   padding: 0.8rem 2rem;
@@ -261,9 +296,81 @@ const submit = async () => {
   cursor: not-allowed;
 }
 
+/* ====================== МОДАЛКИ ====================== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.admin-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 92vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  padding: 30px 24px;
+  text-align: center;
+}
+
+.success-icon, .error-icon { font-size: 3.5rem; margin-bottom: 10px; }
+.admin-modal-content h2 { margin: 0 0 10px; font-size: 1.4rem; }
+.success-text, .error-text { font-size: 1.05rem; line-height: 1.4; margin-bottom: 24px; }
+
+.admin-modal-button-submit {
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admin-modal-button-cancel {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.error-modal .error-icon { color: #e53935; }
+.error-modal h2 { color: #e53935; }
+
+/* Лоадер */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.loading-spinner {
+  width: 46px;
+  height: 46px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #2c8f3c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
+  .form-grid { grid-template-columns: 1fr; }
 }
 </style>

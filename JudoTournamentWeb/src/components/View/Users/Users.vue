@@ -13,12 +13,7 @@
         <div class="filters-grid">
           <div class="filter-group">
             <label class="filter-label">Поиск</label>
-            <input
-                v-model="filters.search"
-                type="text"
-                class="filter-input"
-                placeholder="Имя, логин или email..."
-            />
+            <input v-model="filters.search" type="text" class="filter-input" placeholder="Имя, логин или email..." />
           </div>
           <div class="filter-group">
             <label class="filter-label">Роль</label>
@@ -86,30 +81,18 @@
       <div class="table-header">
         <h3>Список пользователей</h3>
         <div class="table-actions">
-          <button
-              class="btn-edit"
-              :disabled="!selectedUserId"
-              @click="editSelectedUser"
-              title="Редактировать выбранного"
-          >
+          <button class="btn-edit" :disabled="!selectedUserId" @click="editSelectedUser" title="Редактировать выбранного">
             Редактировать
           </button>
-          <button
-              class="btn-delete"
-              :disabled="!selectedUserId"
-              @click="confirmDeleteSelected"
-              title="Удалить выбранного"
-          >
+          <button class="btn-delete" :disabled="!selectedUserId" @click="confirmDeleteSelected" title="Удалить выбранного">
             Удалить
           </button>
         </div>
       </div>
-
       <div class="table-container">
         <div v-if="loading" class="loading-state">
           <p>Загрузка данных...</p>
         </div>
-
         <table v-else-if="users.length > 0" class="users-table">
           <thead>
           <tr>
@@ -129,11 +112,7 @@
               @click="selectUser(user.id)"
           >
             <td class="col-select">
-              <input
-                  type="radio"
-                  :checked="selectedUserId === user.id"
-                  @click.stop="selectUser(user.id)"
-              />
+              <input type="radio" :checked="selectedUserId === user.id" @click.stop="selectUser(user.id)" />
             </td>
             <td class="user-info">
               <div class="user-avatar">{{ getUserInitials(user) }}</div>
@@ -166,7 +145,6 @@
           </tr>
           </tbody>
         </table>
-
         <div v-else class="empty-state">
           <div class="empty-icon">Пользователи не найдены</div>
           <h3>Пользователи не найдены</h3>
@@ -183,12 +161,7 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
-    <UserEditModal
-        v-if="editingUser"
-        :user="userForm"
-        @close="closeModal"
-        @save="handleSaveUser"
-    />
+    <UserEditModal v-if="editingUser" :user="userForm" @close="closeModal" @save="handleSaveUser" />
 
     <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ -->
     <div v-if="deletingUser" class="modal-overlay" @click="cancelDelete">
@@ -202,6 +175,20 @@
         </div>
       </div>
     </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО УСПЕШНОГО УДАЛЕНИЯ -->
+    <div v-if="showDeleteSuccessModal" class="modal-overlay" @click.self="closeDeleteSuccessModal">
+      <div class="admin-modal-content success-modal" @click.stop>
+        <div class="success-icon">✅</div>
+        <h2>Успешно!</h2>
+        <p class="success-text">{{ deleteSuccessMessage }}</p>
+        <div class="admin-modal-actions">
+          <button class="admin-modal-button-submit" @click="closeDeleteSuccessModal">
+            Отлично, продолжить
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -212,15 +199,15 @@ import './Users.css';
 
 export default {
   name: 'AdminUsersManagement',
-
-  components: {
-    UserEditModal
-  },
-
+  components: { UserEditModal },
   data() {
     return {
       users: [],
-      filters: { search: '', role: '', status: '' },
+      filters: {
+        search: '',
+        role: '',
+        status: ''
+      },
       stats: {
         adminCount: 0,
         refereeCount: 0,
@@ -228,11 +215,17 @@ export default {
         participantCount: 0,
         totalCount: 0
       },
-      pagination: { page: 1, perPage: 10, totalPages: 1 },
+      pagination: {
+        page: 1,
+        perPage: 10,
+        totalPages: 1
+      },
       loading: false,
       editingUser: null,
       deletingUser: null,
       selectedUserId: null,
+      showDeleteSuccessModal: false,
+      deleteSuccessMessage: '',
       userForm: {
         id: null,
         username: '',
@@ -245,17 +238,14 @@ export default {
       }
     };
   },
-
   mounted() {
     this.loadStats();
     this.loadUsers();
   },
-
   methods: {
     getUserRole(user) {
       return user?.roles?.[0]?.name || user?.roles?.[0] || null;
     },
-
     getFullName(user) {
       if (!user) return '—';
       const parts = [];
@@ -264,32 +254,26 @@ export default {
       if (user.middle_name) parts.push(user.middle_name);
       return parts.join(' ') || user.username || '—';
     },
-
     getUserInitials(user) {
       const name = this.getFullName(user);
       if (name === '—') return '??';
       return name.trim().split(/\s+/).map(w => w[0].toUpperCase()).join('').slice(0, 2) || '??';
     },
-
     async loadStats() {
       try {
         const res = await GetCountRolesUsers();
         if (!res?.success || !res?.data) return;
-
         const { total_active_users, users_by_role } = res.data;
         this.stats.totalCount = total_active_users || 0;
-
         const getCount = (role) => users_by_role.find(r => r.normalized_name === role)?.count || 0;
-
-        this.stats.adminCount      = getCount('ADMIN');
-        this.stats.refereeCount    = getCount('REFEREE');
+        this.stats.adminCount = getCount('ADMIN');
+        this.stats.refereeCount = getCount('REFEREE');
         this.stats.scoreboardCount = getCount('SCOREBOARD');
         this.stats.participantCount = getCount('PARTICIPANT');
       } catch (err) {
         console.error('Ошибка загрузки статистики:', err);
       }
     },
-
     async loadUsers() {
       this.loading = true;
       try {
@@ -298,17 +282,14 @@ export default {
           per_page: this.pagination.perPage
         };
         if (this.filters.search) params.search = this.filters.search;
-        if (this.filters.role)    params.role = this.filters.role;
+        if (this.filters.role) params.role = this.filters.role;
         if (this.filters.status !== '') {
           params.is_active = this.filters.status === 'true';
         }
-
         const res = await GetAllUsersInformation(params);
-
         if (res?.success && Array.isArray(res.data)) {
           this.users = res.data.filter(u => u?.id != null);
-          this.pagination.totalPages = res.total_pages ||
-              Math.ceil((res.total || res.data.length) / this.pagination.perPage) || 1;
+          this.pagination.totalPages = res.total_pages || Math.ceil((res.total || res.data.length) / this.pagination.perPage) || 1;
         } else {
           this.users = [];
           this.pagination.totalPages = 1;
@@ -320,23 +301,19 @@ export default {
         this.loading = false;
       }
     },
-
     selectUser(id) {
       this.selectedUserId = this.selectedUserId === id ? null : id;
     },
-
     editSelectedUser() {
       if (!this.selectedUserId) return;
       const user = this.users.find(u => u.id === this.selectedUserId);
       if (user) this.editUser(user);
     },
-
     confirmDeleteSelected() {
       if (!this.selectedUserId) return;
       const user = this.users.find(u => u.id === this.selectedUserId);
       if (user) this.confirmDelete(user);
     },
-
     editUser(user) {
       this.editingUser = true;
       this.userForm = {
@@ -350,23 +327,28 @@ export default {
         is_active: user.is_active ?? true
       };
     },
-
     async handleSaveUser() {
       this.editingUser = false;
-      this.userForm = { id: null, username: '', first_name: '', last_name: '', middle_name: '', email: '', phone: '', is_active: true };
+      this.userForm = {
+        id: null,
+        username: '',
+        first_name: '',
+        last_name: '',
+        middle_name: '',
+        email: '',
+        phone: '',
+        is_active: true
+      };
       await this.loadUsers();
       await this.loadStats();
       this.selectedUserId = null;
     },
-
     confirmDelete(user) {
       this.deletingUser = user;
     },
-
     cancelDelete() {
       this.deletingUser = null;
     },
-
     async deleteUser() {
       if (!this.deletingUser?.id) return;
 
@@ -377,23 +359,25 @@ export default {
         const result = await DeleteUser(userId);
 
         if (result.success) {
-          this.$toast?.success?.(`Пользователь ${userName} удалён`) ||
-          alert(`Пользователь ${userName} успешно удалён`);
-
           this.deletingUser = null;
           this.selectedUserId = null;
+          this.deleteSuccessMessage = `Пользователь ${userName} успешно удалён`;
+          this.showDeleteSuccessModal = true;
           await this.loadUsers();
           await this.loadStats();
         } else {
-          this.$toast?.error?.(result.message || 'Не удалось удалить пользователя') ||
-          alert(`Ошибка: ${result.message || 'Неизвестная ошибка'}`);
+          const errorMsg = result.message || 'Не удалось удалить пользователя';
+          alert(`Ошибка: ${errorMsg}`);
         }
       } catch (err) {
         console.error('Ошибка удаления пользователя:', err);
         alert('Произошла ошибка при попытке удаления');
       }
     },
-
+    closeDeleteSuccessModal() {
+      this.showDeleteSuccessModal = false;
+      this.deleteSuccessMessage = '';
+    },
     closeModal() {
       this.editingUser = false;
       this.userForm = {
@@ -407,27 +391,23 @@ export default {
         is_active: true
       };
     },
-
     resetFilters() {
       this.filters = { search: '', role: '', status: '' };
       this.pagination.page = 1;
       this.loadUsers();
     },
-
     prevPage() {
       if (this.pagination.page > 1) {
         this.pagination.page--;
         this.loadUsers();
       }
     },
-
     nextPage() {
       if (this.pagination.page < this.pagination.totalPages) {
         this.pagination.page++;
         this.loadUsers();
       }
     },
-
     getRoleClass(role) {
       const map = {
         'ADMIN': 'role-admin',
@@ -438,7 +418,6 @@ export default {
       };
       return map[role] || 'role-viewer';
     },
-
     getRoleDisplay(role) {
       const map = {
         'ADMIN': 'Администратор',
@@ -449,7 +428,6 @@ export default {
       };
       return map[role] || role || '—';
     },
-
     formatDate(date) {
       if (!date) return '—';
       try {
@@ -467,26 +445,53 @@ export default {
 </script>
 
 <style scoped>
-.table-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.table-actions button {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-}
-
-.user-row {
-  cursor: pointer;
-}
-
-.selected-row {
-  background: #e3f2fd !important;
-}
-
-.col-select {
-  width: 40px;
+.admin-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 92vw;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 30px 24px;
   text-align: center;
+}
+
+.success-icon {
+  font-size: 3.5rem;
+  margin-bottom: 10px;
+}
+
+.admin-modal-content h2 {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+  color: #1a1a1a;
+}
+
+.success-text {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin-bottom: 24px;
+  color: #555;
+}
+
+.admin-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-modal-button-submit {
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.admin-modal-button-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
 }
 </style>

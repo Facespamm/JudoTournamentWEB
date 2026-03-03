@@ -27,10 +27,6 @@
       />
       <ManageCategories
           v-if="activeTab === 'categories'"
-          :new-tournament-id="newTournamentId"
-      />
-      <TournamentRegistration
-          v-if="activeTab === 'registration'"
       />
     </section>
   </div>
@@ -42,11 +38,10 @@ import CreateTournament from '@/components/View/TournamentManagement/CreateTourn
 import ManageCategories from '@/components/View/TournamentManagement/ManageCategories.vue'
 
 const activeTab = ref('create')
-const newTournamentId = ref(null)
 
 const handleTournamentCreated = (tournamentId) => {
-  newTournamentId.value = tournamentId
-  activeTab.value = 'categories'
+  console.log('Турнир успешно создан (ID:', tournamentId, ')')
+  // Переход на вкладку категорий отключён по вашему запросу
 }
 </script>
 
@@ -124,7 +119,6 @@ const handleTournamentCreated = (tournamentId) => {
   min-height: 60vh;
 }
 
-/* Адаптивность — унифицирована с другими страницами */
 @media (max-width: 1200px) {
   .tournament-settings-page {
     padding-left: 1rem;
@@ -136,16 +130,13 @@ const handleTournamentCreated = (tournamentId) => {
   .tournament-settings-page {
     padding-top: 70px;
   }
-
   .settings-navigation,
   .settings-content {
     padding: 1.8rem;
   }
-
   .nav-tabs {
     flex-direction: column;
   }
-
   .nav-tab {
     min-width: auto;
   }
@@ -155,16 +146,13 @@ const handleTournamentCreated = (tournamentId) => {
   .tournament-settings-page {
     padding-top: 65px;
   }
-
   .settings-navigation,
   .settings-content {
     padding: 1.2rem;
   }
-
   .settings-navigation h2 {
     font-size: 1.6rem;
   }
-
   .nav-tab {
     padding: 0.9rem 1.5rem;
     font-size: 0.95rem;

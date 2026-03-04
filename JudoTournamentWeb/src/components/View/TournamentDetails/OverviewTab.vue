@@ -2,7 +2,18 @@
   <div class="overview-wrapper">
     <section class="tournament-main-info">
       <div class="tournament-info">
-        <h1>{{ tournament?.name || 'Название турнира' }}</h1>
+        <!-- Заголовок + кнопка Документ -->
+        <div class="tournament-header">
+          <h1>{{ tournament?.name || 'Название турнира' }}</h1>
+          <button
+              class="document-btn"
+              @click="downloadDocument"
+              title="Скачать протокол турнира в PDF"
+          >
+            📄 Документ
+          </button>
+        </div>
+
         <p class="tournament-description">{{ tournament?.description || 'Описание отсутствует' }}</p>
 
         <div class="tournament-meta">
@@ -35,16 +46,23 @@
         </div>
       </div>
     </section>
-
-    <!-- Дополнительный контент (если захотите) -->
-    <!-- <p class="welcome-text">Добро пожаловать в обзор турнира!</p> -->
   </div>
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { inject, computed } from 'vue'          // ← ИСПРАВЛЕНИЕ: добавлен computed
+import { useRoute } from 'vue-router'
+import { fetchGetDocument } from "@/components/View/Brackets/fetchBrackets.js"
 
 const tournament = inject('tournament')
+const route = useRoute()
+
+// Надёжное получение ID турнира
+const tournamentId = computed(() => {
+  if (tournament?.id) return Number(tournament.id)
+  if (tournament?.tournament_id) return Number(tournament.tournament_id)
+  return Number(route.params.id)
+})
 
 const formatDate = (startDate, endDate) => {
   if (!startDate) return 'Дата не указана'
@@ -86,13 +104,39 @@ const getStatusText = (status) => {
   }
   return map[status] || status
 }
+
+// Функция скачивания PDF турнира
+const downloadDocument = async () => {
+  const id = tournamentId.value
+
+  if (!id || isNaN(id)) {
+    console.error('❌ Не удалось определить ID турнира', { tournament, routeParams: route.params })
+    alert('Не удалось определить ID турнира. Обновите страницу и попробуйте снова.')
+    return
+  }
+
+  try {
+    const blob = await fetchGetDocument(id)
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Протокол_турнира_${(tournament?.name || 'Турнир').replace(/\s+/g, '_')}_${id}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    console.log(`✅ PDF турнира ${id} успешно скачан`)
+  } catch (error) {
+    console.error('❌ Ошибка при скачивании PDF турнира:', error)
+    alert('Не удалось скачать документ. Попробуйте позже.')
+  }
+}
 </script>
 
-<!--
 <style scoped>
-.overview-wrapper {
-  padding: 0 1rem;
-}
+.overview-wrapper { padding: 0 1rem; }
 
 .tournament-main-info {
   background: white;
@@ -102,14 +146,21 @@ const getStatusText = (status) => {
   margin-bottom: 2rem;
 }
 
-.tournament-info {
-  text-align: center;
+.tournament-info { text-align: center; }
+
+.tournament-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .tournament-info h1 {
   font-size: 1.8rem;
   font-weight: 700;
-  margin: 0 0 0.75rem;
+  margin: 0;
   color: #1a1a1a;
 }
 
@@ -139,15 +190,8 @@ const getStatusText = (status) => {
   border-radius: 8px;
 }
 
-.meta-label {
-  font-weight: 500;
-  color: #666;
-}
-
-.meta-value {
-  font-weight: 600;
-  color: #333;
-}
+.meta-label { font-weight: 500; color: #666; }
+.meta-value { font-weight: 600; color: #333; }
 
 .status-badge {
   padding: 0.25rem 0.75rem;
@@ -163,10 +207,35 @@ const getStatusText = (status) => {
 .status-weighing { background: #f3e5f5; color: #7b1fa2; }
 .status-brackets { background: #e8eaf6; color: #303f9f; }
 
-/* Убрал старый .overview-section и min-height, теперь всё в карточке */
-@media (max-width: 768px) {
-  .tournament-meta {
-    grid-template-columns: 1fr;
-  }
+.document-btn {
+  padding: 0.55rem 1.6rem;
+  border-radius: 50px;
+  background: #c89b3c;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
 }
-</style>-->
+
+.document-btn:hover:not(:disabled) {
+  background: #d4aa5a;
+  transform: translateY(-1px);
+}
+
+.document-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .tournament-header { justify-content: center; }
+  .tournament-meta { grid-template-columns: 1fr; }
+}
+</style>

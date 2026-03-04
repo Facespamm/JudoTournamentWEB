@@ -32,11 +32,11 @@
               <input v-model="form.login" type="text" placeholder="gugiguga" required />
             </div>
             <div class="field-wrap">
-              <label>Email</label>                    <!-- ← изменено -->
+              <label>Email</label>
               <input v-model="form.email" type="email" placeholder="email@example.com" />
             </div>
             <div class="field-wrap">
-              <label>Телефон</label>                  <!-- ← изменено -->
+              <label>Телефон</label>
               <input v-model="form.phone" type="tel" placeholder="+79031234567" />
             </div>
             <div class="field-wrap full">
@@ -313,7 +313,7 @@ onMounted(() => {
 }
 
 .register-container {
-  max-width: 820px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -374,11 +374,19 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-/* ===== ФОРМА ===== */
+/* ===== ФОРМА — 2 колонки ===== */
 .register-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1.2rem;
+  align-items: start;
+}
+
+/* Сообщения и кнопка — на всю ширину */
+.form-error,
+.form-success,
+.submit-btn {
+  grid-column: 1 / -1;
 }
 
 /* ===== БЛОК ===== */
@@ -597,6 +605,11 @@ select option { background: white; color: #1a1a1a; }
 .slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s ease; }
 .slide-up-enter-from { opacity: 0; transform: translateY(8px); }
 .slide-up-leave-to { opacity: 0; transform: translateY(-4px); }
+
+@media (max-width: 900px) {
+  .register-form { grid-template-columns: 1fr; }
+  .register-container { max-width: 820px; }
+}
 
 @media (max-width: 600px) {
   .fields-grid { grid-template-columns: 1fr; }

@@ -63,7 +63,32 @@ export const createBasketSemiFinals = async (bracketData, tournament_id, categor
         return { success: false, error: error.message };
     }
 };
+// ====================== УНИВЕРСАЛЬНЫЙ fetchGetDocument ======================
+// Работает и с категорией, и без (для всего турнира)
+export const fetchGetDocument = async (tournamentId, categoryId = null) => {
+    try {
+        let url = `/api/pdf/tournament/${tournamentId}`
+        if (categoryId !== null) {
+            url += `?category_id=${categoryId}`
+        }
 
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/pdf' }
+        })
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
+        }
+
+        const blob = await response.blob()
+        console.log(`✅ PDF загружен (размер: ${(blob.size / 1024).toFixed(1)} KB)`)
+        return blob
+    } catch (error) {
+        console.error('❌ Ошибка при получении PDF:', error)
+        throw error
+    }
+}
 export const createBasketFinals = async (bracketData, tournament_id, categoryId, tatami_number = null) => {
     try {
         // Формируем URL динамически — добавляем tatami_number только если он указан и валиден

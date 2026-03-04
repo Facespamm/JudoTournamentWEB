@@ -4,6 +4,7 @@
       <h1>Схватки и поединки</h1>
       <p class="subtitle">Управление всеми боями турнира</p>
     </div>
+
     <div class="filters-section">
       <div class="filter-group">
         <label>Турнир:</label>
@@ -32,9 +33,26 @@
         </select>
       </div>
     </div>
-    <div class="tatami-sections">
+
+    <!-- Табы переключения блоков -->
+    <div v-if="fights.length > 0" class="bracket-tabs">
+      <button
+          v-for="tab in availableTabs"
+          :key="tab.key"
+          class="bracket-tab"
+          :class="{ active: activeTab === tab.key }"
+          @click="activeTab = tab.key"
+      >
+        <span class="tab-icon">{{ tab.icon }}</span>
+        {{ tab.label }}
+        <span class="tab-count">{{ tab.count }}</span>
+      </button>
+    </div>
+
+    <!-- Основная сетка -->
+    <div v-if="activeTab === 'main'" class="tatami-sections">
       <div
-          v-for="tatami in availableTatamis"
+          v-for="tatami in mainTatamis"
           :key="tatami"
           class="tatami-section"
       >
@@ -44,7 +62,7 @@
         </div>
         <div class="fights-rows">
           <div
-              v-for="fight in groupedFights[tatami]"
+              v-for="fight in groupedMainFights[tatami]"
               :key="fight.id"
               class="fight-row"
               @click="viewFightDetail(fight.id)"
@@ -55,14 +73,13 @@
               {{ statusText(fight.status) }}
             </div>
             <div class="row-content">
-              <div class="category-weight">
-                {{ fight.category || '—' }}
-              </div>
+              <div class="category-weight">{{ fight.category || '—' }}</div>
               <div class="fighters-matchup">
                 <div class="fighter left">
                   <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
                   <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
                 </div>
+
                 <div class="fighter right">
                   <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
                   <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
@@ -75,14 +92,124 @@
           </div>
         </div>
       </div>
-      <div v-if="availableTatamis.length === 0 && !tournamentsLoading" class="empty-state">
-        <h3>
-          {{ selectedCategory === null ? 'Выберите категорию для просмотра схваток' : 'Схватки не найдены' }}
-        </h3>
-        <button v-if="selectedTournament || selectedCategory !== null" class="reset-filters-btn" @click="resetFilters">
-          Сбросить фильтры
-        </button>
+
+    </div>
+
+    <!-- Утешительные бои от полуфиналистов -->
+    <div v-if="activeTab === 'semifinalist'" class="tatami-sections">
+      <div class="consolation-header-banner semifinalist-banner">
+        <span class="banner-icon">🥉</span>
+        <div>
+          <div class="banner-title">Утешительные от полуфиналистов</div>
+          <div class="banner-subtitle">Бои за 3 место — ветки A и B</div>
+        </div>
       </div>
+
+      <div class="consolation-groups">
+        <div
+            v-for="group in ['SEMIFINALIST_CONSOLATION_GROUP_A', 'SEMIFINALIST_CONSOLATION_GROUP_B']"
+            :key="group"
+            class="consolation-group"
+        >
+          <div class="group-header">
+            <span class="group-label">{{ group === 'SEMIFINALIST_CONSOLATION_GROUP_A' ? 'Ветка A' : 'Ветка B' }}</span>
+          </div>
+          <div v-if="consolationByType[group]?.length">
+            <div
+                v-for="fight in consolationByType[group]"
+                :key="fight.id"
+                class="fight-row consolation-row"
+                @click="viewFightDetail(fight.id)"
+            >
+              <div class="status-bar consolation-bar"></div>
+              <div class="status-corner">
+                <span v-if="fight.status === 'IN_PROGRESS'" class="dot"></span>
+                {{ statusText(fight.status) }}
+              </div>
+              <div class="row-content">
+                <div class="category-weight">{{ fight.category || '—' }}</div>
+                <div class="fighters-matchup">
+                  <div class="fighter left">
+                    <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
+                    <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
+                  </div>
+
+                  <div class="fighter right">
+                    <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
+                    <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
+                  </div>
+                </div>
+                <div class="round-or-timer" :class="{ 'live-timer': fight.status === 'IN_PROGRESS' }">
+                  {{ fight.round_info || '—' }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-group">Нет боёв в этой ветке</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Утешительные бои от финалистов -->
+    <div v-if="activeTab === 'finalist'" class="tatami-sections">
+      <div class="consolation-header-banner finalist-banner">
+        <span class="banner-icon">🏅</span>
+        <div>
+          <div class="banner-title">Утешительные от финалистов</div>
+          <div class="banner-subtitle">Бои за 3 место — ветки A и B</div>
+        </div>
+      </div>
+
+      <div class="consolation-groups">
+        <div
+            v-for="group in ['FINALIST_CONSOLATION_GROUP_A', 'FINALIST_CONSOLATION_GROUP_B']"
+            :key="group"
+            class="consolation-group"
+        >
+          <div class="group-header finalist-group-header">
+            <span class="group-label">{{ group === 'FINALIST_CONSOLATION_GROUP_A' ? 'Ветка A' : 'Ветка B' }}</span>
+          </div>
+          <div v-if="consolationByType[group]?.length">
+            <div
+                v-for="fight in consolationByType[group]"
+                :key="fight.id"
+                class="fight-row consolation-row"
+                @click="viewFightDetail(fight.id)"
+            >
+              <div class="status-bar finalist-bar"></div>
+              <div class="status-corner">
+                <span v-if="fight.status === 'IN_PROGRESS'" class="dot"></span>
+                {{ statusText(fight.status) }}
+              </div>
+              <div class="row-content">
+                <div class="category-weight">{{ fight.category || '—' }}</div>
+                <div class="fighters-matchup">
+                  <div class="fighter left">
+                    <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
+                    <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
+                  </div>
+
+                  <div class="fighter right">
+                    <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
+                    <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
+                  </div>
+                </div>
+                <div class="round-or-timer" :class="{ 'live-timer': fight.status === 'IN_PROGRESS' }">
+                  {{ fight.round_info || '—' }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-group">Нет боёв в этой ветке</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="fights.length === 0 && !tournamentsLoading" class="empty-state">
+      <h3>{{ selectedCategory ? 'Схватки не найдены' : 'Выберите категорию для просмотра схваток' }}</h3>
+      <button v-if="selectedTournament || selectedCategory" class="reset-filters-btn" @click="resetFilters">
+        Сбросить фильтры
+      </button>
     </div>
   </div>
 </template>
@@ -92,6 +219,13 @@ import { fetchTournaments } from "@/components/View/Tournaments/fetchTournaments
 import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
 import { fetchGetScheduledFight } from "@/components/View/Fight/fetchFights.js"
 import "./Fight.css"
+
+const CONSOLATION_TYPES = [
+  'SEMIFINALIST_CONSOLATION_GROUP_A',
+  'SEMIFINALIST_CONSOLATION_GROUP_B',
+  'FINALIST_CONSOLATION_GROUP_A',
+  'FINALIST_CONSOLATION_GROUP_B',
+]
 
 export default {
   name: 'FightsOverview',
@@ -104,22 +238,68 @@ export default {
       tournamentsLoading: false,
       categories: [],
       categoriesLoading: false,
-      currentCategoryName: ''
+      currentCategoryName: '',
+      activeTab: 'main',
     }
   },
   computed: {
-    filteredFights() {
-      return this.fights
+    // Основные бои
+    mainFights() {
+      return this.fights.filter(f => f.type_bracket === 'MAIN')
     },
-    availableTatamis() {
-      const tatamis = [...new Set(this.filteredFights.map(f => f.tatami))].sort((a, b) => a - b)
+    // Утешительные бои сгруппированные по type_bracket
+    consolationByType() {
+      const result = {}
+      CONSOLATION_TYPES.forEach(type => {
+        result[type] = this.fights.filter(f => f.type_bracket === type)
+            .sort((a, b) => (a.round || 0) - (b.round || 0))
+      })
+      return result
+    },
+    // Есть ли утешительные от полуфиналистов
+    hasSemifinalistConsolation() {
+      return (
+          this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_A']?.length > 0 ||
+          this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_B']?.length > 0
+      )
+    },
+    // Есть ли утешительные от финалистов
+    hasFinalistConsolation() {
+      return (
+          this.consolationByType['FINALIST_CONSOLATION_GROUP_A']?.length > 0 ||
+          this.consolationByType['FINALIST_CONSOLATION_GROUP_B']?.length > 0
+      )
+    },
+    // Доступные табы
+    availableTabs() {
+      const tabs = [
+        { key: 'main', label: 'Основная сетка', icon: '🏆', count: this.mainFights.length }
+      ]
+      if (this.hasSemifinalistConsolation) {
+        const count =
+            (this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_A']?.length || 0) +
+            (this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_B']?.length || 0)
+        tabs.push({ key: 'semifinalist', label: 'Утешительные (полуфин.)', icon: '🥉', count })
+      }
+      if (this.hasFinalistConsolation) {
+        const count =
+            (this.consolationByType['FINALIST_CONSOLATION_GROUP_A']?.length || 0) +
+            (this.consolationByType['FINALIST_CONSOLATION_GROUP_B']?.length || 0)
+        tabs.push({ key: 'finalist', label: 'Утешительные (финал.)', icon: '🏅', count })
+      }
+      return tabs
+    },
+    // Татами для основной сетки
+    mainTatamis() {
+      const tatamis = [...new Set(this.mainFights.map(f => f.tatami))].sort((a, b) => a - b)
       const positive = tatamis.filter(t => t > 0)
       const zero = tatamis.includes(0) ? [0] : []
       return positive.concat(zero)
     },
-    groupedFights() {
+    // Группировка основных боёв по татами
+    groupedMainFights() {
       const grouped = {}
-      this.filteredFights.forEach(f => {
+      this.mainFights.forEach(f => {
         const key = f.tatami
         if (!grouped[key]) grouped[key] = []
         grouped[key].push(f)
@@ -132,24 +312,45 @@ export default {
       })
       return grouped
     },
-    // Все ID боёв в порядке их отображения
+    availableTatamis() {
+      const tatamis = [...new Set(this.fights.map(f => f.tatami))].sort((a, b) => a - b)
+      return tatamis
+    },
     allFightIds() {
-      const ids = []
-      this.availableTatamis.forEach(tatami => {
-        const group = this.groupedFights[tatami] || []
-        group.forEach(f => ids.push(f.id))
-      })
-      return ids
+      return this.fights.map(f => f.id)
     }
   },
   async mounted() {
     await this.loadTournaments()
+
+    // Восстанавливаем выбранный турнир и категорию
+    const savedTournament = sessionStorage.getItem('selectedTournament')
+    const savedCategory = sessionStorage.getItem('selectedCategory')
+
+    if (savedTournament) {
+      this.selectedTournament = Number(savedTournament)
+      // Загружаем категории для восстановленного турнира
+      this.categoriesLoading = true
+      try {
+        const res = await fetchCategories(this.selectedTournament)
+        if (res.success) {
+          this.categories = res.categories || res.data?.categories || []
+        }
+      } catch (err) {
+        this.categories = []
+      } finally {
+        this.categoriesLoading = false
+      }
+
+      if (savedCategory) {
+        this.selectedCategory = Number(savedCategory)
+        await this.loadFights()
+      }
+    }
   },
   methods: {
     formatAthlete(athlete) {
-      if (!athlete) {
-        return { name: 'Ожидает победителя', club: '' }
-      }
+      if (!athlete) return { name: 'Ожидает победителя', club: '' }
       const name = [athlete.last_name, athlete.first_name, athlete.middle_name]
           .filter(Boolean)
           .join(' ')
@@ -159,11 +360,7 @@ export default {
       this.tournamentsLoading = true
       try {
         const res = await fetchTournaments()
-        if (res?.success) {
-          this.tournaments = Array.isArray(res.data) ? res.data : []
-        } else {
-          this.tournaments = []
-        }
+        this.tournaments = res?.success && Array.isArray(res.data) ? res.data : []
       } catch (err) {
         console.error('Ошибка загрузки турниров:', err)
         this.tournaments = []
@@ -176,8 +373,15 @@ export default {
       this.categories = []
       this.fights = []
       this.currentCategoryName = ''
+      this.activeTab = 'main'
+      sessionStorage.removeItem('selectedCategory')
 
-      if (!this.selectedTournament) return
+      if (!this.selectedTournament) {
+        sessionStorage.removeItem('selectedTournament')
+        return
+      }
+
+      sessionStorage.setItem('selectedTournament', this.selectedTournament)
 
       this.categoriesLoading = true
       try {
@@ -195,11 +399,13 @@ export default {
     async loadFights() {
       this.fights = []
       this.currentCategoryName = ''
+      this.activeTab = 'main'
 
       if (!this.selectedTournament || this.selectedCategory === null) return
 
+      sessionStorage.setItem('selectedCategory', this.selectedCategory)
+
       try {
-        console.log('Загрузка боёв для турнира:', this.selectedTournament, 'категория:', this.selectedCategory)
         const res = await fetchGetScheduledFight(this.selectedTournament, this.selectedCategory)
 
         if (res?.success && res.fights?.length) {
@@ -213,9 +419,9 @@ export default {
             fighter1: this.formatAthlete(fight.white_athlete),
             fighter2: this.formatAthlete(fight.blue_athlete),
             round: fight.round || null,
-            round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
+            round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—'),
+            type_bracket: fight.type_bracket || 'MAIN',
           }))
-          console.log('Загружено боев:', this.fights.length)
         } else {
           this.fights = []
         }
@@ -230,6 +436,9 @@ export default {
       this.categories = []
       this.fights = []
       this.currentCategoryName = ''
+      this.activeTab = 'main'
+      sessionStorage.removeItem('selectedTournament')
+      sessionStorage.removeItem('selectedCategory')
     },
     statusText(s) {
       switch (s) {
@@ -240,7 +449,6 @@ export default {
       }
     },
     viewFightDetail(fightId) {
-      // Сохраняем список всех ID в sessionStorage — чистый URL без query params
       sessionStorage.setItem('fightIds', JSON.stringify(this.allFightIds))
       this.$router.push(`/fights/${fightId}`)
     }
@@ -285,7 +493,7 @@ export default {
 .filters-section {
   display: flex;
   gap: 1.5rem;
-  margin: 0 auto 3rem;
+  margin: 0 auto 2rem;
   max-width: 900px;
   padding: 1.2rem 1.5rem;
   background: white;
@@ -321,16 +529,137 @@ export default {
   transition: border-color 0.3s ease;
 }
 
-.filter-group select:hover:not(:disabled) {
+.filter-group select:hover:not(:disabled) { border-color: #c89b3c; }
+.filter-group select:disabled { background: #f5f5f5; opacity: 0.7; cursor: not-allowed; }
+
+/* Табы */
+.bracket-tabs {
+  display: flex;
+  gap: 0.8rem;
+  margin: 0 auto 2rem;
+  max-width: 1400px;
+  flex-wrap: wrap;
+}
+
+.bracket-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  background: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bracket-tab:hover {
   border-color: #c89b3c;
+  color: #c89b3c;
 }
 
-.filter-group select:disabled {
-  background: #f5f5f5;
-  opacity: 0.7;
-  cursor: not-allowed;
+.bracket-tab.active {
+  border-color: #c89b3c;
+  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  color: white;
+  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.35);
 }
 
+.tab-icon { font-size: 1.1rem; }
+
+.tab-count {
+  background: rgba(255,255,255,0.3);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.bracket-tab:not(.active) .tab-count {
+  background: #f0f0f0;
+  color: #999;
+}
+
+/* Баннер утешительных */
+.consolation-header-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+}
+
+.semifinalist-banner {
+  background: linear-gradient(135deg, #fff8e6, #fffdf7);
+  border: 2px solid #c89b3c;
+}
+
+.finalist-banner {
+  background: linear-gradient(135deg, #f0f7ff, #f8fbff);
+  border: 2px solid #4a90d9;
+}
+
+.banner-icon { font-size: 2rem; }
+
+.banner-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.banner-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+
+/* Группы утешительных */
+.consolation-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.consolation-group {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  border-top: 3px solid #c89b3c;
+}
+
+.group-header {
+  padding: 0.8rem 1.4rem;
+  background: linear-gradient(135deg, #fffdf7 0%, #ffffff 100%);
+  border-bottom: 1px solid #eee;
+}
+
+.finalist-group-header {
+  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+}
+
+.group-label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #c89b3c;
+}
+
+.finalist-group-header .group-label {
+  color: #4a90d9;
+}
+
+.empty-group {
+  padding: 2rem;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.95rem;
+}
+
+/* Секции татами */
 .tatami-sections {
   max-width: 1400px;
   margin: 0 auto;
@@ -375,54 +704,53 @@ export default {
 }
 
 .fight-row {
-  position: relative;
   display: flex;
-  align-items: center;
-  padding: 0.9rem 1.4rem;
+  align-items: stretch;
   border-bottom: 1px solid #eee;
   cursor: pointer;
   transition: background 0.3s ease;
+  overflow: hidden;
 }
 
-.fight-row:hover {
-  background: #fdfdfb;
-}
-
-.fight-row:last-child {
-  border-bottom: none;
-}
+.fight-row:hover { background: #fdfdfb; }
+.fight-row:last-child { border-bottom: none; }
 
 .status-bar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
   width: 6px;
-  background: linear-gradient(135deg, #c89b3c, #e0b456);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #c89b3c, #e0b456);
+}
+
+.consolation-bar {
+  background: linear-gradient(180deg, #e0b456, #f4d03f);
+}
+
+.finalist-bar {
+  background: linear-gradient(180deg, #4a90d9, #74b3f0);
 }
 
 .status-corner {
-  position: absolute;
-  top: 10px;
-  right: 14px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+  margin-right: 1rem;
   background: white;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: 10px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
   gap: 5px;
-  z-index: 10;
   color: #c89b3c;
   border: 2px solid #c89b3c;
+  white-space: nowrap;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: #c89b3c;
   animation: pulse 1.8s infinite;
@@ -431,40 +759,38 @@ export default {
 .row-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-right: 140px;
+  flex: 1;
+  padding: 0.9rem 1rem 0.9rem 1.2rem;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .category-weight {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 800;
-  min-width: 110px;
+  min-width: 90px;
+  flex-shrink: 0;
   color: #c89b3c;
 }
 
 .fighters-matchup {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .fighter {
   display: flex;
   flex-direction: column;
-  min-width: 240px;
+  min-width: 0;
+  flex: 1;
 }
 
-.fighter.left {
-  align-items: flex-start;
-  text-align: left;
-}
-
-.fighter.right {
-  align-items: flex-end;
-  text-align: right;
-}
+.fighter.left { align-items: flex-start; text-align: left; }
+.fighter.right { align-items: flex-end; text-align: right; }
 
 .club-code {
   font-size: 1rem;
@@ -530,90 +856,20 @@ export default {
   50% { opacity: 0.6; }
 }
 
-@media (max-width: 1200px) {
-  .fights-overview {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
 @media (max-width: 992px) {
-  .row-content {
-    flex-direction: column;
-    align-items: flex-start;
-    padding-right: 0;
-  }
-  .fighters-matchup {
-    padding: 1rem 0;
-    width: 100%;
-    justify-content: space-between;
-  }
-  .round-or-timer {
-    margin: 1rem 0;
-    text-align: left;
-  }
-  .category-weight {
-    margin-bottom: 1rem;
-  }
-  .tatami-header {
-    flex-direction: column;
-    text-align: center;
-    padding: 1rem 1.2rem;
-  }
-  .tatami-number {
-    margin-right: 0;
-    margin-bottom: 0.5rem;
-  }
-  .status-corner {
-    right: 50%;
-    transform: translateX(50%);
-    top: 8px;
-  }
+  .consolation-groups { grid-template-columns: 1fr; }
+  .row-content { flex-wrap: wrap; }
+  .fighters-matchup { width: 100%; }
+  .round-or-timer { text-align: left; }
 }
 
 @media (max-width: 768px) {
-  .fights-overview {
-    padding-top: 70px;
-  }
-  .fighters-matchup {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-  .fighter.left,
-  .fighter.right {
-    align-items: center;
-    text-align: center;
-    min-width: auto;
-  }
-  .tatami-number {
-    font-size: 2.2rem;
-  }
-  .tatami-title {
-    font-size: 1.3rem;
-  }
-  .filters-section {
-    flex-direction: column;
-    padding: 1rem;
-  }
-  .filter-group {
-    min-width: auto;
-    width: 100%;
-  }
-  .filter-group select {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .fights-overview {
-    padding-top: 65px;
-  }
-  .fights-header h1 {
-    font-size: 2rem;
-  }
-  .tatami-number {
-    font-size: 2rem;
-  }
+  .fights-overview { padding-top: 70px; }
+  .bracket-tabs { gap: 0.5rem; }
+  .bracket-tab { padding: 0.6rem 1rem; font-size: 0.85rem; }
+  .fighters-matchup { flex-direction: column; align-items: center; gap: 0.5rem; }
+  .fighter.left, .fighter.right { align-items: center; text-align: center; min-width: auto; }
+  .filters-section { flex-direction: column; padding: 1rem; }
+  .filter-group { min-width: auto; width: 100%; }
 }
 </style>

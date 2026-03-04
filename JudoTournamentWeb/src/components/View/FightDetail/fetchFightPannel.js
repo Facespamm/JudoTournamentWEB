@@ -235,6 +235,31 @@ export const getFightSummary = async (fightId) => {
     }
 };
 
+
+export const resetFight = async (fightData,fightId) => {
+    try {
+        const response = await fetch(`/api/scores/fight/${fightId}/rematch
+`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(fightData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка при сбросе матча:', error);
+        throw error;
+    }
+};
+
+
 export const setLifeFight = async (fightId,tatami_number) => {
     try {
         const response = await fetch(`/api/fights/${fightId}/set-live?tatami_number=${tatami_number}`, {

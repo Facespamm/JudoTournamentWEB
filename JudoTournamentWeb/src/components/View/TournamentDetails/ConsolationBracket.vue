@@ -31,19 +31,24 @@
               <div class="round-header">{{ ri === roundsA.length - 1 ? 'Бронза' : `Раунд ${ri + 1}` }}</div>
               <div class="round-body">
                 <div v-for="(fight, fi) in round" :key="fi" class="match-slot">
-                  <div class="match-card">
-                    <div :class="['contestant', { tbd: !fight.white_athlete }]">
+                  <div :class="['match-card', { 'card-done': fight.result }]">
+
+                    <!-- Белый угол -->
+                    <div :class="['contestant', { tbd: !fight.white_athlete, loser: fight.result && fight.result.winner_id !== fight.white_athlete?.id && fight.white_athlete }]">
                       <div class="c-name-wrap">
                         <span v-if="fight.white_athlete" class="c-first">{{ fight.white_athlete.first_name }}</span>
                         <span class="c-name">{{ fight.white_athlete ? fight.white_athlete.last_name.toUpperCase() : 'TBD' }}</span>
                       </div>
                     </div>
-                    <div :class="['contestant', 'blue-side', { tbd: !fight.blue_athlete }]">
+
+                    <!-- Синий угол -->
+                    <div :class="['contestant', 'blue-side', { tbd: !fight.blue_athlete, loser: fight.result && fight.result.winner_id !== fight.blue_athlete?.id && fight.blue_athlete }]">
                       <div class="c-name-wrap">
                         <span v-if="fight.blue_athlete" class="c-first">{{ fight.blue_athlete.first_name }}</span>
                         <span class="c-name">{{ fight.blue_athlete ? fight.blue_athlete.last_name.toUpperCase() : 'TBD' }}</span>
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -55,9 +60,10 @@
               <div class="champion-body">
                 <div class="match-slot">
                   <div class="match-card champion-card">
-                    <div class="contestant tbd">
+                    <div :class="['contestant', bronzeWinnerA ? '' : 'tbd']">
                       <div class="c-name-wrap">
-                        <span class="c-name">TBD</span>
+                        <span v-if="bronzeWinnerA" class="c-first">{{ bronzeWinnerA.first_name }}</span>
+                        <span class="c-name">{{ bronzeWinnerA ? bronzeWinnerA.last_name.toUpperCase() : 'TBD' }}</span>
                       </div>
                     </div>
                   </div>
@@ -78,19 +84,24 @@
               <div class="round-header">{{ ri === roundsB.length - 1 ? 'Бронза' : `Раунд ${ri + 1}` }}</div>
               <div class="round-body">
                 <div v-for="(fight, fi) in round" :key="fi" class="match-slot">
-                  <div class="match-card">
-                    <div :class="['contestant', { tbd: !fight.white_athlete }]">
+                  <div :class="['match-card', { 'card-done': fight.result }]">
+
+                    <!-- Белый угол -->
+                    <div :class="['contestant', { tbd: !fight.white_athlete, loser: fight.result && fight.result.winner_id !== fight.white_athlete?.id && fight.white_athlete }]">
                       <div class="c-name-wrap">
                         <span v-if="fight.white_athlete" class="c-first">{{ fight.white_athlete.first_name }}</span>
                         <span class="c-name">{{ fight.white_athlete ? fight.white_athlete.last_name.toUpperCase() : 'TBD' }}</span>
                       </div>
                     </div>
-                    <div :class="['contestant', 'blue-side', { tbd: !fight.blue_athlete }]">
+
+                    <!-- Синий угол -->
+                    <div :class="['contestant', 'blue-side', { tbd: !fight.blue_athlete, loser: fight.result && fight.result.winner_id !== fight.blue_athlete?.id && fight.blue_athlete }]">
                       <div class="c-name-wrap">
                         <span v-if="fight.blue_athlete" class="c-first">{{ fight.blue_athlete.first_name }}</span>
                         <span class="c-name">{{ fight.blue_athlete ? fight.blue_athlete.last_name.toUpperCase() : 'TBD' }}</span>
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -102,9 +113,10 @@
               <div class="champion-body">
                 <div class="match-slot">
                   <div class="match-card champion-card">
-                    <div class="contestant tbd">
+                    <div :class="['contestant', bronzeWinnerB ? '' : 'tbd']">
                       <div class="c-name-wrap">
-                        <span class="c-name">TBD</span>
+                        <span v-if="bronzeWinnerB" class="c-first">{{ bronzeWinnerB.first_name }}</span>
+                        <span class="c-name">{{ bronzeWinnerB ? bronzeWinnerB.last_name.toUpperCase() : 'TBD' }}</span>
                       </div>
                     </div>
                   </div>
@@ -139,6 +151,12 @@ const rootB = ref(null)
 const svgA  = ref(null)
 const svgB  = ref(null)
 
+// Формат времени мм:сс
+const formatTime = (sec) => {
+  if (!sec && sec !== 0) return ''
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+}
+
 const buildRounds = (fights) => {
   if (!fights.length) return []
   const max = Math.max(...fights.map(f => f.round))
@@ -152,7 +170,24 @@ const buildRounds = (fights) => {
 const roundsA = computed(() => buildRounds(groupA.value))
 const roundsB = computed(() => buildRounds(groupB.value))
 
-// ===== SVG коннекторы (тот же алгоритм что в основной сетке) =====
+// Победитель последнего боя группы (бронза)
+const getBronzeWinner = (fights) => {
+  if (!fights.length) return null
+  const maxRound = Math.max(...fights.map(f => f.round))
+  const finalFights = fights.filter(f => f.round === maxRound)
+  if (!finalFights.length) return null
+  const lastFight = finalFights[finalFights.length - 1]
+  if (!lastFight.result) return null
+  const winnerId = lastFight.result.winner_id
+  if (lastFight.white_athlete?.id === winnerId) return lastFight.white_athlete
+  if (lastFight.blue_athlete?.id === winnerId)  return lastFight.blue_athlete
+  return null
+}
+
+const bronzeWinnerA = computed(() => getBronzeWinner(groupA.value))
+const bronzeWinnerB = computed(() => getBronzeWinner(groupB.value))
+
+// ===== SVG коннекторы =====
 const drawConnectors = (root, svg) => {
   if (!root || !svg) return
   const rRect = root.getBoundingClientRect()
@@ -300,7 +335,7 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
-/* ===== Сетка — точная копия стилей основной сетки ===== */
+/* ===== Сетка ===== */
 .bracket-root {
   position: relative;
   width: 100%;
@@ -366,6 +401,7 @@ onMounted(() => {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .match-card:hover { border-color: #e0b456; box-shadow: 0 3px 14px rgba(200,155,60,0.18); }
+.match-card.card-done { border-color: #d1d5db; }
 
 .champion-card {
   width: 172px; border: 2px solid #c89b3c;
@@ -379,6 +415,12 @@ onMounted(() => {
 }
 .contestant:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
 .contestant:hover { background: #fdfcf8; }
+
+/* Проигравший — только приглушённый текст */
+.contestant.loser .c-name  { color: #9ca3af; }
+.contestant.loser .c-first { color: #c4c9d1; }
+.blue-side.loser .c-name   { color: #93c5fd; opacity: 0.5; }
+.blue-side.loser .c-first  { opacity: 0.4; }
 
 .blue-side { background-color: #2563eb; }
 .blue-side:hover { background-color: #1d4ed8; }
@@ -398,6 +440,28 @@ onMounted(() => {
   font-size: 0.76rem; font-weight: 700; color: #111827;
   display: block; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; line-height: 1.2;
+}
+
+/* Бейдж результата */
+.result-badge {
+  flex-shrink: 0;
+  font-size: 0.56rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: #dcfce7;
+  border-radius: 4px;
+  padding: 2px 5px;
+  white-space: nowrap;
+  margin-left: 4px;
+  line-height: 1.4;
+}
+.result-badge-blue {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+}
+.result-time {
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 .bracket-loading, .no-fights {

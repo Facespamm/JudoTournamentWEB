@@ -5,21 +5,33 @@
       <div class="spinner"></div>
       <p>Загрузка весовых категорий...</p>
     </div>
-
     <!-- Если нет категорий -->
     <div v-else-if="!categories.length" class="no-categories">
       <p>В этом турнире пока нет весовых категорий</p>
     </div>
 
     <template v-else>
-      <div class="main-tabs">
-        <button class="main-tab" :class="{ active: mainTab === 'bracket' }" @click="mainTab = 'bracket'">
-          Турнирная сетка
-        </button>
-        <button class="main-tab" :class="{ active: mainTab === 'consolation' }" @click="mainTab = 'consolation'">
-          Утешительные бои
+      <!-- === БЛОК С ТАБАМИ И КНОПКОЙ ДОКУМЕНТ === -->
+      <div class="tabs-header">
+        <div class="main-tabs">
+          <button class="main-tab" :class="{ active: mainTab === 'bracket' }" @click="mainTab = 'bracket'">
+            Турнирная сетка
+          </button>
+          <button class="main-tab" :class="{ active: mainTab === 'consolation' }" @click="mainTab = 'consolation'">
+            Утешительные бои
+          </button>
+        </div>
+
+        <button
+            class="document-btn"
+            @click="downloadDocument"
+            :disabled="!selectedCategory"
+            title="Скачать протокол категории в PDF"
+        >
+          📄 Документ
         </button>
       </div>
+      <!-- ========================================= -->
 
       <div class="weight-categories-bar">
         <button
@@ -50,16 +62,13 @@
             <span class="group-label">ВЕСОВАЯ КАТЕГОРИЯ</span>
             <span class="group-weight">{{ selectedCategory.name }}</span>
           </div>
-
           <div v-if="isLoadingBracket" class="bracket-loading">
             <div class="spinner"></div>
             <p>Загрузка турнирной сетки...</p>
           </div>
-
           <div v-else-if="!rounds.length" class="no-fights">
             <p>В этой категории пока нет схваток</p>
           </div>
-
           <div v-else id="bracket-root" ref="bracketRoot">
             <div class="rounds-row">
               <div
@@ -88,7 +97,6 @@
                           <span class="c-name">{{ getContestant(match.p1)?.last || 'TBD' }}</span>
                         </div>
                       </div>
-
                       <div
                           :class="[
                           'contestant',
@@ -107,7 +115,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="round-col champion-col">
                 <div class="round-header">Чемпион</div>
                 <div class="champion-body">
@@ -132,16 +139,13 @@
                 </div>
               </div>
             </div>
-
             <svg ref="connectorSvg" id="connector-svg" width="1" height="1"></svg>
           </div>
         </div>
-
         <div v-else-if="categories.length && !selectedCategory" class="placeholder">
           <p>Выберите весовую категорию выше</p>
         </div>
       </template>
-
     </template>
   </div>
 </template>
@@ -149,7 +153,13 @@
 <script setup>
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchGetCategoryByTournament, fetchBrackets, getResultTournament } from "@/components/View/Brackets/fetchBrackets.js"
+import {
+  fetchGetCategoryByTournament,
+  fetchBrackets,
+  getResultTournament,
+  fetchGetDocument   // ← добавлен импорт
+} from "@/components/View/Brackets/fetchBrackets.js"
+
 import ConsolationBracket from "@/components/View/TournamentDetails/ConsolationBracket.vue"
 
 const route = useRoute()
@@ -158,13 +168,13 @@ const tournamentId = computed(() => Number(route.params.id))
 const categories = ref([])
 const selectedCategory = ref(null)
 const isLoadingCategories = ref(true)
-
 const mainTab = ref('bracket')
-
 const contestants = ref([])
 const rounds = ref([])
 const championId = ref(null)
 const isLoadingBracket = ref(false)
+const bracketRoot = ref(null)
+const connectorSvg = ref(null)
 
 const championContestant = computed(() => {
   if (!championId.value) return null
@@ -199,26 +209,21 @@ const loadBracket = async (catId) => {
   contestants.value = []
   rounds.value = []
   championId.value = null
-
   try {
     const [bracketData, resultsData] = await Promise.all([
       fetchBrackets(tournamentId.value, catId),
       getResultTournament(tournamentId.value, catId)
     ])
-
     if (bracketData.success && bracketData.fights) {
       const mainFights = bracketData.fights.filter(f =>
-          !f.type_bracket ||
-          f.type_bracket === 'MAIN'
+          !f.type_bracket || f.type_bracket === 'MAIN'
       )
-
       const resultsMap = new Map()
       if (resultsData.success && resultsData.results) {
         resultsData.results.forEach(r => {
           resultsMap.set(r.fight_id, r.winner_name)
         })
       }
-
       processBracketData(mainFights, resultsMap)
     }
   } catch (err) {
@@ -258,7 +263,6 @@ const processBracketData = (fights, resultsMap = new Map()) => {
     const matches = roundFights.map(f => {
       const result = resultsMap.get(f.id)
       let winnerId = null
-
       if (result) {
         const white = f.white_athlete
         const blue = f.blue_athlete
@@ -268,7 +272,6 @@ const processBracketData = (fights, resultsMap = new Map()) => {
           winnerId = blue.id
         }
       }
-
       return {
         p1: f.white_athlete?.id || null,
         p2: f.blue_athlete?.id || null,
@@ -282,6 +285,7 @@ const processBracketData = (fights, resultsMap = new Map()) => {
 
   rounds.value = bracketRounds
 
+  // Определяем чемпиона
   if (maxRound > 0) {
     const finalFights = fights.filter(f => f.round === maxRound)
     if (finalFights.length > 0) {
@@ -300,6 +304,31 @@ const processBracketData = (fights, resultsMap = new Map()) => {
   }
 }
 
+// === НОВАЯ ФУНКЦИЯ СКАЧИВАНИЯ PDF ===
+const downloadDocument = async () => {
+  if (!selectedCategory.value) {
+    alert('Пожалуйста, выберите весовую категорию')
+    return
+  }
+
+  try {
+    const blob = await fetchGetDocument(tournamentId.value, selectedCategory.value.id)
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Протокол_${selectedCategory.value.name.replace(/\s+/g, '_')}_${tournamentId.value}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Ошибка при скачивании PDF:', error)
+    alert('Не удалось скачать документ. Попробуйте позже.')
+  }
+}
+
+// === WATCHERS ===
 watch(
     selectedCategory,
     async (newCat) => {
@@ -319,7 +348,6 @@ watch(rounds, () => {
   })
 }, { deep: true })
 
-// ===== ФИКС: перерисовываем линии при возврате на вкладку bracket =====
 watch(mainTab, (tab) => {
   if (tab === 'bracket') {
     nextTick(() => {
@@ -328,9 +356,7 @@ watch(mainTab, (tab) => {
   }
 })
 
-const bracketRoot = ref(null)
-const connectorSvg = ref(null)
-
+// === РИСОВАНИЕ СОЕДИНИТЕЛЬНЫХ ЛИНИЙ ===
 const drawConnectors = () => {
   if (!bracketRoot.value || !connectorSvg.value) return
 
@@ -367,11 +393,13 @@ const drawConnectors = () => {
       const slot1 = srcSlots[pi * 2]
       const slot2 = srcSlots[pi * 2 + 1]
       const tSlot = tgtSlots[pi]
+
       if (!slot1 || !tSlot) continue
 
       const card1 = slot1.querySelector('.match-card')
       const card2 = slot2 ? slot2.querySelector('.match-card') : null
       const tCard = tSlot.querySelector('.match-card')
+
       if (!card1 || !tCard) continue
 
       const r1 = rel(card1.getBoundingClientRect())
@@ -423,6 +451,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ===================== ВСЕ СТИЛИ (обновлённые + новые) ===================== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -435,10 +464,19 @@ onMounted(() => {
   color: #1a1a2e;
 }
 
+/* === Новый контейнер для табов и кнопки Документ === */
+.tabs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .main-tabs {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
 }
 
 .main-tab {
@@ -462,9 +500,38 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(26,26,46,0.25);
 }
 
-.page {
-  padding: 12px 0 32px;
+/* === Кнопка «Документ» === */
+.document-btn {
+  padding: 0.55rem 1.6rem;
+  border-radius: 50px;
+  background: #c89b3c;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
 }
+
+.document-btn:hover:not(:disabled) {
+  background: #d4aa5a;
+  transform: translateY(-1px);
+}
+
+.document-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Остальные стили (без изменений) */
+.page { padding: 12px 0 32px; }
 
 .group-section {
   display: flex;
@@ -654,7 +721,7 @@ onMounted(() => {
 .blue-side { background-color: #2563eb; }
 .blue-side:hover { background-color: #1d4ed8; }
 .blue-side .c-first { color: #93c5fd; }
-.blue-side .c-name  { color: #fff; }
+.blue-side .c-name { color: #fff; }
 
 .contestant.winner::before {
   content: '';
@@ -723,10 +790,10 @@ onMounted(() => {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 700px) {
-  .match-card    { width: 140px; }
+  .match-card { width: 140px; }
   .champion-card { width: 152px; }
-  .page          { padding: 10px 0 20px; }
+  .page { padding: 10px 0 20px; }
   .match-slot, .champion-body { padding-left: 6px; padding-right: 6px; }
-  #bracket-root  { border-radius: 10px; padding: 14px 6px 20px; }
+  #bracket-root { border-radius: 10px; padding: 14px 6px 20px; }
 }
 </style>

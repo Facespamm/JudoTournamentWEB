@@ -111,6 +111,9 @@
         <div class="result-row"><span>Победитель:</span><strong>{{ getWinnerName() }}</strong></div>
         <div class="result-row"><span>Тип победы:</span><strong>{{ victoryTypeText }}</strong></div>
       </div>
+      <button class="btn-rematch" @click="rematch" :disabled="rematchLoading">
+        {{ rematchLoading ? 'Сброс...' : '↺ Переигровка' }}
+      </button>
     </div>
 
     <div class="info-section">
@@ -138,7 +141,7 @@
 </template>
 
 <script>
-import { endFight, setLifeFight } from "@/components/View/FightDetail/fetchFightPannel.js"
+import { endFight, setLifeFight, resetFight } from "@/components/View/FightDetail/fetchFightPannel.js"
 import { fetchGetDetailFight } from "@/components/View/Fight/fetchFights.js"
 
 export default {
@@ -166,7 +169,8 @@ export default {
       eventLog: [],
       fightDurationPreset: 240,
       fightIds: [],
-      currentIndex: -1
+      currentIndex: -1,
+      rematchLoading: false,
     }
   },
 
@@ -208,10 +212,8 @@ export default {
         clearInterval(this.timerInterval)
         clearInterval(this.osaekomiInterval)
 
-        // Сохраняем список перед сбросом
         const savedFightIds = [...this.fightIds]
 
-        // Сброс состояния
         this.fight = null
         this.loading = true
         this.scores = {
@@ -230,8 +232,8 @@ export default {
         this.winnerColor = null
         this.eventLog = []
         this.fightDurationPreset = 240
+        this.rematchLoading = false
 
-        // Восстанавливаем список и обновляем индекс
         this.fightIds = savedFightIds
         this.fightId = Number(newId) || newId
         this.currentIndex = this.fightIds.indexOf(this.fightId)
@@ -248,7 +250,6 @@ export default {
     }
     this.fightId = Number(rawId) || rawId || '???'
 
-    // Читаем список ID из sessionStorage
     try {
       const saved = sessionStorage.getItem('fightIds')
       if (saved) {
@@ -279,9 +280,8 @@ export default {
           this.fightDurationPreset = res.timer_seconds || 240
           this.timerSeconds = this.fightDurationPreset
 
-          console.log('Загруженный fight:', this.fight)
           if (!this.fight.white_athlete?.id || !this.fight.blue_athlete?.id) {
-            this.addEvent('warning', 'Внимание: ID атлетов отсутствуют в данных! Победитель будет отправлен как null.')
+            this.addEvent('warning', 'Внимание: ID атлетов отсутствуют в данных!')
           }
         } else {
           throw new Error('Нет данных или неверный формат ответа')
@@ -420,7 +420,6 @@ export default {
 
       const winnerId = color === 'WHITE' ? this.fight?.white_athlete?.id : this.fight?.blue_athlete?.id
 
-      console.log('winner ID:', winnerId)
       if (!winnerId) {
         this.addEvent('warning', 'ID победителя не найден — отправляем winner_athlete_id: null')
       }
@@ -487,6 +486,37 @@ export default {
       }
     },
 
+    async rematch() {
+      if (!confirm('Сбросить результат и начать переигровку?')) return
+      this.rematchLoading = true
+      try {
+        const result = await resetFight({}, this.fightId)
+        if (result.success) {
+          this.addEvent('system', 'Бой сброшен — переигровка')
+          this.fightStatus = 'SCHEDULED'
+          this.victoryType = null
+          this.winnerColor = null
+          this.timerSeconds = this.fightDurationPreset
+          this.gsSeconds = 0
+          this.isRunning = false
+          this.isGoldenScore = false
+          this.scores = {
+            white: { ippon: 0, wazaari: 0, penalty_count: 0 },
+            blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
+          }
+          clearInterval(this.timerInterval)
+          clearInterval(this.osaekomiInterval)
+          this.osaekomi = { active: false, athlete_color: null, time: 0 }
+        } else {
+          this.addEvent('error', `Ошибка сброса: ${result.message}`)
+        }
+      } catch (e) {
+        this.addEvent('error', `Ошибка переигровки: ${e.message || e}`)
+      } finally {
+        this.rematchLoading = false
+      }
+    },
+
     enterGoldenScore() {
       this.isGoldenScore = !this.isGoldenScore
       if (this.isGoldenScore) this.gsSeconds = 0
@@ -521,11 +551,9 @@ export default {
               this.addEvent('system', `Схватка переведена в LIVE на татами ${this.fight.tatami}`)
             } else {
               this.addEvent('error', `Не удалось перевести в LIVE: ${result.error || 'неизвестная ошибка'}`)
-              console.error('setLifeFight error:', result)
             }
           } catch (err) {
             this.addEvent('error', `Ошибка сети при переводе в LIVE: ${err.message || err}`)
-            console.error('setLifeFight exception:', err)
           }
         } else {
           this.addEvent('warning', 'Нет fightId или номера татами — перевод в LIVE пропущен')
@@ -597,7 +625,6 @@ export default {
 
 .back:hover { color: #e0b456; }
 
-/* Кнопка вперёд — полное зеркало кнопки назад */
 .forward {
   position: absolute;
   right: 0;
@@ -614,11 +641,7 @@ export default {
 }
 
 .forward:hover:not(:disabled) { color: #e0b456; }
-
-.forward:disabled {
-  opacity: 0.25;
-  cursor: not-allowed;
-}
+.forward:disabled { opacity: 0.25; cursor: not-allowed; }
 
 .header-content {
   flex: 1;
@@ -916,6 +939,30 @@ export default {
 }
 
 .result-row:last-child { border-bottom: none; }
+
+.btn-rematch {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.7rem;
+  background: #fff0f0;
+  border: 2px solid #e05555;
+  border-radius: 12px;
+  color: #e05555;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-rematch:hover:not(:disabled) {
+  background: #e05555;
+  color: white;
+}
+
+.btn-rematch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .info-section {
   max-width: 1200px;

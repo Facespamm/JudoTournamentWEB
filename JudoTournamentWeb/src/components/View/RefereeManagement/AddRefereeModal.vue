@@ -38,16 +38,18 @@
           <input v-model.trim="form.middle_name" type="text" placeholder="Отчество" />
         </div>
 
-        <!-- Категория теперь как в редактировании — обычный input text -->
+        <!-- Дропдаун категории судейства -->
         <div class="form-group">
           <label>Категория судейства <span class="required">*</span></label>
-          <input
-              v-model.trim="form.certification_level"
-              type="text"
-              required
-              placeholder="Например: Национальный 3 категории"
+          <select
+              v-model="form.certification_level"
               :class="{ 'input-error': errors.certification_level }"
-          />
+          >
+            <option value="" disabled>— Выберите категорию —</option>
+            <option v-for="(label, key) in REFEREE_LEVELS" :key="key" :value="label">
+              {{ label }}
+            </option>
+          </select>
           <div v-if="errors.certification_level" class="error-text">{{ errors.certification_level }}</div>
         </div>
 
@@ -85,6 +87,18 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { CreateReferee } from '@/components/View/RefereeManagement/fetchRefereeManagement.js'
+
+const REFEREE_LEVELS = {
+  NATIONAL_3:      'Национальный 3 категории',
+  NATIONAL_2:      'Национальный 2 категории',
+  NATIONAL_1:      'Национальный 1 категории',
+  CONTINENTAL_C:   'Континентальный C',
+  CONTINENTAL_B:   'Континентальный B',
+  CONTINENTAL_A:   'Континентальный A',
+  INTERNATIONAL_C: 'Международный C',
+  INTERNATIONAL_B: 'Международный B',
+  INTERNATIONAL_A: 'Международный A',
+}
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true }
@@ -128,7 +142,7 @@ const validateForm = () => {
     errors.value.first_name = 'Обязательное поле'
     isValid = false
   }
-  if (!form.value.certification_level.trim()) {
+  if (!form.value.certification_level) {
     errors.value.certification_level = 'Обязательное поле'
     isValid = false
   }
@@ -141,7 +155,6 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true
   try {
-    // Отправляем ровно те поля, которые указаны в JSON-примере
     await CreateReferee(form.value)
     emit('submit', { success: true })
     close()
@@ -159,14 +172,11 @@ const close = () => {
 }
 
 watch(() => props.isOpen, (val) => {
-  if (val) {
-    resetForm()
-  }
+  if (val) resetForm()
 })
 </script>
 
 <style scoped>
-/* Стили без изменений — оставлены точно как в оригинальной модалке добавления */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -215,8 +225,20 @@ input, select {
   font-size: 1rem;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  background: white;
+  color: #1a1a1a;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
 }
-input:focus {
+input {
+  background-image: none;
+  padding-right: 12px;
+}
+input:focus, select:focus {
   outline: none;
   border-color: #c89b3c;
   box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.15);

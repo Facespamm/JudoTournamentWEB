@@ -5,18 +5,15 @@
       <p class="subtitle">Все бои текущего турнира</p>
     </div>
 
-    <!-- Лоадер категорий -->
     <div v-if="isLoadingCategories" class="categories-loading">
       <div class="spinner"></div>
       <p>Загрузка весовых категорий...</p>
     </div>
 
-    <!-- Нет категорий -->
     <div v-else-if="!categories.length" class="no-categories">
       <p>В этом турнире пока нет весовых категорий</p>
     </div>
 
-    <!-- Дропдаун категорий -->
     <div v-else class="weight-categories-dropdown">
       <select v-model="selectedCategory" class="category-dropdown" @change="loadFights">
         <option v-for="cat in categories" :key="cat.id" :value="cat">
@@ -25,30 +22,22 @@
       </select>
     </div>
 
-    <!-- Заголовок выбранной категории -->
     <div v-if="selectedCategory && selectedCategory.id !== null" class="group-section">
       <span class="group-label">ВЕСОВАЯ КАТЕГОРИЯ</span>
       <span class="group-weight">{{ selectedCategory.name }}</span>
     </div>
 
-    <!-- Лоадер боёв -->
     <div v-if="isLoadingFights" class="fights-loading">
       <div class="spinner"></div>
       <p>Загрузка схваток...</p>
     </div>
 
-    <!-- Нет боёв -->
     <div v-else-if="fights.length === 0" class="no-fights">
       <p>{{ selectedCategory?.id === null ? 'В турнире пока нет схваток' : 'В этой категории пока нет схваток' }}</p>
     </div>
 
-    <!-- Татами с боями -->
     <div v-else class="tatami-sections">
-      <div
-          v-for="tatami in availableTatamis"
-          :key="tatami"
-          class="tatami-section"
-      >
+      <div v-for="tatami in availableTatamis" :key="tatami" class="tatami-section">
         <div class="tatami-header">
           <div class="tatami-badge">
             <span class="tatami-label">ТАТАМИ</span>
@@ -65,25 +54,22 @@
               :key="fight.id"
               class="fight-card"
               :class="{
-                'fight-live': getLiveStatus(fight) === 'IN_PROGRESS',
-                'fight-done': getLiveStatus(fight) === 'COMPLETED'
-              }"
+              'fight-live': getLiveStatus(fight) === 'IN_PROGRESS',
+              'fight-done': getLiveStatus(fight) === 'COMPLETED'
+            }"
           >
-            <!-- Статус-бейдж -->
             <div class="fight-status-badge">
               <span v-if="getLiveStatus(fight) === 'IN_PROGRESS'" class="pulse-dot"></span>
               <span class="status-text" :class="getLiveStatus(fight)">{{ statusText(getLiveStatus(fight)) }}</span>
             </div>
 
-            <!-- Мета инфо -->
             <div class="fight-meta">
               <span class="fight-category">{{ fight.category }}</span>
               <span class="fight-round">{{ fight.round_info }}</span>
             </div>
 
-            <!-- Табло -->
             <div class="scoreboard">
-              <!-- Боец 1 (белый) -->
+              <!-- Белый боец -->
               <div class="fighter-row white-side">
                 <div class="fighter-info">
                   <div class="fighter-color-dot white-dot"></div>
@@ -93,22 +79,10 @@
                   </div>
                 </div>
                 <div class="scores">
-                  <div class="score-block">
-                    <span class="score-label">I</span>
-                    <span class="score-val">{{ getScore(fight.id, 'white', 'ippon') }}</span>
-                  </div>
-                  <div class="score-block">
-                    <span class="score-label">W</span>
-                    <span class="score-val">{{ getScore(fight.id, 'white', 'wazaari') }}</span>
-                  </div>
-                  <div class="score-block">
-                    <span class="score-label">Y</span>
-                    <span class="score-val">{{ getScore(fight.id, 'white', 'yuko') }}</span>
-                  </div>
-                  <div class="score-block shido-block">
-                    <span class="score-label">S</span>
-                    <span class="score-val shido">{{ getScore(fight.id, 'white', 'shido') }}</span>
-                  </div>
+                  <div class="score-block"><span class="score-label">I</span><span class="score-val">{{ getScore(fight.id, 'white', 'ippon') }}</span></div>
+                  <div class="score-block"><span class="score-label">W</span><span class="score-val">{{ getScore(fight.id, 'white', 'wazaari') }}</span></div>
+                  <div class="score-block"><span class="score-label">Y</span><span class="score-val">{{ getScore(fight.id, 'white', 'yuko') }}</span></div>
+                  <div class="score-block shido-block"><span class="score-label">S</span><span class="score-val shido">{{ getScore(fight.id, 'white', 'shido') }}</span></div>
                 </div>
               </div>
 
@@ -118,7 +92,7 @@
                 <div class="divider-line"></div>
               </div>
 
-              <!-- Боец 2 (синий) -->
+              <!-- Синий боец -->
               <div class="fighter-row blue-side">
                 <div class="fighter-info">
                   <div class="fighter-color-dot blue-dot"></div>
@@ -128,26 +102,13 @@
                   </div>
                 </div>
                 <div class="scores">
-                  <div class="score-block">
-                    <span class="score-label">I</span>
-                    <span class="score-val">{{ getScore(fight.id, 'blue', 'ippon') }}</span>
-                  </div>
-                  <div class="score-block">
-                    <span class="score-label">W</span>
-                    <span class="score-val">{{ getScore(fight.id, 'blue', 'wazaari') }}</span>
-                  </div>
-                  <div class="score-block">
-                    <span class="score-label">Y</span>
-                    <span class="score-val">{{ getScore(fight.id, 'blue', 'yuko') }}</span>
-                  </div>
-                  <div class="score-block shido-block">
-                    <span class="score-label">S</span>
-                    <span class="score-val shido">{{ getScore(fight.id, 'blue', 'shido') }}</span>
-                  </div>
+                  <div class="score-block"><span class="score-label">I</span><span class="score-val">{{ getScore(fight.id, 'blue', 'ippon') }}</span></div>
+                  <div class="score-block"><span class="score-label">W</span><span class="score-val">{{ getScore(fight.id, 'blue', 'wazaari') }}</span></div>
+                  <div class="score-block"><span class="score-label">Y</span><span class="score-val">{{ getScore(fight.id, 'blue', 'yuko') }}</span></div>
+                  <div class="score-block shido-block"><span class="score-label">S</span><span class="score-val shido">{{ getScore(fight.id, 'blue', 'shido') }}</span></div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
@@ -163,32 +124,19 @@ import { fightScores, initFight } from "@/stores/fightScoresStore.js"
 
 const route = useRoute()
 const router = useRouter()
-
 const tournamentId = computed(() => Number(route.params.id))
 
 const categories = ref([])
 const selectedCategory = ref(null)
 const isLoadingCategories = ref(true)
-
 const fights = ref([])
 const isLoadingFights = ref(false)
 
-// Читаем очко из стора (реактивно обновляется)
-const getScore = (fightId, color, field) => {
-  return fightScores[fightId]?.[color]?.[field] ?? 0
-}
-
-// Статус из стора или из данных боя
-const getLiveStatus = (fight) => {
-  return fightScores[fight.id]?.status || fight.status
-}
+const getScore = (fightId, color, field) => fightScores[fightId]?.[color]?.[field] ?? 0
+const getLiveStatus = (fight) => fightScores[fight.id]?.status || fight.status
 
 const loadCategories = async () => {
-  if (!tournamentId.value) {
-    router.push('/tournaments')
-    return
-  }
-
+  if (!tournamentId.value) { router.push('/tournaments'); return }
   isLoadingCategories.value = true
   try {
     const res = await fetchGetCategoryByTournament(tournamentId.value)
@@ -206,56 +154,25 @@ const loadCategories = async () => {
 
 const loadFights = async () => {
   if (!tournamentId.value) return
-
   isLoadingFights.value = true
   fights.value = []
-
   try {
     if (selectedCategory.value.id === null) {
       const allFights = []
-      const catList = categories.value.filter(c => c.id !== null)
-
-      for (const cat of catList) {
+      for (const cat of categories.value.filter(c => c.id !== null)) {
         try {
           const res = await fetchBrackets(tournamentId.value, cat.id)
           if (res?.success && res.fights?.length) {
             const catName = `${cat.name} ${cat.gender ? `(${cat.gender === 'MALE' ? 'М' : 'Ж'})` : ''}`
-            const catFights = res.fights.map(fight => {
-              initFight(fight.id)
-              return {
-                id: fight.id,
-                tatami: fight.tatami_number ?? 0,
-                status: fight.status_fight || 'SCHEDULED',
-                category: catName,
-                fighter1: formatAthlete(fight.white_athlete),
-                fighter2: formatAthlete(fight.blue_athlete),
-                round: fight.round || null,
-                round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
-              }
-            })
-            allFights.push(...catFights)
+            allFights.push(...res.fights.map(fight => { initFight(fight.id); return mapFight(fight, catName) }))
           }
-        } catch (err) {
-          console.error(`Ошибка загрузки боёв для категории ${cat.id}:`, err)
-        }
+        } catch {}
       }
       fights.value = allFights
     } else {
       const res = await fetchBrackets(tournamentId.value, selectedCategory.value.id)
       if (res?.success && res.fights?.length) {
-        fights.value = res.fights.map(fight => {
-          initFight(fight.id)
-          return {
-            id: fight.id,
-            tatami: fight.tatami_number ?? 0,
-            status: fight.status_fight || 'SCHEDULED',
-            category: selectedCategory.value.name,
-            fighter1: formatAthlete(fight.white_athlete),
-            fighter2: formatAthlete(fight.blue_athlete),
-            round: fight.round || null,
-            round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
-          }
-        })
+        fights.value = res.fights.map(fight => { initFight(fight.id); return mapFight(fight, selectedCategory.value.name) })
       }
     }
   } catch (err) {
@@ -266,17 +183,25 @@ const loadFights = async () => {
   }
 }
 
+const mapFight = (fight, catName) => ({
+  id: fight.id,
+  tatami: fight.tatami_number ?? 0,
+  status: fight.status_fight || 'SCHEDULED',
+  category: catName,
+  fighter1: formatAthlete(fight.white_athlete),
+  fighter2: formatAthlete(fight.blue_athlete),
+  round: fight.round || null,
+  round_info: fight.round ? `Раунд ${fight.round}` : (fight.next_fight === null ? 'Финал' : '—')
+})
+
 const formatAthlete = (athlete) => {
   if (!athlete) return { name: 'Ожидает победителя', club: '' }
-  const name = [athlete.last_name, athlete.first_name, athlete.middle_name].filter(Boolean).join(' ')
-  return { name, club: athlete.club_name || '' }
+  return { name: [athlete.last_name, athlete.first_name, athlete.middle_name].filter(Boolean).join(' '), club: athlete.club_name || '' }
 }
 
 const availableTatamis = computed(() => {
   const tatamis = [...new Set(fights.value.map(f => f.tatami || 0))].sort((a, b) => a - b)
-  const positive = tatamis.filter(t => t > 0)
-  const zero = tatamis.includes(0) ? [0] : []
-  return positive.concat(zero)
+  return tatamis.filter(t => t > 0).concat(tatamis.includes(0) ? [0] : [])
 })
 
 const groupedFights = computed(() => {
@@ -287,38 +212,26 @@ const groupedFights = computed(() => {
     grouped[key].push(f)
   })
   Object.keys(grouped).forEach(key => {
-    grouped[key].sort((a, b) => {
-      if (a.round !== b.round) return (a.round || 999) - (b.round || 999)
-      return a.id - b.id
-    })
+    grouped[key].sort((a, b) => ((a.round || 999) - (b.round || 999)) || (a.id - b.id))
   })
   return grouped
 })
 
-const statusText = (s) => {
-  switch (s) {
-    case 'IN_PROGRESS': return 'LIVE'
-    case 'SCHEDULED': return 'Запланировано'
-    case 'COMPLETED': return 'Завершено'
-    default: return 'Неизвестно'
-  }
-}
+const statusText = (s) => ({ IN_PROGRESS: 'LIVE', SCHEDULED: 'Запланировано', COMPLETED: 'Завершено' }[s] || 'Неизвестно')
 
 watch(selectedCategory, loadFights)
 onMounted(() => { loadCategories() })
 </script>
 
 <style scoped>
-/* ===================== ОСНОВА ===================== */
 .fights-overview {
   min-height: 100vh;
-  background: #f4f5f7;
+  background: #ffffff;
   padding: 40px 2rem 4rem;
   font-family: 'SF Pro Display', -apple-system, sans-serif;
   color: #1a1a1a;
 }
 
-/* ===================== ЗАГОЛОВОК ===================== */
 .fights-header h1 {
   font-size: 2.4rem;
   font-weight: 900;
@@ -336,7 +249,6 @@ onMounted(() => { loadCategories() })
   margin-bottom: 2rem;
 }
 
-/* ===================== ДРОПДАУН ===================== */
 .weight-categories-dropdown {
   display: flex;
   justify-content: center;
@@ -353,16 +265,15 @@ onMounted(() => { loadCategories() })
   font-weight: 600;
   min-width: 340px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(200, 155, 60, 0.1);
+  box-shadow: 0 4px 12px rgba(200,155,60,0.1);
   transition: all 0.2s;
 }
 
 .category-dropdown:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(200, 155, 60, 0.2);
+  box-shadow: 0 0 0 4px rgba(200,155,60,0.2);
 }
 
-/* ===================== ГРУППА ===================== */
 .group-section {
   display: flex;
   align-items: center;
@@ -376,15 +287,8 @@ onMounted(() => { loadCategories() })
 .group-label { color: #888; }
 .group-weight { color: #c89b3c; font-size: 1.1rem; }
 
-/* ===================== ТАТАМИ СЕКЦИЯ ===================== */
-.tatami-sections {
-  max-width: 1300px;
-  margin: 0 auto;
-}
-
-.tatami-section {
-  margin-bottom: 2.5rem;
-}
+.tatami-sections { max-width: 1300px; margin: 0 auto; }
+.tatami-section { margin-bottom: 2.5rem; }
 
 .tatami-header {
   display: flex;
@@ -404,40 +308,22 @@ onMounted(() => { loadCategories() })
   border-radius: 30px;
 }
 
-.tatami-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  opacity: 0.7;
-  text-transform: uppercase;
-}
+.tatami-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; opacity: 0.7; }
+.tatami-num { font-size: 1.4rem; font-weight: 900; color: #c89b3c; line-height: 1; }
+.fights-count { font-size: 0.85rem; color: #888; font-weight: 500; }
 
-.tatami-num {
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: #c89b3c;
-  line-height: 1;
-}
-
-.fights-count {
-  font-size: 0.85rem;
-  color: #888;
-  font-weight: 500;
-}
-
-/* ===================== СЕТКА КАРТОЧЕК ===================== */
 .fights-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
   gap: 1rem;
 }
 
-/* ===================== КАРТОЧКА БОЯ ===================== */
+/* КАРТОЧКА */
 .fight-card {
   background: white;
   border-radius: 16px;
   padding: 1.2rem 1.4rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   border: 1.5px solid #e8e8e8;
   transition: all 0.25s ease;
   position: relative;
@@ -447,31 +333,16 @@ onMounted(() => { loadCategories() })
 .fight-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 3px;
   background: #e8e8e8;
 }
 
-.fight-card.fight-live {
-  border-color: #c89b3c;
-  box-shadow: 0 4px 20px rgba(200, 155, 60, 0.15);
-}
+.fight-card.fight-live { border-color: #c89b3c; box-shadow: 0 4px 20px rgba(200,155,60,0.15); }
+.fight-card.fight-live::before { background: linear-gradient(90deg, #c89b3c, #f4d03f); }
+.fight-card.fight-done { opacity: 0.7; }
+.fight-card.fight-done::before { background: #10b981; }
 
-.fight-card.fight-live::before {
-  background: linear-gradient(90deg, #c89b3c, #f4d03f);
-}
-
-.fight-card.fight-done {
-  opacity: 0.7;
-}
-
-.fight-card.fight-done::before {
-  background: #10b981;
-}
-
-/* ===================== СТАТУС БЕЙДЖ ===================== */
 .fight-status-badge {
   display: flex;
   align-items: center;
@@ -480,8 +351,7 @@ onMounted(() => { loadCategories() })
 }
 
 .pulse-dot {
-  width: 8px;
-  height: 8px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: #c89b3c;
   animation: pulse 1.5s infinite;
@@ -493,18 +363,11 @@ onMounted(() => { loadCategories() })
   50% { opacity: 0.5; transform: scale(1.3); }
 }
 
-.status-text {
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-
+.status-text { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; }
 .status-text.IN_PROGRESS { color: #c89b3c; }
 .status-text.SCHEDULED { color: #64748b; }
 .status-text.COMPLETED { color: #10b981; }
 
-/* ===================== МЕТА ===================== */
 .fight-meta {
   display: flex;
   align-items: center;
@@ -516,23 +379,15 @@ onMounted(() => { loadCategories() })
   font-size: 0.85rem;
   font-weight: 700;
   color: #c89b3c;
-  background: rgba(200, 155, 60, 0.1);
+  background: rgba(200,155,60,0.1);
   padding: 3px 10px;
   border-radius: 20px;
 }
 
-.fight-round {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #888;
-}
+.fight-round { font-size: 0.8rem; font-weight: 600; color: #888; }
 
-/* ===================== ТАБЛО ===================== */
-.scoreboard {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
+/* ТАБЛО — ключевое исправление */
+.scoreboard { display: flex; flex-direction: column; gap: 0; }
 
 .fighter-row {
   display: flex;
@@ -541,15 +396,20 @@ onMounted(() => { loadCategories() })
   padding: 0.75rem 0.9rem;
   border-radius: 10px;
   gap: 0.5rem;
+  /* ✅ Одинаковая высота у обеих строк */
+  min-height: 60px;
+  box-sizing: border-box;
 }
 
 .white-side {
   background: #f8f9fa;
-  border: 1px solid #e8e8e8;
+  /* ✅ border такой же ширины как у blue-side (border: none = 0px, добавляем явно) */
+  border: 1.5px solid #e8e8e8;
 }
 
 .blue-side {
   background: #1a3a6e;
+  border: 1.5px solid transparent;
 }
 
 .fighter-info {
@@ -558,104 +418,51 @@ onMounted(() => { loadCategories() })
   gap: 0.6rem;
   flex: 1;
   min-width: 0;
-  overflow: visible;
 }
 
-.fighter-color-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+.fighter-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.white-dot { background: white; border: 2px solid #ccc; }
+.blue-dot { background: #4a9eff; border: 2px solid #3b7fd4; }
 
-.white-dot {
-  background: white;
-  border: 2px solid #ccc;
-}
+.fighter-details { display: flex; flex-direction: column; min-width: 0; }
 
-.blue-dot {
-  background: #4a9eff;
-  border: 2px solid #3b7fd4;
-}
-
-.fighter-details {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.fighter-club {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: visible;
-}
-
+.fighter-club { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
 .white-side .fighter-club { color: #c89b3c; }
-.blue-side .fighter-club { color: rgba(200, 155, 60, 0.9); }
+.blue-side .fighter-club { color: rgba(200,155,60,0.9); }
 
-.fighter-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: unset;
-}
-
+.fighter-name { font-size: 0.9rem; font-weight: 700; white-space: nowrap; }
 .white-side .fighter-name { color: #1a1a1a; }
 .blue-side .fighter-name { color: white; }
 
-/* ===================== ОЧКИ ===================== */
-.scores {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
+.scores { display: flex; gap: 4px; flex-shrink: 0; }
 
 .score-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 36px;
+  width: 40px;
   border-radius: 6px;
   padding: 4px 0;
 }
 
-.white-side .score-block {
-  background: white;
-  border: 1px solid #e0e0e0;
-}
+.white-side .score-block { background: white; border: 1px solid #e0e0e0; }
+.blue-side .score-block { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); }
 
-.blue-side .score-block {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.score-label {
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
+.score-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
 .white-side .score-label { color: #999; }
-.blue-side .score-label { color: rgba(255, 255, 255, 0.5); }
+.blue-side .score-label { color: rgba(255,255,255,0.5); }
 
-.score-val {
-  font-size: 1.2rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
+.score-val { font-size: 1.2rem; font-weight: 900; line-height: 1; }
 .white-side .score-val { color: #1a1a1a; }
 .blue-side .score-val { color: white; }
 
-.shido-block .score-val.shido { color: white; }
+/* Шидо — красный фон */
+.shido-block { overflow: hidden; }
+.white-side .shido-block .score-val.shido,
 .blue-side .shido-block .score-val.shido { color: white; }
+.shido-block { background: #e53e3e !important; border-color: #e53e3e !important; }
+.shido-block .score-label { color: rgba(255,255,255,0.7) !important; }
 
-/* ===================== РАЗДЕЛИТЕЛЬ ===================== */
 .vs-divider {
   display: flex;
   align-items: center;
@@ -663,33 +470,15 @@ onMounted(() => { loadCategories() })
   padding: 4px 0.9rem;
 }
 
-.divider-line {
-  flex: 1;
-  height: 1px;
-  background: #e8e8e8;
-}
+.divider-line { flex: 1; height: 1px; background: #e8e8e8; }
+.vs-text { font-size: 0.65rem; font-weight: 900; color: #bbb; letter-spacing: 1px; }
 
-.vs-text {
-  font-size: 0.65rem;
-  font-weight: 900;
-  color: #bbb;
-  letter-spacing: 1px;
-}
-
-/* ===================== СОСТОЯНИЯ ===================== */
-.categories-loading,
-.fights-loading,
-.no-categories,
-.no-fights {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #888;
-  font-size: 1rem;
+.categories-loading, .fights-loading, .no-categories, .no-fights {
+  text-align: center; padding: 4rem 2rem; color: #888; font-size: 1rem;
 }
 
 .spinner {
-  width: 36px;
-  height: 36px;
+  width: 36px; height: 36px;
   border: 3px solid #f3f3f3;
   border-top: 3px solid #c89b3c;
   border-radius: 50%;
@@ -699,32 +488,15 @@ onMounted(() => { loadCategories() })
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===================== АДАПТИВ ===================== */
 @media (max-width: 768px) {
-  .fights-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .category-dropdown {
-    min-width: 100%;
-  }
-
-  .fights-header h1 {
-    font-size: 1.8rem;
-  }
+  .fights-grid { grid-template-columns: 1fr; }
+  .category-dropdown { min-width: 100%; }
+  .fights-header h1 { font-size: 1.8rem; }
 }
 
 @media (max-width: 480px) {
-  .score-block {
-    width: 30px;
-  }
-
-  .score-val {
-    font-size: 1rem;
-  }
-
-  .fighter-name {
-    font-size: 0.82rem;
-  }
+  .score-block { width: 30px; }
+  .score-val { font-size: 1rem; }
+  .fighter-name { font-size: 0.82rem; }
 }
 </style>

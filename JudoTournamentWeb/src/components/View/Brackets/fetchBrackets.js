@@ -92,7 +92,7 @@ export const fetchGetDocument = async (tournamentId, categoryId = null) => {
 export const createBasketFinals = async (bracketData, tournament_id, categoryId, tatami_number = null) => {
     try {
         // Формируем URL динамически — добавляем tatami_number только если он указан и валиден
-        let url = `/api/brackets/${tournament_id}/finals-consalation?category=${categoryId}&tatami_number=${tatami_number}`
+        let url = `/api/brackets/${tournament_id}/finals-consolation?category=${categoryId}&tatami_number=${tatami_number}`
 
         if (tatami_number !== null && tatami_number !== undefined && Number.isInteger(tatami_number) && tatami_number >= 1) {
             url += `&tatami_number=${tatami_number}`

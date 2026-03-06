@@ -112,10 +112,10 @@
     gap: 1rem;
     margin: 0 2rem 3rem 0;
     padding-left: 2rem;
+    padding-top: 80px; /* ← добавь это */
     flex-wrap: wrap;
     align-items: center;
 }
-
 .judo-tournament-setting_search_select_category,
 .judo-tournament-setting_select_age_group,
 .judo-tournament-setting_date {
@@ -199,9 +199,7 @@
     margin-left: 0;
     padding-left: 20px;
     padding-right: 0;
-
 }
-
 .tournament-cards-container {
     display: flex;
     flex-direction: column;

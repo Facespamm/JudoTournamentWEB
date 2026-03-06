@@ -25,7 +25,9 @@ import Clubs from "@/components/View/Clubs/Clubs.vue"
 import RefereeManagement from "@/components/View/RefereeManagement/RefereeManagement.vue"
 import RefereeDetail from "@/components/View/RefereeDetail/RefereeDetail.vue"
 import AdminRegistrationAthletes from "@/components/View/AdminRegistrationAthletes/AdminRegistrationAthletes.vue";
-// TournamentDetails импортируем только для lazy-loading (прямой импорт не нужен)
+import {setupGuards} from "@/router/guard.js";
+import {USER_ROLES} from "@/composables/useAuth.js";
+const { ADMIN, REFEREE, SCOREBOARD, VIEWER, ATHLETE } = USER_ROLES
 const routes = [
     { path: '/', redirect: '/login' },
 
@@ -33,13 +35,14 @@ const routes = [
         path: '/login',
         name: 'login',
         component: Login,
-        meta: { hideSidebar: true }
+        meta: { hideSidebar: true,public: true }
     },
     {
         path: '/registration',
         name: 'registration',
         component: Registration,
-        meta: { hideSidebar: true }
+        meta: { hideSidebar: true,public: true }
+
     },
 
     /* ==================== ТУРНИР ДЕТАЛИ (один маршрут!) ==================== */
@@ -49,7 +52,7 @@ const routes = [
         component: () => import('@/components/View/TournamentDetails/TournamentDetails.vue'),
         meta: {
             hideSidebar: true,
-            align: 'center'          // ← включает центрирование
+            align: 'center'
         },
         children: [
             {
@@ -81,24 +84,25 @@ const routes = [
     },
 
     { path: '/home', name: 'home', component: HomePage },
-    { path: '/adminregistration', name: 'adminregistration', component: AdminRegistrationAthletes },
-    { path: '/refereeManagement', name: 'refereeManagement', component: RefereeManagement },
-    { path: '/athletes', name: 'athletes', component: Athletes },
-    { path: '/registrationathlete', name: 'registrationathlete', component: RegistrationModal },
-    { path: '/tournament', name: 'tournament', component: Tournament },
-    { path: '/referees', name: 'referees', component: RefereeDashboard },
-    { path: '/roles', name: 'roles', component: ManageRole },
-    { path: '/registrationathletes', name: 'registrationathletes', component: RegistrationAthletes },
-    { path: '/referee', name: 'referee', component: Referees },
-    { path: '/weighing', name: 'weighing', component: Weighings, meta: { hideSidebar: true } },
-    { path: '/tatami', name: 'tatami', component: Fight },
+    { path: '/adminregistration', name: 'adminregistration', component: AdminRegistrationAthletes, meta: { roles: [ADMIN] } },
+    { path: '/refereeManagement', name: 'refereeManagement', component: RefereeManagement , meta: { roles: [ADMIN,REFEREE] } },
+    { path: '/athletes', name: 'athletes', component: Athletes, meta: { roles: [ADMIN, REFEREE, ATHLETE,VIEWER] } },
+    { path: '/registrationathlete', name: 'registrationathlete', component: RegistrationModal, meta: { hideSidebar: true, roles: [ATHLETE,ADMIN,REFEREE] } },
+    { path: '/tournament', name: 'tournament', component: Tournament,meta: { roles: [ADMIN, REFEREE, VIEWER,ATHLETE] } },
+    { path: '/referees', name: 'referees', component: RefereeDashboard, meta: { roles: [REFEREE,ADMIN] } },
+    { path: '/roles', name: 'roles', component: ManageRole, meta: { roles: [VIEWER] } },
+    { path: '/registrationathletes', name: 'registrationathletes', component: RegistrationAthletes,meta: { roles: [ADMIN,ATHLETE,REFEREE] } },
+    { path: '/referee', name: 'referee', component: Referees , meta: { roles: [ADMIN,REFEREE] } },
+    { path: '/weighing', name: 'weighing', component: Weighings, meta: { hideSidebar: true,roles: [ADMIN,REFEREE] } },
+    { path: '/tatami', name: 'tatami', component: Fight ,meta : { roles: [REFEREE, ADMIN] } },
     { path: '/scoreboard', name: 'scoreboard', component: Scoreboard },
-    { path: '/admin', name: 'admin', component: AdminDashboard },
-    { path: '/brackets', name: 'bracket', component: Bracket },
-    { path: '/clubs', name: 'clubs', component: Clubs },
-    { path: '/admin/clubsAdmin', name: 'clubsAdmin', component: ClubsAdmin },
-    { path: '/admin/users', name: 'users', component: Users },
-    { path: '/admin/tournament-settings', name: 'tournament-settings', component: TournamentSettings },
+    { path: '/admin', name: 'admin', component: AdminDashboard,meta: { roles: [ADMIN] } },
+    { path: '/brackets', name: 'bracket', component: Bracket,meta: { roles: [ADMIN,REFEREE] } },
+    { path: '/clubs', name: 'clubs', component: Clubs,meta: { roles: [ADMIN,REFEREE,VIEWER,ATHLETE] } },
+    { path: '/admin/clubsAdmin', name: 'clubsAdmin', component: ClubsAdmin, meta: { roles: [ADMIN] } },
+    { path: '/admin/users', name: 'users', component: Users,meta: { roles: [ADMIN] } },
+    { path: '/admin/tournament-settings', name: 'tournament-settings', component: TournamentSettings ,meta: { roles: [ADMIN,REFEREE,ATHLETE,VIEWER] } },
+    { path: '/admin/tournament-settings', name: 'tournament-settings', component: TournamentSettings ,meta: { roles: [ADMIN,REFEREE,ATHLETE,VIEWER] } },
     { path: '/athlete/:id', name: 'athlete-detail', component: AthleteDetail },   // удалил дубликат
     { path: '/brackets/:id', name: 'bracket-detail', component: BracketViewDetail },
     { path: '/fights/:id', name: 'fight-detail', component: FightDetail },
@@ -109,5 +113,7 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 })
+
+setupGuards(router) // ← подключаем guard
 
 export default router

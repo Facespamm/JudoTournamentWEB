@@ -13,11 +13,17 @@
 
     <form @submit.prevent="saveAthleteProfile" class="role-form" novalidate>
       <div class="form-grid">
+
+        <!-- Дата рождения + возраст -->
         <div class="form-group">
           <label>Дата рождения</label>
-          <input v-model="athleteForm.birth_date" type="date" :disabled="isLoading" required />
+          <div class="input-with-badge">
+            <input v-model="athleteForm.birth_date" type="date" :disabled="isLoading" required />
+            <span class="age-badge" v-if="calculatedAge !== null">{{ calculatedAge }} лет</span>
+          </div>
         </div>
 
+        <!-- Пол -->
         <div class="form-group">
           <label>Пол</label>
           <select v-model="athleteForm.gender" :disabled="isLoading" required>
@@ -27,50 +33,44 @@
           </select>
         </div>
 
-        <!-- Автоматически рассчитываемый возраст (только для отображения) -->
-        <div class="form-group full-width">
-          <label>Возраст</label>
-          <p class="age-display">
-            {{ calculatedAge !== null ? `${calculatedAge} лет` : 'Укажите дату рождения' }}
-          </p>
-        </div>
-
+        <!-- Вес -->
         <div class="form-group">
           <label>Вес (кг)</label>
-          <input v-model.number="athleteForm.weight" type="number" min="20" step="0.5" :disabled="isLoading" placeholder="Например, 68.5" required />
+          <input v-model.number="athleteForm.weight" type="number" min="20" step="0.5" :disabled="isLoading" placeholder="68.5" required />
         </div>
 
+        <!-- Кю/Дан -->
         <div class="form-group">
-          <label>Клуб</label>
-          <select v-model="athleteForm.club_id" :disabled="isLoading" required>
-            <option value="" disabled>Выберите клуб</option>
-            <option v-for="club in clubs" :key="club.id" :value="club.id">
-              {{ club.name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Кю/Дан</label>
+          <label>Кю / Дан</label>
           <select v-model="athleteForm.rank_id" :disabled="isLoading" required>
-            <option value="" disabled>Выберите кю/дан</option>
-            <option v-for="dan in dans" :key="dan.id" :value="dan.id">
-              {{ dan.description }}
-            </option>
+            <option value="" disabled>Выберите разряд</option>
+            <option v-for="dan in dans" :key="dan.id" :value="dan.id">{{ dan.description }}</option>
           </select>
         </div>
 
+        <!-- Клуб (необязательно) -->
         <div class="form-group">
-          <label>Номер лицензии</label>
-          <input v-model="athleteForm.license_number" type="text" :disabled="isLoading" placeholder="Введите номер лицензии" />
+          <label>Клуб <span class="optional">(необязательно)</span></label>
+          <select v-model="athleteForm.club_id" :disabled="isLoading">
+            <option value="">Без клуба</option>
+            <option v-for="club in clubs" :key="club.id" :value="club.id">{{ club.name }}</option>
+          </select>
         </div>
 
+        <!-- Лицензия -->
         <div class="form-group">
-          <label>Номер страховки</label>
-          <input v-model="athleteForm.insurance_number" type="text" :disabled="isLoading" placeholder="Введите номер страховки" />
+          <label>Номер лицензии <span class="optional">(необязательно)</span></label>
+          <input v-model="athleteForm.license_number" type="text" :disabled="isLoading" placeholder="Введите номер" />
         </div>
 
-        <div class="form-group full-width checkbox-group">
+        <!-- Страховка -->
+        <div class="form-group">
+          <label>Номер страховки <span class="optional">(необязательно)</span></label>
+          <input v-model="athleteForm.insurance_number" type="text" :disabled="isLoading" placeholder="Введите номер" />
+        </div>
+
+        <!-- Чекбокс -->
+        <div class="form-group full-width">
           <label class="checkbox-label">
             <input type="checkbox" v-model="athleteForm.medical_check" :disabled="isLoading" class="hidden-checkbox" />
             <span class="custom-checkbox"></span>
@@ -101,7 +101,6 @@ const isLoading = ref(false)
 const clubs = ref([])
 const dans = ref([])
 
-// Форма без поля age (возраст рассчитывается автоматически на основе даты рождения)
 const athleteForm = ref({
   birth_date: '',
   gender: '',
@@ -113,63 +112,37 @@ const athleteForm = ref({
   medical_check: false
 })
 
-// Расчёт возраста для отображения пользователю
 const calculatedAge = computed(() => {
   if (!athleteForm.value.birth_date) return null
   const birth = new Date(athleteForm.value.birth_date)
   const today = new Date()
   let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
   return age
 })
 
-// Функция получения user_id из JWT
 const getUserId = () => {
-  console.log('=== Пытаемся получить user_id из JWT ===')
-  console.log('Все куки:', document.cookie)
-  const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('jwt_token='))
-      ?.split('=')[1]
-
-  console.log('Найденный токен:', token ? token.substring(0, 20) + '...' : 'НЕ НАЙДЕН')
+  const token = document.cookie.split('; ').find(r => r.startsWith('jwt_token='))?.split('=')[1]
   if (!token) return null
-
   try {
     const parts = token.split('.')
     if (parts.length !== 3) return null
     let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
     base64 += '='.repeat((4 - base64.length % 4) % 4)
-    const decoded = atob(base64)
-    const payloadStr = decodeURIComponent(
-        Array.from(decoded, c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-    )
-    const payload = JSON.parse(payloadStr)
-    console.log('Payload JWT:', payload)
-    const userId = payload.sub ?? payload.id ?? payload.user_id ?? null
-    console.log('Извлечённый userId:', userId)
-    return Number(userId) || userId
-  } catch (e) {
-    console.error('Ошибка декодирования JWT:', e)
-    return null
-  }
+    const payload = JSON.parse(decodeURIComponent(
+        Array.from(atob(base64), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    ))
+    return Number(payload.sub ?? payload.id ?? payload.user_id) || null
+  } catch { return null }
 }
 
 const loadData = async () => {
   try {
-    const clubsResult = await fetchClubs()
+    const [clubsResult, dansResult] = await Promise.all([fetchClubs(), fetchDan()])
     if (clubsResult?.success) {
-      clubs.value = Array.isArray(clubsResult.clubs)
-          ? clubsResult.clubs
-          : Array.isArray(clubsResult.data)
-              ? clubsResult.data
-              : []
+      clubs.value = Array.isArray(clubsResult.clubs) ? clubsResult.clubs : clubsResult.data || []
     }
-
-    const dansResult = await fetchDan()
     if (dansResult?.success && Array.isArray(dansResult.dans)) {
       dans.value = dansResult.dans.sort((a, b) => a.id - b.id)
     }
@@ -178,19 +151,9 @@ const loadData = async () => {
   }
 }
 
-// Валидация формы (убрали проверку age, сделали license_number, insurance_number и medical_check опциональными,
-// если они действительно не обязательны на backend; при необходимости верните строгие проверки)
 const validateForm = () => {
-  if (!athleteForm.value.birth_date) return false
-  if (!athleteForm.value.gender) return false
-  if (athleteForm.value.weight === null || athleteForm.value.weight === '') return false
-  if (!athleteForm.value.club_id) return false
-  if (!athleteForm.value.rank_id) return false
-  // Опционально: раскомментируйте, если эти поля обязательны
-  // if (!athleteForm.value.license_number?.trim()) return false
-  // if (!athleteForm.value.insurance_number?.trim()) return false
-  // if (!athleteForm.value.medical_check) return false
-  return true
+  const f = athleteForm.value
+  return f.birth_date && f.gender && f.weight !== null && f.weight !== '' && f.rank_id
 }
 
 const saveAthleteProfile = async () => {
@@ -198,32 +161,24 @@ const saveAthleteProfile = async () => {
     emit('show-toast', 'Пожалуйста, заполните все обязательные поля', 'error')
     return
   }
-
   const userId = getUserId()
-  console.log('Финальный userId для запроса:', userId)
   if (!userId) {
-    emit('show-toast', 'Не удалось получить ID пользователя. Смотрите консоль.', 'error')
+    emit('show-toast', 'Не удалось получить ID пользователя', 'error')
     return
   }
 
   isLoading.value = true
   try {
-    const data = {
+    const res = await fetchCreateAthlete({
       birth_date: athleteForm.value.birth_date,
       gender: athleteForm.value.gender,
-      club_id: Number(athleteForm.value.club_id),
+      club_id: athleteForm.value.club_id ? Number(athleteForm.value.club_id) : null,
       rank_id: Number(athleteForm.value.rank_id),
       license_number: athleteForm.value.license_number || null,
       medical_check: athleteForm.value.medical_check,
       insurance_number: athleteForm.value.insurance_number || null,
       weight: Number(athleteForm.value.weight)
-      // age НЕ передаётся — backend рассчитает его сам по birth_date
-    }
-
-    console.log('Данные для отправки (без user_id):', data)
-
-    const res = await fetchCreateAthlete(data, userId)
-    console.log('Ответ от fetchCreateAthlete:', res)
+    }, userId)
 
     if (res?.success) {
       emit('show-toast', 'Профиль успешно сохранён', 'success')
@@ -231,27 +186,47 @@ const saveAthleteProfile = async () => {
     } else {
       emit('show-toast', res?.error || 'Не удалось сохранить профиль', 'error')
     }
-  } catch (err) {
+  } catch {
     emit('show-toast', 'Ошибка сервера. Попробуйте позже', 'error')
-    console.error('Ошибка:', err)
   } finally {
     isLoading.value = false
   }
 }
 
-onMounted(() => {
-  loadData()
-  console.log('=== Компонент загружен ===')
-  getUserId()
-})
+onMounted(loadData)
 </script>
 
 <style scoped>
-/* Добавьте стили для отображения возраста, если нужно */
-.age-display {
-  margin: 8px 0 0 0;
-  font-size: 1.1em;
-  font-weight: 500;
-  color: #333;
+.input-with-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-badge input[type="date"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.9rem;
+}
+
+.age-badge {
+  position: absolute;
+  right: 2.2rem;
+  background: #c89b3c;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.optional {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #9ca3af;
 }
 </style>

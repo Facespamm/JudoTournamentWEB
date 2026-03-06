@@ -151,18 +151,17 @@ const rootB = ref(null)
 const svgA  = ref(null)
 const svgB  = ref(null)
 
-// Формат времени мм:сс
-const formatTime = (sec) => {
-  if (!sec && sec !== 0) return ''
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
-}
-
+// ← Сортировка по id вместо fight_number
 const buildRounds = (fights) => {
   if (!fights.length) return []
   const max = Math.max(...fights.map(f => f.round))
   const rounds = []
   for (let r = 1; r <= max; r++) {
-    rounds.push(fights.filter(f => f.round === r).sort((a, b) => a.fight_number - b.fight_number))
+    rounds.push(
+        fights
+            .filter(f => f.round === r)
+            .sort((a, b) => a.id - b.id)
+    )
   }
   return rounds
 }
@@ -170,11 +169,13 @@ const buildRounds = (fights) => {
 const roundsA = computed(() => buildRounds(groupA.value))
 const roundsB = computed(() => buildRounds(groupB.value))
 
-// Победитель последнего боя группы (бронза)
+// ← Сортировка по id для корректного определения последнего боя
 const getBronzeWinner = (fights) => {
   if (!fights.length) return null
   const maxRound = Math.max(...fights.map(f => f.round))
-  const finalFights = fights.filter(f => f.round === maxRound)
+  const finalFights = fights
+      .filter(f => f.round === maxRound)
+      .sort((a, b) => a.id - b.id)
   if (!finalFights.length) return null
   const lastFight = finalFights[finalFights.length - 1]
   if (!lastFight.result) return null
@@ -307,7 +308,6 @@ onMounted(() => {
 
 .page { padding: 12px 0 32px; }
 
-/* Вкладки */
 .consolation-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
 .consolation-tab {
   padding: 0.5rem 1.3rem; border-radius: 50px; background: #fff;
@@ -320,7 +320,6 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(200,155,60,0.3);
 }
 
-/* Две группы рядом */
 .groups-wrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -328,44 +327,25 @@ onMounted(() => {
 }
 @media (max-width: 900px) { .groups-wrapper { grid-template-columns: 1fr; } }
 
-/* Заголовок группы */
 .group-label-title {
   font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em;
-  text-transform: uppercase; color: #c89b3c;
-  margin-bottom: 8px;
+  text-transform: uppercase; color: #c89b3c; margin-bottom: 8px;
 }
 
-/* ===== Сетка ===== */
 .bracket-root {
-  position: relative;
-  width: 100%;
-  min-height: 200px;
-  background: #ffffff;
-  border: 2px solid #e0b456;
-  border-radius: 14px;
-  box-shadow:
-      0 0 0 1px rgba(224,180,86,0.10),
-      0 6px 32px rgba(200,155,60,0.09),
-      inset 0 1px 0 rgba(255,255,255,0.9);
-  overflow-x: auto;
-  overflow-y: visible;
-  padding: 20px 16px 28px;
-  scrollbar-width: thin;
-  scrollbar-color: #e0b456 #fafafa;
+  position: relative; width: 100%; min-height: 200px;
+  background: #ffffff; border: 2px solid #e0b456; border-radius: 14px;
+  box-shadow: 0 0 0 1px rgba(224,180,86,0.10), 0 6px 32px rgba(200,155,60,0.09), inset 0 1px 0 rgba(255,255,255,0.9);
+  overflow-x: auto; overflow-y: visible; padding: 20px 16px 28px;
+  scrollbar-width: thin; scrollbar-color: #e0b456 #fafafa;
 }
 .bracket-root::-webkit-scrollbar { height: 5px; }
 .bracket-root::-webkit-scrollbar-track { background: #fafafa; border-radius: 3px; }
 .bracket-root::-webkit-scrollbar-thumb { background: #e0b456; border-radius: 3px; }
 
-.connector-svg {
-  position: absolute; top: 0; left: 0;
-  pointer-events: none; overflow: visible;
-}
+.connector-svg { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 
-.rounds-row {
-  display: flex; align-items: stretch;
-  justify-content: space-evenly; min-width: 100%;
-}
+.rounds-row { display: flex; align-items: stretch; justify-content: space-evenly; min-width: 100%; }
 
 .round-col { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 
@@ -376,29 +356,18 @@ onMounted(() => {
   padding: 0 8px; white-space: nowrap;
   border-bottom: 1px solid rgba(224,180,86,0.25); margin-bottom: 16px;
 }
-
 .bronze-col .round-header { font-size: 1rem; letter-spacing: 0; }
 
-.round-body {
-  display: flex; flex-direction: column;
-  justify-content: space-around; flex: 1; gap: 8px;
-}
+.round-body { display: flex; flex-direction: column; justify-content: space-around; flex: 1; gap: 8px; }
 
-.champion-body {
-  display: flex; flex-direction: column;
-  justify-content: center; flex: 1; padding: 0 12px;
-}
+.champion-body { display: flex; flex-direction: column; justify-content: center; flex: 1; padding: 0 12px; }
 
-.match-slot {
-  display: flex; align-items: center; justify-content: center;
-  padding: 0 12px; position: relative;
-}
+.match-slot { display: flex; align-items: center; justify-content: center; padding: 0 12px; position: relative; }
 
 .match-card {
   width: 172px; background: #fff; border-radius: 8px;
   border: 1px solid #e9ecef; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  overflow: hidden; flex-shrink: 0;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden; flex-shrink: 0; transition: border-color 0.2s, box-shadow 0.2s;
 }
 .match-card:hover { border-color: #e0b456; box-shadow: 0 3px 14px rgba(200,155,60,0.18); }
 .match-card.card-done { border-color: #d1d5db; }
@@ -416,7 +385,6 @@ onMounted(() => {
 .contestant:not(:last-child) { border-bottom: 1px solid #f0f0f0; }
 .contestant:hover { background: #fdfcf8; }
 
-/* Проигравший — только приглушённый текст */
 .contestant.loser .c-name  { color: #9ca3af; }
 .contestant.loser .c-first { color: #c4c9d1; }
 .blue-side.loser .c-name   { color: #93c5fd; opacity: 0.5; }
@@ -432,41 +400,10 @@ onMounted(() => {
 .blue-side.tbd .c-name { color: #bfdbfe; }
 
 .c-name-wrap { flex: 1; min-width: 0; text-align: left; }
-.c-first {
-  font-size: 0.58rem; font-weight: 400; color: #9ca3af;
-  display: block; line-height: 1; margin-bottom: 1px;
-}
-.c-name {
-  font-size: 0.76rem; font-weight: 700; color: #111827;
-  display: block; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; line-height: 1.2;
-}
+.c-first { font-size: 0.58rem; font-weight: 400; color: #9ca3af; display: block; line-height: 1; margin-bottom: 1px; }
+.c-name { font-size: 0.76rem; font-weight: 700; color: #111827; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 
-/* Бейдж результата */
-.result-badge {
-  flex-shrink: 0;
-  font-size: 0.56rem;
-  font-weight: 700;
-  color: #16a34a;
-  background: #dcfce7;
-  border-radius: 4px;
-  padding: 2px 5px;
-  white-space: nowrap;
-  margin-left: 4px;
-  line-height: 1.4;
-}
-.result-badge-blue {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.22);
-}
-.result-time {
-  font-weight: 400;
-  opacity: 0.85;
-}
-
-.bracket-loading, .no-fights {
-  text-align: center; padding: 3rem 2rem; color: #9ca3af; font-size: 0.9rem;
-}
+.bracket-loading, .no-fights { text-align: center; padding: 3rem 2rem; color: #9ca3af; font-size: 0.9rem; }
 
 .spinner {
   width: 34px; height: 34px; border: 3px solid #f3f3f3;

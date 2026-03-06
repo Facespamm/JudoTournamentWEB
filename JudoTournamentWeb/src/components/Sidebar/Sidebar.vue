@@ -26,11 +26,11 @@
         <img :src="ClubIcon" class="nav-icon" alt="Клубы" />
         <span class="nav-text">Клубы</span>
       </button>
-      <button type="button" name="referee_page" @click="RedirectToReferee" title="Рефери">
+      <button v-if="canSee([ADMIN, REFEREE])" name="referee_page" @click="RedirectToReferee" title="Рефери">
         <img :src="RefereeIcon" class="nav-icon" alt="Рефери" />
         <span class="nav-text">Рефери</span>
       </button>
-      <button type="button" name="admin_page" @click="RedirectToAdmin" title="Админ">
+      <button v-if="canSee([ADMIN])" type="button" name="admin_page" @click="RedirectToAdmin" title="Админ">
         <img :src="AdminIcon" class="nav-icon" alt="Админ" />
         <span class="nav-text">Админ</span>
       </button>
@@ -68,6 +68,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAuth, USER_ROLES } from '@/composables/useAuth'
 import HomeIcon from '@/components/icons/Home.png'
 import UserIcon from '@/components/icons/Athletes.png'
 import TrophyIcon from '@/components/icons/CupIconAdmin.png'
@@ -84,6 +85,9 @@ import {
   RedirectToAdmin,
   RedirectToClubs,
 } from "@/router/redirect.js"
+
+const { canSee } = useAuth()
+const { ADMIN, REFEREE, ATHLETE, VIEWER } = USER_ROLES
 
 const languages = [
   { code: 'ru', name: 'Русский', flag: 'RU' },

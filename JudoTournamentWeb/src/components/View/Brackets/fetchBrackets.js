@@ -32,7 +32,7 @@ export const createBracket = async (bracketData, tournament_id, categoryId, tata
 export const createBasketSemiFinals = async (bracketData, tournament_id, categoryId, tatami_number = null) => {
     try {
         // Базовый URL — только обязательный параметр category
-        let url = `/api/brackets/${tournament_id}/semifinals-consalation?category=${categoryId}`;
+        let url = `/api/brackets/${tournament_id}/semifinals-consolation?category=${categoryId}`;
 
         // Добавляем tatami_number ТОЛЬКО если он валиден
         if (tatami_number !== null

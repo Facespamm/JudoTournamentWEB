@@ -73,21 +73,21 @@
       </button>
 
       <button
+          v-if="canSee([ADMIN, REFEREE, ATHLETE, SCOREBOARD])"
           class="tab-button"
           :class="{ active: selectedTab === 'weighing' }"
           @click="selectedTab = 'weighing'"
       >
-        <span class="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3v18h18"/>
-            <path d="M7 16v-6"/>
-            <path d="M12 16v-10"/>
-            <path d="M17 16v-4"/>
-          </svg>
-        </span>
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"/>
+      <path d="M7 16v-6"/>
+      <path d="M12 16v-10"/>
+      <path d="M17 16v-4"/>
+    </svg>
+  </span>
         <span class="label">Взвешивание</span>
       </button>
-
       <button
           class="tab-button"
           :class="{ active: selectedTab === 'results' }"
@@ -146,6 +146,10 @@ import { ref, onMounted, defineAsyncComponent, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchTournamentDetail } from '@/components/View/TournamentDetails/fetchTournamentDetail.js'
 import "./TournamentDetails.css"
+import { useAuth, USER_ROLES } from '@/composables/useAuth.js'
+
+const { canSee } = useAuth()
+const { ADMIN, REFEREE, ATHLETE, SCOREBOARD } = USER_ROLES
 
 const route = useRoute()
 const router = useRouter()

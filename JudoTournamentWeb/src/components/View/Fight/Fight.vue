@@ -51,11 +51,7 @@
 
     <!-- Основная сетка -->
     <div v-if="activeTab === 'main'" class="tatami-sections">
-      <div
-          v-for="tatami in mainTatamis"
-          :key="tatami"
-          class="tatami-section"
-      >
+      <div v-for="tatami in mainTatamis" :key="tatami" class="tatami-section">
         <div class="tatami-header">
           <div class="tatami-number">{{ tatami > 0 ? tatami : '—' }}</div>
           <h2 class="tatami-title">{{ tatami > 0 ? `Татами ${tatami}` : 'Не назначено' }}</h2>
@@ -79,7 +75,6 @@
                   <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
                   <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
                 </div>
-
                 <div class="fighter right">
                   <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
                   <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
@@ -92,7 +87,6 @@
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- Утешительные бои от полуфиналистов -->
@@ -104,7 +98,6 @@
           <div class="banner-subtitle">Бои за 3 место — ветки A и B</div>
         </div>
       </div>
-
       <div class="consolation-groups">
         <div
             v-for="group in ['SEMIFINALIST_CONSOLATION_GROUP_A', 'SEMIFINALIST_CONSOLATION_GROUP_B']"
@@ -133,7 +126,6 @@
                     <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
                     <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
                   </div>
-
                   <div class="fighter right">
                     <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
                     <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
@@ -159,7 +151,6 @@
           <div class="banner-subtitle">Бои за 3 место — ветки A и B</div>
         </div>
       </div>
-
       <div class="consolation-groups">
         <div
             v-for="group in ['FINALIST_CONSOLATION_GROUP_A', 'FINALIST_CONSOLATION_GROUP_B']"
@@ -188,7 +179,6 @@
                     <div class="club-code">{{ fight.fighter1?.club || '' }}</div>
                     <div class="fighter-name">{{ fight.fighter1?.name || '' }}</div>
                   </div>
-
                   <div class="fighter right">
                     <div class="club-code">{{ fight.fighter2?.club || '' }}</div>
                     <div class="fighter-name">{{ fight.fighter2?.name || '' }}</div>
@@ -243,34 +233,30 @@ export default {
     }
   },
   computed: {
-    // Основные бои
     mainFights() {
       return this.fights.filter(f => f.type_bracket === 'MAIN')
     },
-    // Утешительные бои сгруппированные по type_bracket
     consolationByType() {
       const result = {}
       CONSOLATION_TYPES.forEach(type => {
-        result[type] = this.fights.filter(f => f.type_bracket === type)
+        result[type] = this.fights
+            .filter(f => f.type_bracket === type)
             .sort((a, b) => (a.round || 0) - (b.round || 0))
       })
       return result
     },
-    // Есть ли утешительные от полуфиналистов
     hasSemifinalistConsolation() {
       return (
           this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_A']?.length > 0 ||
           this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_B']?.length > 0
       )
     },
-    // Есть ли утешительные от финалистов
     hasFinalistConsolation() {
       return (
           this.consolationByType['FINALIST_CONSOLATION_GROUP_A']?.length > 0 ||
           this.consolationByType['FINALIST_CONSOLATION_GROUP_B']?.length > 0
       )
     },
-    // Доступные табы
     availableTabs() {
       const tabs = [
         { key: 'main', label: 'Основная сетка', icon: '🏆', count: this.mainFights.length }
@@ -289,14 +275,12 @@ export default {
       }
       return tabs
     },
-    // Татами для основной сетки
     mainTatamis() {
       const tatamis = [...new Set(this.mainFights.map(f => f.tatami))].sort((a, b) => a - b)
       const positive = tatamis.filter(t => t > 0)
       const zero = tatamis.includes(0) ? [0] : []
       return positive.concat(zero)
     },
-    // Группировка основных боёв по татами
     groupedMainFights() {
       const grouped = {}
       this.mainFights.forEach(f => {
@@ -312,24 +296,33 @@ export default {
       })
       return grouped
     },
-    availableTatamis() {
-      const tatamis = [...new Set(this.fights.map(f => f.tatami))].sort((a, b) => a - b)
-      return tatamis
-    },
-    allFightIds() {
-      return this.fights.map(f => f.id)
+    // ID боёв текущего таба отсортированные по id
+    currentTabFightIds() {
+      let visibleFights = []
+      if (this.activeTab === 'main') {
+        visibleFights = this.mainFights
+      } else if (this.activeTab === 'semifinalist') {
+        visibleFights = [
+          ...(this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_A'] || []),
+          ...(this.consolationByType['SEMIFINALIST_CONSOLATION_GROUP_B'] || [])
+        ]
+      } else if (this.activeTab === 'finalist') {
+        visibleFights = [
+          ...(this.consolationByType['FINALIST_CONSOLATION_GROUP_A'] || []),
+          ...(this.consolationByType['FINALIST_CONSOLATION_GROUP_B'] || [])
+        ]
+      }
+      return visibleFights.map(f => f.id).sort((a, b) => a - b)
     }
   },
   async mounted() {
     await this.loadTournaments()
 
-    // Восстанавливаем выбранный турнир и категорию
     const savedTournament = sessionStorage.getItem('selectedTournament')
     const savedCategory = sessionStorage.getItem('selectedCategory')
 
     if (savedTournament) {
       this.selectedTournament = Number(savedTournament)
-      // Загружаем категории для восстановленного турнира
       this.categoriesLoading = true
       try {
         const res = await fetchCategories(this.selectedTournament)
@@ -449,7 +442,8 @@ export default {
       }
     },
     viewFightDetail(fightId) {
-      sessionStorage.setItem('fightIds', JSON.stringify(this.allFightIds))
+      // Сохраняем только бои текущего таба, отсортированные по id
+      sessionStorage.setItem('fightIds', JSON.stringify(this.currentTabFightIds))
       this.$router.push(`/fights/${fightId}`)
     }
   }
@@ -532,7 +526,6 @@ export default {
 .filter-group select:hover:not(:disabled) { border-color: #c89b3c; }
 .filter-group select:disabled { background: #f5f5f5; opacity: 0.7; cursor: not-allowed; }
 
-/* Табы */
 .bracket-tabs {
   display: flex;
   gap: 0.8rem;
@@ -556,10 +549,7 @@ export default {
   transition: all 0.2s ease;
 }
 
-.bracket-tab:hover {
-  border-color: #c89b3c;
-  color: #c89b3c;
-}
+.bracket-tab:hover { border-color: #c89b3c; color: #c89b3c; }
 
 .bracket-tab.active {
   border-color: #c89b3c;
@@ -578,12 +568,8 @@ export default {
   font-weight: 800;
 }
 
-.bracket-tab:not(.active) .tab-count {
-  background: #f0f0f0;
-  color: #999;
-}
+.bracket-tab:not(.active) .tab-count { background: #f0f0f0; color: #999; }
 
-/* Баннер утешительных */
 .consolation-header-banner {
   display: flex;
   align-items: center;
@@ -593,36 +579,14 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-.semifinalist-banner {
-  background: linear-gradient(135deg, #fff8e6, #fffdf7);
-  border: 2px solid #c89b3c;
-}
-
-.finalist-banner {
-  background: linear-gradient(135deg, #f0f7ff, #f8fbff);
-  border: 2px solid #4a90d9;
-}
+.semifinalist-banner { background: linear-gradient(135deg, #fff8e6, #fffdf7); border: 2px solid #c89b3c; }
+.finalist-banner { background: linear-gradient(135deg, #f0f7ff, #f8fbff); border: 2px solid #4a90d9; }
 
 .banner-icon { font-size: 2rem; }
+.banner-title { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; }
+.banner-subtitle { font-size: 0.9rem; color: #888; margin-top: 0.2rem; }
 
-.banner-title {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #1a1a1a;
-}
-
-.banner-subtitle {
-  font-size: 0.9rem;
-  color: #888;
-  margin-top: 0.2rem;
-}
-
-/* Группы утешительных */
-.consolation-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+.consolation-groups { display: flex; flex-direction: column; gap: 1.5rem; }
 
 .consolation-group {
   background: white;
@@ -638,32 +602,14 @@ export default {
   border-bottom: 1px solid #eee;
 }
 
-.finalist-group-header {
-  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
-}
+.finalist-group-header { background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%); }
 
-.group-label {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #c89b3c;
-}
+.group-label { font-size: 1.1rem; font-weight: 800; color: #c89b3c; }
+.finalist-group-header .group-label { color: #4a90d9; }
 
-.finalist-group-header .group-label {
-  color: #4a90d9;
-}
+.empty-group { padding: 2rem; text-align: center; color: #aaa; font-size: 0.95rem; }
 
-.empty-group {
-  padding: 2rem;
-  text-align: center;
-  color: #aaa;
-  font-size: 0.95rem;
-}
-
-/* Секции татами */
-.tatami-sections {
-  max-width: 1400px;
-  margin: 0 auto;
-}
+.tatami-sections { max-width: 1400px; margin: 0 auto; }
 
 .tatami-section {
   background: white;
@@ -675,10 +621,7 @@ export default {
   transition: all 0.3s ease;
 }
 
-.tatami-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-}
+.tatami-section:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
 
 .tatami-header {
   display: flex;
@@ -688,20 +631,8 @@ export default {
   border-bottom: 1px solid #eee;
 }
 
-.tatami-number {
-  font-size: 2.4rem;
-  font-weight: 900;
-  color: #c89b3c;
-  margin-right: 0.8rem;
-  line-height: 1;
-}
-
-.tatami-title {
-  font-size: 1.4rem;
-  font-weight: 900;
-  margin: 0;
-  color: #c89b3c;
-}
+.tatami-number { font-size: 2.4rem; font-weight: 900; color: #c89b3c; margin-right: 0.8rem; line-height: 1; }
+.tatami-title { font-size: 1.4rem; font-weight: 900; margin: 0; color: #c89b3c; }
 
 .fight-row {
   display: flex;
@@ -715,19 +646,9 @@ export default {
 .fight-row:hover { background: #fdfdfb; }
 .fight-row:last-child { border-bottom: none; }
 
-.status-bar {
-  width: 6px;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #c89b3c, #e0b456);
-}
-
-.consolation-bar {
-  background: linear-gradient(180deg, #e0b456, #f4d03f);
-}
-
-.finalist-bar {
-  background: linear-gradient(180deg, #4a90d9, #74b3f0);
-}
+.status-bar { width: 6px; flex-shrink: 0; background: linear-gradient(180deg, #c89b3c, #e0b456); }
+.consolation-bar { background: linear-gradient(180deg, #e0b456, #f4d03f); }
+.finalist-bar { background: linear-gradient(180deg, #4a90d9, #74b3f0); }
 
 .status-corner {
   flex-shrink: 0;
@@ -749,12 +670,7 @@ export default {
   white-space: nowrap;
 }
 
-.dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #c89b3c;
-  animation: pulse 1.8s infinite;
-}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #c89b3c; animation: pulse 1.8s infinite; }
 
 .row-content {
   display: flex;
@@ -765,13 +681,7 @@ export default {
   min-width: 0;
 }
 
-.category-weight {
-  font-size: 1rem;
-  font-weight: 800;
-  min-width: 90px;
-  flex-shrink: 0;
-  color: #c89b3c;
-}
+.category-weight { font-size: 1rem; font-weight: 800; min-width: 90px; flex-shrink: 0; color: #c89b3c; }
 
 .fighters-matchup {
   flex: 1;
@@ -782,28 +692,12 @@ export default {
   min-width: 0;
 }
 
-.fighter {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
+.fighter { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .fighter.left { align-items: flex-start; text-align: left; }
 .fighter.right { align-items: flex-end; text-align: right; }
 
-.club-code {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #c89b3c;
-  margin-bottom: 0.2rem;
-}
-
-.fighter-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #000;
-}
+.club-code { font-size: 1rem; font-weight: 800; color: #c89b3c; margin-bottom: 0.2rem; }
+.fighter-name { font-size: 1.1rem; font-weight: 600; color: #000; }
 
 .round-or-timer {
   font-size: 1.6rem;
@@ -814,23 +708,10 @@ export default {
   color: #1a1a1a;
 }
 
-.live-timer {
-  color: #c89b3c;
-  font-size: 2rem;
-  animation: pulse 2s infinite;
-}
+.live-timer { color: #c89b3c; font-size: 2rem; animation: pulse 2s infinite; }
 
-.empty-state {
-  text-align: center;
-  padding: 80px 20px 50px;
-  color: #666;
-}
-
-.empty-state h3 {
-  font-size: 1.4rem;
-  margin-bottom: 1.5rem;
-  color: #444;
-}
+.empty-state { text-align: center; padding: 80px 20px 50px; color: #666; }
+.empty-state h3 { font-size: 1.4rem; margin-bottom: 1.5rem; color: #444; }
 
 .reset-filters-btn {
   background: linear-gradient(135deg, #c89b3c, #e0b456);
@@ -846,10 +727,7 @@ export default {
   box-shadow: 0 4px 12px rgba(200, 155, 60, 0.3);
 }
 
-.reset-filters-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(200, 155, 60, 0.4);
-}
+.reset-filters-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(200, 155, 60, 0.4); }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }

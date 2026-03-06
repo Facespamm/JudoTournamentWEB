@@ -91,12 +91,12 @@
     margin-bottom: 1rem;
 }
 
+/* Дата и пол — в одну строку, не на всю ширину */
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1.2rem 1.25rem;
 }
-
 .full-width {
     grid-column: 1 / -1;
 }

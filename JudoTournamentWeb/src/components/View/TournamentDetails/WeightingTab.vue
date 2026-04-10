@@ -485,6 +485,7 @@ const weighAthlete = async () => {
       categoryAthletes.value = []
       tournamentCategories.value = []
       loadCategories()
+      alert(res.data.message)
     } else {
       emit('show-toast', res.message || 'Ошибка при создании взвешивания', 'error')
     }

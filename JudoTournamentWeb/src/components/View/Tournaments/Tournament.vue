@@ -82,16 +82,43 @@
 
               <!-- Кнопка регистрации — только для Админа, Судьи и Участника -->
               <template v-if="canSee([ADMIN, REFEREE, ATHLETE])">
+
                 <button
-                    v-if="isRegistrationAvailable(tournament)"
+                    v-if="!isRegistrationAvailable(tournament)"
+                    class="tournament-action-btn tournament-register-disabled-btn"
+                    disabled
+                >
+                  Регистрация закрыта
+                </button>
+
+                <template v-else-if="userRole === ATHLETE">
+                  <!-- Уже зарегистрирован — показать кнопку отмены -->
+                  <button
+                      v-if="registrationMap[tournament.id]"
+                      class="tournament-action-btn tournament-unregister-btn"
+                      @click="unassignTournament(tournament.id)"
+                  >
+                    Отменить регистрацию
+                  </button>
+
+                  <!-- Не зарегистрирован -->
+                  <button
+                      v-else
+                      class="tournament-action-btn tournament-register-btn"
+                      @click="isAssignTournament(tournament.id)"
+                  >
+                    Зарегистрироваться
+                  </button>
+                </template>
+
+                <button
+                    v-else
                     class="tournament-action-btn tournament-register-btn"
                     @click="navigateToRegistration(tournament.id)"
                 >
                   Зарегистрироваться
                 </button>
-                <button v-else class="tournament-action-btn tournament-register-disabled-btn" disabled>
-                  Регистрация закрыта
-                </button>
+
               </template>
             </div>
           </div>
@@ -116,7 +143,12 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchTournaments, fetchTournamentsByCategory } from '@/components/View/Tournaments/fetchTournaments.js'
+import {
+  checkRegistration,
+  fetchAssignToTournament,
+  fetchTournaments,
+  fetchTournamentsByCategory, fetchunassignTournament
+} from '@/components/View/Tournaments/fetchTournaments.js'
 import { fetchCategories } from "@/components/View/TournamentManagement/fetchTournamentManagement.js"
 import { useAuth, USER_ROLES } from '@/composables/useAuth.js'
 import "./Tournaments.css"
@@ -124,7 +156,7 @@ import "./Tournaments.css"
 const router = useRouter()
 
 // ─── Роли ─────────────────────────────────────────────────────────
-const { canSee } = useAuth()
+const { canSee, userRole } = useAuth()
 const { ADMIN, REFEREE, ATHLETE } = USER_ROLES
 
 // ─── Фильтры ──────────────────────────────────────────────────────
@@ -205,6 +237,49 @@ const loadCategories = async () => {
   } catch (err) {
     console.error('Ошибка при загрузке категорий:', err)
     categories.value = []
+  }
+}
+
+const isAssignTournament = async (id) => {
+  try {
+    const result = await fetchAssignToTournament(id)
+    if (result && result.success && result.data) {
+      alert(result.data)
+      registrationMap.value[id] = true
+    }
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const registrationMap = ref({})
+
+const loadRegistrationStatus = async (tournaments) => {
+  for (const t of tournaments) {
+    const result = await checkRegistration(t.id)
+    registrationMap.value[t.id] = result
+  }
+}
+
+const isRegistered = async (id) => {
+  try {
+    const result = await checkRegistration(id)
+    return result.data
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const unassignTournament = async (id) =>{
+  try {
+    const result = await fetchunassignTournament(id)
+    if (result && result.success && result.data) {
+      alert(result.data)
+      registrationMap.value[id] = false
+    }
+    console.log(result.data.message)
+  }catch (err) {
+    console.log(err)
   }
 }
 
@@ -303,6 +378,9 @@ const navigateToRegistration = (id) => {
 onMounted(async () => {
   await loadCategories()
   await loadTournaments('all')
+  if (userRole.value === ATHLETE) {
+    await loadRegistrationStatus(rawTournaments.value)
+  }
 })
 </script>
 <style scoped>

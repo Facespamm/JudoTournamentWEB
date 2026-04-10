@@ -105,8 +105,15 @@ const routes = [
     { path: '/admin/tournament-settings', name: 'tournament-settings', component: TournamentSettings ,meta: { roles: [ADMIN,REFEREE,ATHLETE,VIEWER] } },
     { path: '/athlete/:id', name: 'athlete-detail', component: AthleteDetail },   // удалил дубликат
     { path: '/brackets/:id', name: 'bracket-detail', component: BracketViewDetail },
-    { path: '/fights/:id', name: 'fight-detail', component: FightDetail },
-    { path: '/referee/:id', name: 'referee-detail', component: RefereeDetail }
+    {
+        path: '/fights/:id',
+        name: 'fight-detail',
+        component: FightDetail,
+        meta: {
+            hideSidebar: true,
+            align: 'center'
+        }
+    },    { path: '/referee/:id', name: 'referee-detail', component: RefereeDetail }
 ]
 
 const router = createRouter({

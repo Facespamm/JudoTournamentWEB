@@ -1,142 +1,126 @@
 <template>
-  <div class="fight-detail">
-    <div class="header">
-      <button class="back" @click="$router.back()">←</button>
-      <div class="header-content">
-        <h1>Схватка #{{ fight?.fight_number || fightId }}</h1>
-        <div class="meta">
-          Татами {{ fight?.tatami || '—' }} • Раунд {{ fight?.round_number || '—' }} • <span :class="statusClass">{{ statusText }}</span>
-        </div>
-      </div>
-      <button class="forward" @click="goToFight(1)" :disabled="!hasNext">→</button>
+  <div class="board" @keydown.prevent tabindex="0">
+
+    <!-- ══ ЭКРАН ОТДЫХА ══ -->
+    <div v-if="restMode" class="rest-screen">
+      <div class="rest-label">ОТДЫХ</div>
+      <div class="rest-timer">{{ fmt(restSeconds) }}</div>
+      <div class="rest-sub">Следующий бой начнётся через...</div>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <p>Загрузка данных схватки...</p>
+    <!-- ══ НЕТ БОЁВ ══ -->
+    <div v-else-if="!fight" class="no-fight">
+      Нет боёв на татами {{ tatami }}
     </div>
 
-    <div v-else class="fight-card">
+    <!-- ══ ОСНОВНОЕ ТАБЛО ══ -->
+    <template v-else>
+
       <!-- Белый -->
-      <div class="athlete-section white">
-        <h2 class="athlete-name">{{ getAthleteName(fight?.white_athlete) }}</h2>
-        <span class="color-badge">Белый</span>
-        <div class="scores">
-          <div class="score-row"><span class="score-label">Ippon:</span><span class="score-value">{{ scores.white.ippon || 0 }}</span></div>
-          <div class="score-row"><span class="score-label">Waza-ari:</span><span class="score-value">{{ scores.white.wazaari || 0 }}</span></div>
-          <div class="score-row"><span class="score-label">Shido:</span><span class="score-value">{{ scores.white.penalty_count || 0 }}</span></div>
-        </div>
-        <div class="actions">
-          <button class="btn-action ippon" @click="confirmIppon('WHITE')" :disabled="fightStatus === 'COMPLETED'">Ippon</button>
-          <button class="btn-action wazaari" @click="addWazaari('WHITE')" :disabled="fightStatus === 'COMPLETED'">Waza-ari</button>
-          <button class="btn-action shido" @click="addPenalty('WHITE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">Shido</button>
-          <button class="btn-action hansoku" @click="addPenalty('WHITE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku</button>
-          <button class="btn-action osaekomi" @click="toggleOsaekomi('WHITE')"
-                  :disabled="fightStatus === 'COMPLETED' || (osaekomi.active && osaekomi.athlete_color !== 'WHITE')"
-                  :class="{ active: osaekomi.active && osaekomi.athlete_color === 'WHITE' }">
-            {{ osaekomi.active && osaekomi.athlete_color === 'WHITE' ? 'Osaekomi ✓' : 'Osaekomi' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Таймер -->
-      <div class="timer-section">
-        <h3 class="timer-display">
-          {{ isGoldenScore ? formatTime(gsSeconds) : formatTime(timerSeconds) }}
-        </h3>
-        <p v-if="isGoldenScore" class="golden-score">Golden Score</p>
-        <div class="timer-controls">
-          <div class="time-adjust">
-            <button class="time-btn" @click="adjustTimer(-10)" :disabled="fightStatus === 'COMPLETED'">-10s</button>
-            <div class="quick-times">
-              <button class="quick-btn" @click="setTimerTime(120)">2:00</button>
-              <button class="quick-btn" @click="setTimerTime(180)">3:00</button>
-              <button class="quick-btn" @click="setTimerTime(240)">4:00</button>
-            </div>
-            <button class="time-btn" @click="adjustTimer(10)" :disabled="fightStatus === 'COMPLETED'">+10s</button>
+      <div class="athlete-row white" :class="{ flash: flash === 'white' }">
+        <div class="name-block">
+          <div class="athlete-name">
+            {{ getAthleteName(fight.white_athlete) }}
+            <span v-if="whitePoints > bluePoints" class="win-dot">●</span>
           </div>
-          <div class="main-controls">
-            <button v-if="!isRunning && fightStatus !== 'COMPLETED'" class="btn-timer start" @click="startTimer">
-              {{ fightStatus === 'SCHEDULED' ? 'Hajime' : 'Продолжить' }}
-            </button>
-            <button v-if="isRunning" class="btn-timer pause" @click="pauseTimer">Matte</button>
-            <button class="btn-timer golden" @click="enterGoldenScore" :disabled="fightStatus === 'COMPLETED'">
-              {{ isGoldenScore ? 'Обычное время' : 'Golden Score' }}
-            </button>
-            <button class="btn-timer complete" @click="openCompleteDialog" :disabled="fightStatus !== 'IN_PROGRESS'">
-              Завершить
-            </button>
+          <div class="club-name">{{ fight.white_athlete?.club || fight.white_athlete?.team_name || '—' }}</div>
+        </div>
+
+        <div class="scores-container">
+          <div class="score-card" :class="{ 'score-card--active': white.ippon > 0 }">
+            <div class="score-card-label">IPPON</div>
+            <div class="score-card-value">{{ white.ippon }}</div>
+          </div>
+
+          <div class="score-card" :class="{ 'score-card--active': white.wazaari > 0 }">
+            <div class="score-card-label">WAZA-ARI</div>
+            <div class="score-card-value">{{ white.wazaari }}</div>
+          </div>
+
+          <div class="score-card" :class="{ 'score-card--active': white.yuko > 0 }">
+            <div class="score-card-label">YUKO</div>
+            <div class="score-card-value">{{ white.yuko }}</div>
           </div>
         </div>
 
-        <div class="osaekomi-box" v-if="osaekomi.active">
-          <div class="osaekomi-header">
-            <span class="osaekomi-time">{{ formatTime(osaekomi.time) }}</span>
-            <span class="osaekomi-athlete">{{ osaekomi.athlete_color === 'WHITE' ? 'Белый' : 'Синий' }}</span>
+        <div class="penalty-block" :class="{ 'penalty-block--danger': white.shido >= 2 }">
+          <div class="penalty-label">ШТРАФЫ</div>
+          <div class="penalty-value">
+            <span v-if="white.hansoku" class="hansoku-badge">H</span>
+            <span v-else>{{ white.shido }}</span>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: osaekomiProgress + '%' }"></div>
-          </div>
-          <button class="btn-stop" @click="stopOsaekomi">Токета</button>
         </div>
-
-        <p class="status-text">{{ statusText }}</p>
       </div>
 
       <!-- Синий -->
-      <div class="athlete-section blue">
-        <h2 class="athlete-name">{{ getAthleteName(fight?.blue_athlete) }}</h2>
-        <span class="color-badge">Синий</span>
-        <div class="scores">
-          <div class="score-row"><span class="score-label">Ippon:</span><span class="score-value">{{ scores.blue.ippon || 0 }}</span></div>
-          <div class="score-row"><span class="score-label">Waza-ari:</span><span class="score-value">{{ scores.blue.wazaari || 0 }}</span></div>
-          <div class="score-row"><span class="score-label">Shido:</span><span class="score-value">{{ scores.blue.penalty_count || 0 }}</span></div>
-        </div>
-        <div class="actions">
-          <button class="btn-action ippon" @click="confirmIppon('BLUE')" :disabled="fightStatus === 'COMPLETED'">Ippon</button>
-          <button class="btn-action wazaari" @click="addWazaari('BLUE')" :disabled="fightStatus === 'COMPLETED'">Waza-ari</button>
-          <button class="btn-action shido" @click="addPenalty('BLUE', 'SHIDO')" :disabled="fightStatus === 'COMPLETED'">Shido</button>
-          <button class="btn-action hansoku" @click="addPenalty('BLUE', 'HANSOKU_MAKE')" :disabled="fightStatus === 'COMPLETED'">Hansoku</button>
-          <button class="btn-action osaekomi" @click="toggleOsaekomi('BLUE')"
-                  :disabled="fightStatus === 'COMPLETED' || (osaekomi.active && osaekomi.athlete_color !== 'BLUE')"
-                  :class="{ active: osaekomi.active && osaekomi.athlete_color === 'BLUE' }">
-            {{ osaekomi.active && osaekomi.athlete_color === 'BLUE' ? 'Osaekomi ✓' : 'Osaekomi' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="fightStatus === 'COMPLETED' && !loading" class="result-box">
-      <h3>Результат</h3>
-      <div class="result-info">
-        <div class="result-row"><span>Победитель:</span><strong>{{ getWinnerName() }}</strong></div>
-        <div class="result-row"><span>Тип победы:</span><strong>{{ victoryTypeText }}</strong></div>
-      </div>
-      <button class="btn-rematch" @click="rematch" :disabled="rematchLoading">
-        {{ rematchLoading ? 'Сброс...' : '↺ Переигровка' }}
-      </button>
-    </div>
-
-    <div class="info-section">
-      <div class="info-card">
-        <h4>Информация</h4>
-        <div class="info-row">Категория: <strong>{{ fight?.category || '—' }}</strong></div>
-        <div class="info-row">Весовая: <strong>{{ fight?.weight_class || '—' }}</strong></div>
-        <div class="info-row">Время: <strong>{{ formatTime(fightDurationPreset) }}</strong></div>
-        <div class="info-row" v-if="fightIds.length > 1">
-          Бой: <strong>{{ currentIndex + 1 }} из {{ fightIds.length }}</strong>
-        </div>
-      </div>
-      <div class="info-card">
-        <h4>Журнал событий</h4>
-        <div class="log-box">
-          <div v-for="(e, i) in eventLog" :key="i" class="log-item">
-            <span class="log-time">{{ e.time }}</span>
-            <span class="log-msg">{{ e.message }}</span>
+      <div class="athlete-row blue" :class="{ flash: flash === 'blue' }">
+        <div class="name-block">
+          <div class="athlete-name">
+            {{ getAthleteName(fight.blue_athlete) }}
+            <span v-if="bluePoints > whitePoints" class="win-dot">●</span>
           </div>
-          <div v-if="!eventLog.length" class="no-events">Событий пока нет</div>
+          <div class="club-name">{{ fight.blue_athlete?.club || fight.blue_athlete?.team_name || '—' }}</div>
+        </div>
+
+        <div class="scores-container">
+          <div class="score-card score-card--blue" :class="{ 'score-card--active': blue.ippon > 0 }">
+            <div class="score-card-label">IPPON</div>
+            <div class="score-card-value">{{ blue.ippon }}</div>
+          </div>
+
+          <div class="score-card score-card--blue" :class="{ 'score-card--active': blue.wazaari > 0 }">
+            <div class="score-card-label">WAZA-ARI</div>
+            <div class="score-card-value">{{ blue.wazaari }}</div>
+          </div>
+
+          <div class="score-card score-card--blue" :class="{ 'score-card--active': blue.yuko > 0 }">
+            <div class="score-card-label">YUKO</div>
+            <div class="score-card-value">{{ blue.yuko }}</div>
+          </div>
+        </div>
+
+        <div class="penalty-block" :class="{ 'penalty-block--danger': blue.shido >= 2 }">
+          <div class="penalty-label">ШТРАФЫ</div>
+          <div class="penalty-value">
+            <span v-if="blue.hansoku" class="hansoku-badge">H</span>
+            <span v-else>{{ blue.shido }}</span>
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- Нижняя полоса -->
+      <div class="bottom-bar">
+        <div class="category-block">
+          <div class="category-text">{{ fight.category || fight.weight_class || 'Senior' }}</div>
+          <div class="stage-text">{{ fight.stage || `Раунд ${fight.round_number || '—'}` }}</div>
+        </div>
+
+        <div class="timer-block">
+          <div v-if="isGoldenScore" class="gs-label">GOLDEN SCORE</div>
+          <div class="timer-digits" :class="{ blink: isLow, gold: isGoldenScore }">
+            {{ fmt(displayTime) }}
+          </div>
+        </div>
+
+        <div class="osa-block">
+          <template v-if="osa.active">
+            <div class="osa-label">
+              OSAEKOMI — {{ osa.color === 'white' ? 'БЕЛЫЙ' : 'СИНИЙ' }}
+            </div>
+            <div class="osa-track">
+              <div class="osa-fill" :class="osa.color"
+                   :style="{ width: (osa.time / 20 * 100) + '%' }" />
+              <div class="osa-mark" title="10s = waza-ari" />
+            </div>
+            <div class="osa-time">{{ osa.time }}s / 20s</div>
+          </template>
+          <template v-else>
+            <div class="osa-idle">F / J — osaekomi &nbsp;|&nbsp; H — toketa</div>
+          </template>
+        </div>
+      </div>
+
+    </template>
   </div>
 </template>
 
@@ -144,58 +128,73 @@
 import { endFight, setLifeFight, resetFight } from "@/components/View/FightDetail/fetchFightPannel.js"
 import { fetchGetDetailFight } from "@/components/View/Fight/fetchFights.js"
 
+// ─── Константы ───────────────────────────────────────────────────────────────
+const OSAEKOMI_MAX = 20
+const OSAEKOMI_WAZAARI = 10
+const REST_DURATION = 15
+
 export default {
-  name: 'RefereePanel',
+  name: 'TimerBoard',
+
+  props: {
+    tatami: { type: Number, default: 1 },
+  },
 
   data() {
     return {
       fightId: null,
       fight: null,
-      loading: true,
-      scores: {
-        white: { ippon: 0, wazaari: 0, penalty_count: 0 },
-        blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
-      },
-      osaekomi: { active: false, athlete_color: null, time: 0 },
-      osaekomiInterval: null,
-      timerSeconds: 240,
+      loading: false,
+
+      seconds: 240,
       gsSeconds: 0,
-      isRunning: false,
-      timerInterval: null,
-      fightStatus: 'SCHEDULED',
+      running: false,
       isGoldenScore: false,
-      victoryType: null,
-      winnerColor: null,
-      eventLog: [],
-      fightDurationPreset: 240,
+      fightStatus: 'SCHEDULED',
+
+      white: this.emptyScore(),
+      blue: this.emptyScore(),
+
+      historyW: [],
+      historyB: [],
+
+      osa: { active: false, color: null, time: 0 },
+
+      restMode: false,
+      restSeconds: REST_DURATION,
+
+      flash: null,
+
+      _timerInterval: null,
+      _osaInterval: null,
+      _restInterval: null,
+      _holdTimeout: null,
+      _keyDownTime: {},
+
+      // Для переключения боёв (как в старом коде)
       fightIds: [],
       currentIndex: -1,
-      rematchLoading: false,
     }
   },
 
   computed: {
-    statusText() {
-      if (this.loading || !this.fight) return 'Загрузка...'
-      return { SCHEDULED: 'Запланировано', IN_PROGRESS: 'LIVE', COMPLETED: 'Завершено' }[this.fightStatus] || this.fightStatus
+    whitePoints() {
+      return (this.white.ippon || 0) * 100 + (this.white.wazaari || 0) * 10 + (this.white.yuko || 0)
     },
-    statusClass() {
-      return this.fightStatus.toLowerCase().replace('_', '-')
+    bluePoints() {
+      return (this.blue.ippon || 0) * 100 + (this.blue.wazaari || 0) * 10 + (this.blue.yuko || 0)
     },
-    osaekomiProgress() {
-      return Math.min(100, (this.osaekomi.time / 20) * 100)
+    displayTime() {
+      return this.isGoldenScore ? this.gsSeconds : this.seconds
     },
-    victoryTypeText() {
-      const map = {
-        IPPON: 'Иппон',
-        WAZAARI_AWASETE_IPPON: 'Ваза-ари авасетэ иппон',
-        SHIDO: 'По штрафам (3 шидо)',
-        HANSOKU_MAKE: 'Хансоку-макэ',
-        OSAEKOMI: 'Осаэкоми (20 сек)',
-        POINTS: 'По очкам',
-        DECISION: 'Решение судей'
-      }
-      return map[this.victoryType] || this.victoryType || '—'
+    isLow() {
+      return !this.isGoldenScore && this.seconds <= 30 && this.running
+    },
+    fightDuration() {
+      return this.fight?.timer_seconds || 240
+    },
+    isFightCompleted() {
+      return this.fightStatus === 'COMPLETED'
     },
     hasPrev() {
       return this.currentIndex > 0
@@ -209,225 +208,152 @@ export default {
     '$route.params.id': {
       async handler(newId) {
         if (!newId) return
-        clearInterval(this.timerInterval)
-        clearInterval(this.osaekomiInterval)
-
-        const savedFightIds = [...this.fightIds]
-
-        this.fight = null
-        this.loading = true
-        this.scores = {
-          white: { ippon: 0, wazaari: 0, penalty_count: 0 },
-          blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
-        }
-        this.osaekomi = { active: false, athlete_color: null, time: 0 }
-        this.osaekomiInterval = null
-        this.timerSeconds = 240
-        this.gsSeconds = 0
-        this.isRunning = false
-        this.timerInterval = null
-        this.fightStatus = 'SCHEDULED'
-        this.isGoldenScore = false
-        this.victoryType = null
-        this.winnerColor = null
-        this.eventLog = []
-        this.fightDurationPreset = 240
-        this.rematchLoading = false
-
-        this.fightIds = savedFightIds
         this.fightId = Number(newId) || newId
         this.currentIndex = this.fightIds.indexOf(this.fightId)
-
         await this.loadFight()
-      }
+      },
+      immediate: true
     }
   },
 
   async mounted() {
-    let rawId = this.$route.params.id
-    if (typeof rawId === 'object' && rawId !== null) {
-      rawId = rawId.id || rawId.fight_number || '???'
-    }
-    this.fightId = Number(rawId) || rawId || '???'
+    // Отключаем скролл на body только для этой страницы
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
 
+    // Фокус на компонент для клавиатуры
+    this.$nextTick(() => {
+      this.$el.focus()
+    })
+
+    window.addEventListener('keydown', this.onKeyDown)
+    window.addEventListener('keyup', this.onKeyUp)
+
+    // Загружаем ID боёв из sessionStorage (как в старом коде)
     try {
       const saved = sessionStorage.getItem('fightIds')
       if (saved) {
         this.fightIds = JSON.parse(saved)
-        this.currentIndex = this.fightIds.indexOf(this.fightId)
+        console.log('Загружены ID боёв:', this.fightIds)
       }
     } catch (e) {
       this.fightIds = []
     }
 
-    this.loading = true
+    // Если нет сохранённых ID, пробуем загрузить
+    if (this.fightIds.length === 0) {
+      await this.loadFightIds()
+    }
+
+    let rawId = this.$route.params.id
+    if (typeof rawId === 'object' && rawId !== null) {
+      rawId = rawId.id || rawId.fight_number || '???'
+    }
+    this.fightId = Number(rawId) || rawId || '???'
+    this.currentIndex = this.fightIds.indexOf(this.fightId)
+
     await this.loadFight()
   },
 
   beforeUnmount() {
-    clearInterval(this.timerInterval)
-    clearInterval(this.osaekomiInterval)
+    // Восстанавливаем скролл при уходе со страницы
+    document.body.style.overflow = ''
+    document.documentElement.style.overflow = ''
+
+    window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('keyup', this.onKeyUp)
+    clearInterval(this._timerInterval)
+    clearInterval(this._osaInterval)
+    clearInterval(this._restInterval)
+    clearTimeout(this._holdTimeout)
   },
 
   methods: {
+    // ─── API методы ─────────────────────────────────────────────────────────
+    async loadFightIds() {
+      try {
+        const response = await fetch(`/api/fights?tatami=${this.tatami}`)
+        const data = await response.json()
+        if (data.fights && data.fights.length > 0) {
+          this.fightIds = data.fights.map(f => f.id || f.fight_number)
+          sessionStorage.setItem('fightIds', JSON.stringify(this.fightIds))
+          console.log('Сохранены ID боёв:', this.fightIds)
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки списка боёв:', err)
+      }
+    },
+
     async loadFight() {
+      this.loading = true
+
       try {
         const res = await fetchGetDetailFight(this.fightId)
-
         if (res && (res.id || res.fight_number)) {
           this.fight = res
           this.fightStatus = res.status || 'SCHEDULED'
-          this.fightDurationPreset = res.timer_seconds || 240
-          this.timerSeconds = this.fightDurationPreset
+          this.seconds = res.timer_seconds || 240
 
-          if (!this.fight.white_athlete?.id || !this.fight.blue_athlete?.id) {
-            this.addEvent('warning', 'Внимание: ID атлетов отсутствуют в данных!')
+          if (res.scores) {
+            this.white = {
+              ippon: res.scores.white?.ippon || 0,
+              wazaari: res.scores.white?.wazaari || 0,
+              yuko: res.scores.white?.yuko || 0,
+              shido: res.scores.white?.shido || 0,
+              hansoku: res.scores.white?.hansoku || false
+            }
+            this.blue = {
+              ippon: res.scores.blue?.ippon || 0,
+              wazaari: res.scores.blue?.wazaari || 0,
+              yuko: res.scores.blue?.yuko || 0,
+              shido: res.scores.blue?.shido || 0,
+              hansoku: res.scores.blue?.hansoku || false
+            }
           }
-        } else {
-          throw new Error('Нет данных или неверный формат ответа')
         }
       } catch (err) {
-        console.error('Ошибка загрузки деталей боя:', err)
-        alert('Не удалось загрузить данные схватки')
-
-        this.fight = {
-          fight_number: this.fightId,
-          tatami: '—',
-          round_number: '—',
-          white_athlete: { first_name: 'Белый', last_name: 'атлет' },
-          blue_athlete: { first_name: 'Синий', last_name: 'атлет' }
-        }
+        console.error('Ошибка загрузки боя:', err)
       } finally {
         this.loading = false
       }
     },
 
-    goToFight(direction) {
-      const newIndex = this.currentIndex + direction
-      if (newIndex < 0 || newIndex >= this.fightIds.length) return
-      const newId = this.fightIds[newIndex]
-      this.$router.push(`/fights/${newId}`)
-    },
-
+    // ─── Вспомогательные методы ────────────────────────────────────────────
     getAthleteName(a) {
       if (!a) return 'TBD'
-      const surname = a.middle_name || ''
-      const name = a.first_name || ''
-      const patronymic = a.last_name || ''
-      return `${surname} ${name} ${patronymic}`.trim() || 'Неизвестный'
+      return [a.middle_name, a.first_name, a.last_name].filter(Boolean).join(' ') || a.name || 'Неизвестный'
     },
 
-    getWinnerName() {
-      if (!this.winnerColor || !this.fight) return 'Решение судей'
-      const a = this.winnerColor === 'WHITE' ? this.fight.white_athlete : this.fight.blue_athlete
-      return `${this.getAthleteName(a)} (${this.winnerColor === 'WHITE' ? 'Белый' : 'Синий'})`
+    emptyScore() {
+      return { ippon: 0, wazaari: 0, yuko: 0, shido: 0, hansoku: false }
     },
 
-    addEvent(type, msg) {
-      const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      this.eventLog.unshift({ time, type, message: msg })
-      if (this.eventLog.length > 100) this.eventLog.pop()
+    triggerFlash(color) {
+      this.flash = color
+      setTimeout(() => { this.flash = null }, 500)
     },
 
-    addWazaari(color) {
-      const side = color.toLowerCase()
-      this.scores[side].wazaari += 1
-      this.addEvent('score', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari`)
-      if (this.scores[side].wazaari >= 2) {
-        this.completeFight(color, 'WAZAARI_AWASETE_IPPON')
-      }
-    },
+    async completeFight(winnerColor, victoryType) {
+      if (this.isFightCompleted) return
 
-    confirmIppon(color) {
-      if (confirm('Ippon — бой завершится!')) {
-        this.completeFight(color, 'IPPON')
-      }
-    },
-
-    addPenalty(color, type) {
-      const side = color.toLowerCase()
-      if (type === 'SHIDO') {
-        this.scores[side].penalty_count += 1
-        this.addEvent('penalty', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Shido`)
-        if (this.scores[side].penalty_count >= 3) {
-          const opposite = color === 'WHITE' ? 'BLUE' : 'WHITE'
-          this.completeFight(opposite, 'HANSOKU_MAKE')
-        }
-      } else if (type === 'HANSOKU_MAKE') {
-        const opposite = color === 'WHITE' ? 'BLUE' : 'WHITE'
-        this.completeFight(opposite, 'HANSOKU_MAKE')
-      }
-    },
-
-    toggleOsaekomi(color) {
-      if (this.osaekomi.active && this.osaekomi.athlete_color === color) {
-        this.stopOsaekomi()
-      } else {
-        this.startOsaekomi(color)
-      }
-    },
-
-    startOsaekomi(color) {
-      this.osaekomi.active = true
-      this.osaekomi.athlete_color = color
-      this.osaekomi.time = 0
-      clearInterval(this.osaekomiInterval)
-      this.osaekomiInterval = setInterval(() => {
-        this.osaekomi.time += 1
-        if (this.osaekomi.time === 10) {
-          this.addWazaari(color)
-          this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari (10 сек осаэкоми)`)
-        }
-        if (this.osaekomi.time === 20) {
-          clearInterval(this.osaekomiInterval)
-          this.osaekomi.active = false
-          this.osaekomi.time = 0
-          this.osaekomi.athlete_color = null
-          this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Ippon (20 сек осаэкоми)`)
-          this.completeFight(color, 'OSAEKOMI')
-        }
-      }, 1000)
-      this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Osaekomi начат`)
-    },
-
-    stopOsaekomi() {
-      clearInterval(this.osaekomiInterval)
-      const time = this.osaekomi.time
-      const color = this.osaekomi.athlete_color
-      this.osaekomi.active = false
-      this.osaekomi.time = 0
-      this.osaekomi.athlete_color = null
-      if (time >= 10 && time < 20) {
-        this.addWazaari(color)
-        this.addEvent('osaekomi', `${color === 'WHITE' ? 'Белый' : 'Синий'}: Waza-ari (${time} сек осаэкоми)`)
-      }
-      this.addEvent('osaekomi', 'Токета')
-    },
-
-    completeFight(color, localVictoryType) {
-      this.winnerColor = color
-      this.victoryType = localVictoryType
-      this.scores[color.toLowerCase()].ippon = 1
+      this.running = false
+      clearInterval(this._timerInterval)
+      clearInterval(this._osaInterval)
       this.fightStatus = 'COMPLETED'
-      this.isRunning = false
-      clearInterval(this.timerInterval)
-      this.addEvent('system', `Победа ${color === 'WHITE' ? 'Белый' : 'Синий'} — ${this.victoryTypeText}`)
 
-      let serverVictoryType = localVictoryType
-      if (['IPPON', 'WAZAARI_AWASETE_IPPON', 'OSAEKOMI'].includes(localVictoryType)) {
+      const winnerId = winnerColor === 'white'
+          ? this.fight?.white_athlete?.id
+          : this.fight?.blue_athlete?.id
+
+      const totalSeconds = this.fightDuration - this.seconds + this.gsSeconds
+      const minutes = Math.floor(totalSeconds / 60)
+      const seconds = totalSeconds % 60
+      const endTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
+
+      let serverVictoryType = victoryType
+      if (['IPPON', 'WAZAARI_AWASETE_IPPON', 'OSAEKOMI'].includes(victoryType)) {
         serverVictoryType = 'IPPON'
       }
-
-      const winnerId = color === 'WHITE' ? this.fight?.white_athlete?.id : this.fight?.blue_athlete?.id
-
-      if (!winnerId) {
-        this.addEvent('warning', 'ID победителя не найден — отправляем winner_athlete_id: null')
-      }
-
-      const elapsedSeconds = this.fightDurationPreset - this.timerSeconds + this.gsSeconds
-      const minutes = Math.floor(elapsedSeconds / 60)
-      const seconds = elapsedSeconds % 60
-      const endTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
 
       const payload = {
         start_time: '0:00',
@@ -436,623 +362,761 @@ export default {
         winner_athlete_id: winnerId ?? null
       }
 
-      endFight(payload, this.fightId)
-          .then(() => {
-            this.addEvent('system', 'Результат успешно отправлен на сервер')
-          })
-          .catch(e => {
-            this.addEvent('error', `Ошибка отправки результата: ${e.message || e}`)
-          })
-    },
-
-    async openCompleteDialog() {
-      if (!confirm('Завершить схватку вручную?')) return
-
-      const winnerChoice = prompt('Победитель:\n"white" — белый, "blue" — синий, пусто — решение судей', '')
-      const winnerColor = winnerChoice === 'white' ? 'WHITE' : winnerChoice === 'blue' ? 'BLUE' : null
-      const winnerId = winnerChoice === 'white' ? this.fight?.white_athlete?.id :
-          winnerChoice === 'blue' ? this.fight?.blue_athlete?.id : null
-
-      if (winnerColor && !winnerId) {
-        this.addEvent('warning', 'ID выбранного победителя не найден — отправляем null')
-      }
-
-      const victoryType = prompt('Тип победы (IPPON, POINTS, DECISION, HANSOKU_MAKE и т.д.)', 'POINTS').toUpperCase()
-
-      const elapsedSeconds = this.fightDurationPreset - this.timerSeconds + this.gsSeconds
-      const minutes = Math.floor(elapsedSeconds / 60)
-      const seconds = elapsedSeconds % 60
-      const endTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
-
-      const payload = {
-        start_time: '0:00',
-        end_time: endTime,
-        victory_type: victoryType,
-        winner_athlete_id: winnerId ?? null
-      }
-
-      this.winnerColor = winnerColor
-      this.victoryType = victoryType
-      this.fightStatus = 'COMPLETED'
-      this.isRunning = false
-      clearInterval(this.timerInterval)
-      this.addEvent('system', `Матч завершён вручную: ${victoryType}, время ${endTime}`)
-
       try {
         await endFight(payload, this.fightId)
-        this.addEvent('system', 'Результат успешно отправлен на сервер')
-      } catch (e) {
-        this.addEvent('error', `Ошибка отправки результата: ${e.message || e}`)
+        console.log('Бой завершён:', winnerColor, victoryType)
+      } catch (err) {
+        console.error('Ошибка завершения боя:', err)
       }
     },
 
-    async rematch() {
-      if (!confirm('Сбросить результат и начать переигровку?')) return
-      this.rematchLoading = true
+    async setLiveStatus() {
+      if (this.fightStatus !== 'SCHEDULED') return
+      try {
+        const result = await setLifeFight(this.fightId, this.fight?.tatami || this.tatami)
+        if (result.success) {
+          this.fightStatus = 'IN_PROGRESS'
+        }
+      } catch (err) {
+        console.error('Ошибка перевода в LIVE:', err)
+      }
+    },
+
+    async resetCurrentFight() {
       try {
         const result = await resetFight({}, this.fightId)
         if (result.success) {
-          this.addEvent('system', 'Бой сброшен — переигровка')
-          this.fightStatus = 'SCHEDULED'
-          this.victoryType = null
-          this.winnerColor = null
-          this.timerSeconds = this.fightDurationPreset
-          this.gsSeconds = 0
-          this.isRunning = false
-          this.isGoldenScore = false
-          this.scores = {
-            white: { ippon: 0, wazaari: 0, penalty_count: 0 },
-            blue: { ippon: 0, wazaari: 0, penalty_count: 0 }
-          }
-          clearInterval(this.timerInterval)
-          clearInterval(this.osaekomiInterval)
-          this.osaekomi = { active: false, athlete_color: null, time: 0 }
-        } else {
-          this.addEvent('error', `Ошибка сброса: ${result.message}`)
+          this.resetFight()
         }
-      } catch (e) {
-        this.addEvent('error', `Ошибка переигровки: ${e.message || e}`)
-      } finally {
-        this.rematchLoading = false
+      } catch (err) {
+        console.error('Ошибка сброса боя:', err)
       }
     },
 
-    enterGoldenScore() {
-      this.isGoldenScore = !this.isGoldenScore
-      if (this.isGoldenScore) this.gsSeconds = 0
-      this.addEvent('timer', this.isGoldenScore ? 'Переход в Golden Score' : 'Возврат к обычному времени')
+    // ─── Управление очками ─────────────────────────────────────────────────
+    applyScore(color, field, delta = 1) {
+      if (this.isFightCompleted) return
+
+      const sc = color === 'white' ? this.white : this.blue
+      const hist = color === 'white' ? this.historyW : this.historyB
+      hist.push(JSON.parse(JSON.stringify(sc)))
+      if (hist.length > 50) hist.shift()
+      sc[field] = Math.max(0, (sc[field] || 0) + delta)
+      this.triggerFlash(color)
     },
 
-    formatTime(s) {
-      const m = Math.floor(Math.max(0, s) / 60)
-      const sec = Math.max(0, s) % 60
-      return `${m}:${sec < 10 ? '0' : ''}${sec}`
+    undoScore(color) {
+      if (this.isFightCompleted) return
+
+      if (color === 'white') {
+        if (!this.historyW.length) return
+        this.white = this.historyW.pop()
+      } else {
+        if (!this.historyB.length) return
+        this.blue = this.historyB.pop()
+      }
     },
 
-    setTimerTime(s) {
-      if (this.fightStatus !== 'COMPLETED') this.timerSeconds = s
+    addWazaari(color) {
+      if (this.isFightCompleted) return
+
+      const sc = color === 'white' ? this.white : this.blue
+      const hist = color === 'white' ? this.historyW : this.historyB
+      hist.push(JSON.parse(JSON.stringify(sc)))
+      sc.wazaari = (sc.wazaari || 0) + 1
+      this.triggerFlash(color)
+
+      if (sc.wazaari >= 2) {
+        this.completeFight(color, 'WAZAARI_AWASETE_IPPON')
+      }
+
+      if (this.isGoldenScore) {
+        this.completeFight(color, 'POINTS')
+      }
     },
 
-    adjustTimer(d) {
-      if (this.fightStatus !== 'COMPLETED') this.timerSeconds = Math.max(0, this.timerSeconds + d)
+    addIppon(color) {
+      if (this.isFightCompleted) return
+
+      this.applyScore(color, 'ippon')
+      this.completeFight(color, 'IPPON')
     },
 
-    async startTimer() {
-      if (this.fightStatus === 'COMPLETED') return
+    addYuko(color) {
+      if (this.isFightCompleted) return
+
+      this.applyScore(color, 'yuko')
+      if (this.isGoldenScore) {
+        this.completeFight(color, 'POINTS')
+      }
+    },
+
+    addShido(color) {
+      if (this.isFightCompleted) return
+
+      const sc = color === 'white' ? this.white : this.blue
+      const hist = color === 'white' ? this.historyW : this.historyB
+      hist.push(JSON.parse(JSON.stringify(sc)))
+      sc.shido = (sc.shido || 0) + 1
+      this.triggerFlash(color)
+
+      if (sc.shido >= 3) {
+        const opp = color === 'white' ? 'blue' : 'white'
+        this.completeFight(opp, 'HANSOKU_MAKE')
+      }
+    },
+
+    addHansoku(color) {
+      if (this.isFightCompleted) return
+
+      const opp = color === 'white' ? 'blue' : 'white'
+      const sc = this[opp]
+      const hist = opp === 'white' ? this.historyW : this.historyB
+      hist.push(JSON.parse(JSON.stringify(sc)))
+      sc.hansoku = true
+      this.triggerFlash(opp)
+      this.completeFight(opp, 'HANSOKU_MAKE')
+    },
+
+    // ─── Осаэкоми ──────────────────────────────────────────────────────────
+    startOsa(color) {
+      if (this.isFightCompleted) return
+      if (this.osa.active) return
+
+      this.osa = { active: true, color, time: 0 }
+      clearInterval(this._osaInterval)
+      this._osaInterval = setInterval(() => {
+        this.osa.time += 1
+        if (this.osa.time === OSAEKOMI_WAZAARI) {
+          this.addWazaari(color)
+        }
+        if (this.osa.time >= OSAEKOMI_MAX) {
+          clearInterval(this._osaInterval)
+          this.osa = { active: false, color: null, time: 0 }
+          this.addIppon(color)
+        }
+      }, 1000)
+    },
+
+    stopOsa() {
+      if (this.isFightCompleted) return
+
+      clearInterval(this._osaInterval)
+      const { time, color } = this.osa
+      this.osa = { active: false, color: null, time: 0 }
+      if (time >= OSAEKOMI_WAZAARI && time < OSAEKOMI_MAX) {
+        this.addWazaari(color)
+      }
+    },
+
+    // ─── Таймер ────────────────────────────────────────────────────────────
+    startTimer() {
+      if (this.isFightCompleted) return
 
       if (this.fightStatus === 'SCHEDULED') {
-        this.fightStatus = 'IN_PROGRESS'
-        this.addEvent('fight', 'Hajime!')
-
-        if (this.fightId && this.fight?.tatami != null) {
-          try {
-            const result = await setLifeFight(this.fightId, this.fight.tatami)
-            if (result.success) {
-              this.addEvent('system', `Схватка переведена в LIVE на татами ${this.fight.tatami}`)
-            } else {
-              this.addEvent('error', `Не удалось перевести в LIVE: ${result.error || 'неизвестная ошибка'}`)
-            }
-          } catch (err) {
-            this.addEvent('error', `Ошибка сети при переводе в LIVE: ${err.message || err}`)
-          }
-        } else {
-          this.addEvent('warning', 'Нет fightId или номера татами — перевод в LIVE пропущен')
-        }
+        this.setLiveStatus()
       }
 
-      this.isRunning = true
-      clearInterval(this.timerInterval)
-      this.timerInterval = setInterval(() => {
+      this.running = true
+      clearInterval(this._timerInterval)
+      this._timerInterval = setInterval(() => {
         if (this.isGoldenScore) {
           this.gsSeconds += 1
-        } else if (this.timerSeconds > 0) {
-          this.timerSeconds -= 1
-          if (this.timerSeconds === 0) {
-            this.enterGoldenScore()
+        } else {
+          if (this.seconds > 0) {
+            this.seconds -= 1
+          }
+          if (this.seconds === 0 && !this.isGoldenScore) {
+            clearInterval(this._timerInterval)
+            this.running = false
+            this.isGoldenScore = true
+            this.gsSeconds = 0
           }
         }
       }, 1000)
     },
 
     pauseTimer() {
-      if (this.isRunning) {
-        this.isRunning = false
-        clearInterval(this.timerInterval)
-        this.addEvent('timer', 'Matte')
+      this.running = false
+      clearInterval(this._timerInterval)
+    },
+
+    toggleTimer() {
+      if (this.isFightCompleted) return
+      if (this.running) this.pauseTimer()
+      else this.startTimer()
+    },
+
+    toggleGolden() {
+      if (this.isFightCompleted) return
+
+      this.isGoldenScore = !this.isGoldenScore
+      if (this.isGoldenScore) {
+        this.gsSeconds = 0
+        this.running = false
+        clearInterval(this._timerInterval)
       }
-    }
-  }
+    },
+
+    // ─── Переключение боёв ─────────────────────────────────────────────────
+    goToFight(direction) {
+      const newIndex = this.currentIndex + direction
+      if (newIndex < 0 || newIndex >= this.fightIds.length) return
+      const newId = this.fightIds[newIndex]
+      console.log('Переход к бою:', newId, 'направление:', direction)
+      this.$router.push(`/fights/${newId}`)
+    },
+
+    nextFight() {
+      if (this.hasNext) {
+        this.goToFight(1)
+      } else {
+        console.log('Нет следующего боя')
+      }
+    },
+
+    prevFight() {
+      if (this.hasPrev) {
+        this.goToFight(-1)
+      } else {
+        console.log('Нет предыдущего боя')
+      }
+    },
+
+    resetFight() {
+      this.seconds = this.fightDuration
+      this.gsSeconds = 0
+      this.isGoldenScore = false
+      this.fightStatus = 'SCHEDULED'
+      this.running = false
+      this.white = this.emptyScore()
+      this.blue = this.emptyScore()
+      this.historyW = []
+      this.historyB = []
+      this.osa = { active: false, color: null, time: 0 }
+      clearInterval(this._osaInterval)
+    },
+
+    fmt(s) {
+      const abs = Math.abs(s)
+      const m = Math.floor(abs / 60)
+      const sec = abs % 60
+      return `${m}:${sec < 10 ? '0' : ''}${sec}`
+    },
+
+    // ─── Клавиатура ─────────────────────────────────────────────────────────
+    onKeyDown(e) {
+      if (e.repeat) return
+
+      // Стрелка влево - предыдущий бой
+      if (e.key === 'ArrowLeft' || e.code === 'ArrowLeft') {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('Стрелка влево нажата, hasPrev:', this.hasPrev)
+        this.prevFight()
+        return
+      }
+
+      // Стрелка вправо - следующий бой
+      if (e.key === 'ArrowRight' || e.code === 'ArrowRight') {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('Стрелка вправо нажата, hasNext:', this.hasNext)
+        this.nextFight()
+        return
+      }
+
+      // B - предыдущий бой (Back)
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('B нажата, hasPrev:', this.hasPrev)
+        this.prevFight()
+        return
+      }
+
+      // N - следующий бой (Next)
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('N нажата, hasNext:', this.hasNext)
+        this.nextFight()
+        return
+      }
+
+      // Tab - следующий бой
+      if (e.key === 'Tab' || e.code === 'Tab') {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('Tab нажат, hasNext:', this.hasNext)
+        this.nextFight()
+        return
+      }
+
+      const key = e.key.toLowerCase()
+      this._keyDownTime[key] = Date.now()
+
+      // Пробел - Хаджимэ / Маттэ
+      if (e.code === 'Space' || key === ' ' || key === 'space') {
+        e.preventDefault()
+        e.stopPropagation()
+        this.toggleTimer()
+        return
+      }
+
+      // G - голден скор
+      if (key === 'g') {
+        e.preventDefault()
+        this.toggleGolden()
+        return
+      }
+
+      // Если бой завершён - блокируем все действия кроме переключения
+      if (this.isFightCompleted) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          if (window.confirm('Отменить результат схватки?')) {
+            this.resetCurrentFight()
+          }
+        }
+        return
+      }
+
+      // Q/W/E - иппон/ваза-ари/юко для белого
+      if (key === 'q') {
+        e.preventDefault()
+        this.addIppon('white')
+      }
+      if (key === 'w') {
+        e.preventDefault()
+        this.addWazaari('white')
+      }
+      if (key === 'e') {
+        e.preventDefault()
+        this.addYuko('white')
+      }
+
+      // P/O/I - иппон/ваза-ари/юко для синего
+      if (key === 'p') {
+        e.preventDefault()
+        this.addIppon('blue')
+      }
+      if (key === 'o') {
+        e.preventDefault()
+        this.addWazaari('blue')
+      }
+      if (key === 'i') {
+        e.preventDefault()
+        this.addYuko('blue')
+      }
+
+      // F - осаэкоми белый
+      if (key === 'f') {
+        e.preventDefault()
+        this.startOsa('white')
+      }
+      // J - осаэкоми синий
+      if (key === 'j') {
+        e.preventDefault()
+        this.startOsa('blue')
+      }
+      // H - токета
+      if (key === 'h') {
+        e.preventDefault()
+        this.stopOsa()
+      }
+
+      // R/U - шидо (удержание = хансоку)
+      if (key === 'r') {
+        e.preventDefault()
+        this._holdTimeout = setTimeout(() => {
+          this.addHansoku('white')
+        }, 800)
+      }
+      if (key === 'u') {
+        e.preventDefault()
+        this._holdTimeout = setTimeout(() => {
+          this.addHansoku('blue')
+        }, 800)
+      }
+
+      // Z/X - отмена последнего действия
+      if (key === 'z') {
+        e.preventDefault()
+        this.undoScore('white')
+      }
+      if (key === 'x') {
+        e.preventDefault()
+        this.undoScore('blue')
+      }
+    },
+
+    onKeyUp(e) {
+      const key = e.key.toLowerCase()
+      const elapsed = Date.now() - (this._keyDownTime[key] || 0)
+      delete this._keyDownTime[key]
+
+      if (key === 'r' && !this.isFightCompleted) {
+        clearTimeout(this._holdTimeout)
+        if (elapsed < 800) this.addShido('white')
+      }
+      if (key === 'u' && !this.isFightCompleted) {
+        clearTimeout(this._holdTimeout)
+        if (elapsed < 800) this.addShido('blue')
+      }
+    },
+  },
 }
 </script>
 
 <style scoped>
-.fight-detail {
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Rajdhani:wght@500;700&display=swap');
+
+.board {
   width: 100%;
-  min-height: 100vh;
-  background: #ffffff;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  color: #1a1a1a;
-  box-sizing: border-box;
-  margin-left: 0;
-  padding-top: 80px;
-  max-width: calc(100vw - var(--sidebar-width, 120px) - 40px);
-  padding-left: 20px;
-}
-
-.header {
-  max-width: 1200px;
-  margin: 0 auto 1.5rem;
+  height: 100%;
   display: flex;
-  align-items: center;
-  position: relative;
-  height: 50px;
-}
-
-.back {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: #c89b3c;
-  padding: 0.4rem 0.8rem;
-  z-index: 10;
-  transition: color 0.2s;
-}
-
-.back:hover { color: #e0b456; }
-
-.forward {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: #c89b3c;
-  padding: 0.4rem 0.8rem;
-  z-index: 10;
-  transition: color 0.2s;
-}
-
-.forward:hover:not(:disabled) { color: #e0b456; }
-.forward:disabled { opacity: 0.25; cursor: not-allowed; }
-
-.header-content {
-  flex: 1;
-  text-align: center;
-  padding: 0 80px;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.meta {
-  color: #666;
-  font-size: 0.85rem;
-  margin-top: 0.3rem;
-}
-
-.fight-card {
-  display: flex;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  flex-direction: column;
+  background: #0a0a0a;
   overflow: hidden;
-  border: 1px solid #e8e8e8;
+  font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+  user-select: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  outline: none;
 }
 
-.athlete-section {
+.athlete-row {
   flex: 1;
-  padding: 1.2rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  background: #fdfdfd;
+  padding: 0 1vw;
+  gap: 1vw;
+  transition: background 0.2s;
+  min-height: 0;
 }
+.athlete-row.white { background: #d0d0d0; border-bottom: 3px solid #555; }
+.athlete-row.blue { background: #0c2b7a; }
+.athlete-row.white.flash { background: #e8e8e8; }
+.athlete-row.blue.flash { background: #1a4ab0; }
 
+.name-block {
+  flex: 1 1 28%;
+  min-width: 0;
+  overflow: hidden;
+}
 .athlete-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-align: center;
-  color: #1a1a1a;
-  margin: 0;
-}
-
-.color-badge {
-  font-size: 0.85rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(1.4rem, 3.2vw, 3rem);
   font-weight: 700;
-  color: #c89b3c;
-  background: #fdfaf0;
-  padding: 0.3rem 0.8rem;
-  border-radius: 12px;
-}
-
-.scores { width: 100%; }
-
-.score-row {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 0.3rem 0;
-  padding: 0.5rem 0.7rem;
-  background: rgba(255,255,255,0.8);
-  border-radius: 6px;
-  border-left: 3px solid #c89b3c;
+  gap: 0.4em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.white .athlete-name { color: #111; }
+.blue .athlete-name { color: #fff; }
 
-.score-label { font-weight: 500; font-size: 0.9rem; color: #333; flex: 1; }
-.score-value { font-weight: 700; font-size: 1.1rem; color: #c89b3c; min-width: 40px; text-align: right; }
+.win-dot { color: #f4d03f; font-size: 0.45em; flex-shrink: 0; }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  justify-content: center;
-  margin: 0.6rem 0;
-  width: 100%;
-}
-
-.btn-action {
-  padding: 0.6rem 1rem;
-  border-radius: 20px;
+.club-name {
+  font-size: clamp(0.7rem, 1.3vw, 1.1rem);
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  font-size: 0.85rem;
-  color: white;
-  background: linear-gradient(135deg, #c89b3c, #f4d03f);
-  box-shadow: 0 4px 12px rgba(200,155,60,0.2);
-  flex: 1;
-  min-width: 100px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.2em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.white .club-name { color: #555; }
+.blue .club-name { color: #8ab4f8; }
 
-.btn-action:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(200,155,60,0.3);
-}
-
-.btn-action.active {
-  background: linear-gradient(135deg, #a67c00, #d4af37);
-  animation: pulse 2s infinite;
-}
-
-.btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.timer-section {
-  flex: 1;
-  background: white;
+.scores-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  border-left: 1px solid #e8e8e8;
-  border-right: 1px solid #e8e8e8;
-  min-width: 350px;
-}
-
-.timer-display {
-  font-size: 3.5rem;
-  font-weight: 900;
-  color: #c89b3c;
-  margin: 0 0 0.4rem 0;
-  font-family: 'SF Pro Display', monospace;
-}
-
-.golden-score {
-  color: #c89b3c;
-  font-weight: 700;
-  font-size: 1rem;
-  margin: 0 0 1rem 0;
-}
-
-.timer-controls { width: 100%; max-width: 380px; }
-
-.time-adjust {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.8rem;
-}
-
-.time-btn {
-  background: linear-gradient(135deg, #c89b3c, #f4d03f);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(200,155,60,0.2);
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
+  gap: 0.6vw;
   flex-shrink: 0;
 }
 
-.quick-times {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1;
+.score-card {
+  width: clamp(60px, 7vw, 95px);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.3vw 0.5vw;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.1);
 }
-
-.quick-btn {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 16px;
-  padding: 0.6rem 0.8rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  flex: 1;
-  color: #333;
-  transition: all 0.2s;
+.score-card--blue { background: rgba(255, 255, 255, 0.1); }
+.score-card--active {
+  background: linear-gradient(135deg, #f4d03f 0%, #e67e22 100%);
+  border-color: #fff;
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
-
-.quick-btn:hover {
-  background: #c89b3c;
-  color: white;
-  border-color: #c89b3c;
+.score-card--active .score-card-label,
+.score-card--active .score-card-value {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
-
-.main-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.btn-timer {
-  background: linear-gradient(135deg, #c89b3c, #f4d03f);
-  color: white;
-  border: none;
-  border-radius: 20px;
+.score-card-label {
+  font-size: clamp(0.45rem, 0.9vw, 0.7rem);
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(200,155,60,0.2);
-  padding: 0.7rem 1.2rem;
-  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ab4f8;
+  margin-bottom: 0.2vw;
 }
-
-.btn-timer:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(200,155,60,0.3);
-}
-
-.btn-timer:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.osaekomi-box {
-  background: #fdfaf0;
-  border-radius: 10px;
-  padding: 1rem;
-  margin-top: 1rem;
-  width: 100%;
-  max-width: 350px;
-  border: 2px solid #c89b3c;
-}
-
-.osaekomi-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.6rem;
-}
-
-.osaekomi-time { color: #c89b3c; font-size: 2rem; font-weight: 700; font-family: monospace; }
-.osaekomi-athlete { font-weight: 600; color: #a67c00; font-size: 1rem; }
-
-.progress-bar {
-  width: 100%;
-  height: 10px;
-  background: #e8e8e8;
-  border-radius: 5px;
-  overflow: hidden;
-  margin-bottom: 0.6rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #c89b3c, #f4d03f);
-  transition: width 1s ease;
-}
-
-.btn-stop {
-  background: #a67c00;
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  width: 100%;
+.score-card-value {
+  font-family: 'Oswald', monospace;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: clamp(1.3rem, 3.5vw, 2.8rem);
+  line-height: 1;
+  color: #fff;
 }
 
-.status-text {
-  margin-top: 1rem;
-  font-weight: 600;
-  color: #666;
-  font-size: 0.9rem;
+.penalty-block {
+  width: clamp(60px, 7vw, 95px);
+  background: #dc2626;
+  border-radius: 8px;
+  padding: 0.3vw 0.5vw;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
 }
-
-.result-box {
-  background: white;
-  border-left: 5px solid #c89b3c;
-  border-radius: 12px;
-  padding: 1.2rem;
-  max-width: 1200px;
-  margin: 1.5rem auto;
+.penalty-block--danger {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  animation: pulse 1s infinite;
 }
-
-.result-box h3 {
-  margin: 0 0 0.8rem 0;
-  color: #a67c00;
-  font-size: 1.1rem;
-}
-
-.result-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.result-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid #f5f5f5;
-  font-size: 0.9rem;
-}
-
-.result-row:last-child { border-bottom: none; }
-
-.btn-rematch {
-  margin-top: 1rem;
-  width: 100%;
-  padding: 0.7rem;
-  background: #fff0f0;
-  border: 2px solid #e05555;
-  border-radius: 12px;
-  color: #e05555;
+.penalty-label {
+  font-size: clamp(0.45rem, 0.9vw, 0.7rem);
   font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fecaca;
+  margin-bottom: 0.2vw;
 }
-
-.btn-rematch:hover:not(:disabled) {
-  background: #e05555;
-  color: white;
+.penalty-value {
+  font-family: 'Oswald', monospace;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 3.5vw, 2.8rem);
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
-
-.btn-rematch:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.info-section {
-  max-width: 1200px;
-  margin: 1.5rem auto 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.2rem;
-}
-
-.info-card {
-  background: white;
-  padding: 1.2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  border: 1px solid #e8e8e8;
-}
-
-.info-card h4 {
-  margin: 0 0 0.8rem 0;
-  color: #a67c00;
-  font-size: 1rem;
-  font-weight: 600;
-  border-bottom: 2px solid #f5f5f5;
-  padding-bottom: 0.6rem;
-}
-
-.info-row {
-  margin: 0.3rem 0;
-  font-size: 0.85rem;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid #f9f9f9;
-}
-
-.info-row:last-child { border-bottom: none; }
-
-.log-box {
-  max-height: 250px;
-  overflow-y: auto;
-  border: 1px solid #f0f0f0;
+.hansoku-badge {
+  display: inline-block;
+  background: #450a0a;
+  padding: 0 6px;
   border-radius: 6px;
-  padding: 0.6rem;
+  font-size: clamp(1.1rem, 3vw, 2.2rem);
+  font-weight: 700;
+  animation: shake 0.5s ease;
 }
 
-.log-item {
-  padding: 0.5rem 0.6rem;
-  margin-bottom: 0.4rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  background: #fdfdfb;
-  border-left: 3px solid #c89b3c;
+.bottom-bar {
+  height: 22vh;
+  background: #111;
+  border-top: 3px solid #333;
   display: flex;
-  gap: 0.8rem;
+  align-items: center;
+  padding: 0 2vw;
+  gap: 2vw;
+  flex-shrink: 0;
+}
+.category-block {
+  flex: 0 0 16%;
+  min-width: 0;
+}
+.category-text {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(0.9rem, 2vw, 1.6rem);
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stage-text {
+  font-size: clamp(0.7rem, 1.4vw, 1.2rem);
+  font-weight: 700;
+  color: #e05555;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.3em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.log-time {
+.timer-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.gs-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(0.7rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  color: #f4d03f;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  animation: fadeIn 0.4s ease;
+  white-space: nowrap;
+}
+.timer-digits {
+  font-family: 'Oswald', monospace;
+  font-size: clamp(2.2rem, 7vw, 6rem);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  transition: color 0.3s;
+}
+.timer-digits.gold { color: #f4d03f; }
+.timer-digits.blink { animation: blink 1s infinite; }
+
+.osa-block {
+  flex: 0 0 24%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.osa-label {
+  color: #f4d03f;
+  font-weight: 700;
+  font-size: clamp(0.65rem, 1.3vw, 0.95rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.osa-track {
+  width: 100%;
+  height: 14px;
+  background: #2a2a2a;
+  border-radius: 9px;
+  position: relative;
+  overflow: visible;
+}
+.osa-fill {
+  height: 100%;
+  border-radius: 9px;
+  transition: width 1s linear;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.osa-fill.white { background: linear-gradient(90deg, #aaa, #fff); }
+.osa-fill.blue { background: linear-gradient(90deg, #1565c0, #42a5f5); }
+.osa-mark {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  width: 3px;
+  height: 22px;
+  background: #f4d03f;
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+.osa-time {
+  color: #888;
+  font-size: clamp(0.6rem, 1.2vw, 0.85rem);
   font-weight: 600;
-  color: #666;
-  min-width: 60px;
-  font-size: 0.75rem;
+}
+.osa-idle {
+  color: #fff;
+  opacity: 0.3;
+  font-size: clamp(0.55rem, 1.1vw, 0.8rem);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
-.log-msg { flex: 1; color: #333; }
-
-.no-events {
+.rest-screen {
+  width: 100%;
+  height: 100%;
+  background: #050a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+.rest-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: 700;
+  color: #f4d03f;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.rest-timer {
+  font-family: 'Oswald', monospace;
+  font-size: clamp(5rem, 18vw, 14rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.05em;
+}
+.rest-sub {
+  color: #445;
+  font-size: clamp(0.9rem, 2vw, 1.5rem);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   text-align: center;
-  color: #999;
-  font-style: italic;
-  padding: 1rem;
-  font-size: 0.85rem;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
+.no-fight {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: 'Oswald', sans-serif;
+  font-size: 2rem;
+  background: #0a0a0a;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(200,155,60,0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(200,155,60,0); }
-  100% { box-shadow: 0 0 0 0 rgba(200,155,60,0); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
-
-@media (max-width: 768px) {
-  .fight-card { flex-direction: column; }
-  .timer-section { min-width: 100%; order: -1; border: none; border-bottom: 1px solid #e8e8e8; }
-  .actions { flex-direction: column; }
-  .btn-action { width: 100%; }
-  .header-content { padding: 0 60px; }
-  .time-adjust { flex-direction: column; }
-  .quick-times { width: 100%; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 </style>

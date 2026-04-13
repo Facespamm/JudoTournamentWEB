@@ -159,6 +159,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import {fetchRegister} from "@/components/View/Weighings/fetchWeighings.js";
 
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -343,7 +344,7 @@ const loadCategoryAthletes = async () => {
   }
 
   isLoadingAthletes.value = true
-  const result = await fetchCategoryAthletes(weighingForm.value.tournament_id, weighingForm.value.category_id)
+  const result = await fetchRegister(weighingForm.value.tournament_id, weighingForm.value.category_id)
   if (result.success) {
     categoryAthletes.value = result.data
   } else {

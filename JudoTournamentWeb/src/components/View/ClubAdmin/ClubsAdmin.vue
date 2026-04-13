@@ -35,6 +35,13 @@
           <button
               class="admin-btn-edit"
               :disabled="!selectedClubId"
+              @click="openAddAthlete"
+          >
+            добавить участников
+          </button>
+          <button
+              class="admin-btn-edit"
+              :disabled="!selectedClubId"
               @click="openEditModal"
           >
             Редактировать
@@ -129,6 +136,13 @@
         @submit="handleModalSubmit"
     />
 
+    <!-- модалка для добавление атлетов в клую -->
+    <AddAthleteModal
+      :is-open="showModalAddAthlete"
+      :club="addAthleteData"
+      @close="closeAddAthleteModal"
+    />
+
     <!-- Подтверждение удаления -->
     <div v-if="clubToDelete" class="admin-modal-overlay" @click="cancelDelete">
       <div class="admin-confirm-modal" @click.stop>
@@ -152,6 +166,7 @@ import AdminClubModal from '@/components/View/ClubAdmin/ClubModal.vue'
 import { getClubs } from '@/components/View/Clubs/fetchClubs.js'
 import {DeleteClub} from "@/components/View/ClubAdmin/fetchClubAdmin.js";
 import './ClubsAdmin.css'
+import AddAthleteModal from "@/components/View/ClubAdmin/AddAthleteModal.vue";
 
 const clubs = ref([])
 const adminSearchQuery = ref('')
@@ -162,6 +177,8 @@ const showModal = ref(false)
 const editingClubData = ref(null)
 const selectedClubId = ref(null)
 const clubToDelete = ref(null)
+const addAthleteData = ref(null)
+const showModalAddAthlete = ref(false)
 
 // Фильтрация
 const filteredClubs = computed(() => {
@@ -208,10 +225,24 @@ const openEditModal = () => {
   }
 }
 
+const openAddAthlete = () => {
+  if (!selectedClubId.value) return
+  const club = clubs.value.find(c => c.id === selectedClubId.value)
+  if (club) {
+    addAthleteData.value = { ...club }
+    showModalAddAthlete.value = true
+  }
+}
+
 // Закрытие модалки
 const closeModal = () => {
   showModal.value = false
   editingClubData.value = null
+}
+
+const closeAddAthleteModal = () => {
+  showModalAddAthlete.value = false
+  addAthleteData.value = null
 }
 
 // Обработка результата из модалки (успех/ошибка)
@@ -220,6 +251,7 @@ const handleModalSubmit = ({ success }) => {
     loadClubs()
   }
 }
+
 
 // Выбор клуба в таблице
 const selectClub = (id) => {

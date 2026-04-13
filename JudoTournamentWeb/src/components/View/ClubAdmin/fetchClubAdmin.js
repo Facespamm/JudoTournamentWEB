@@ -66,3 +66,78 @@ export const DeleteClub = async (clubId) => {
         throw error;
     }
 };
+
+export const getAthleteForRegistratedClub = async () => {
+    try {
+        const response = await fetch(`/api/athletes/for_registration_on_club`, {
+            headers: { 'X-API-Key': 'mobile_app_2024' },
+            method: 'GET',
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.athletes || data || [];
+    }  catch (error) {
+        console.error('Ошибка при удалении клуба:', error);
+        throw error;
+    }
+}
+
+export const registraitAthleteToClub = async (clubId,athlete_ids) => {
+    try {
+        const response = await fetch(`/api/clubs/${clubId}/assign-athletes`, {
+            method: 'POST',
+            body: JSON.stringify({ athlete_ids: athlete_ids }),
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+
+        if (response.status === 400) {
+            let error_data = await response.json();
+            return error_data;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data)
+        return data.message;
+    } catch (error){
+        console.error('Ошибка при регистрации :', error);
+        throw error;
+    }
+}
+
+export const unassignAthleteToClub = async (clubId,athlete_ids) => {
+    try {
+        const response = await fetch(`/api/clubs/${clubId}/unassign-athletes`, {
+            method: 'POST',
+            body: JSON.stringify({ athlete_ids: athlete_ids }),
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+
+        if (response.status === 400) {
+            let error_data = await response.json();
+            return error_data;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data)
+        return data.message;
+    } catch (error){
+        console.error('Ошибка при регистрации :', error);
+        throw error;
+    }
+}

@@ -1,6 +1,6 @@
 export const adminRegistration = async (data) => {
     try {
-        const response = await fetch(`/api/athletes//private/create-athlete-admin
+        const response = await fetch(`/api/athletes/private/create-athlete-admin
 `, {
             method: 'POST',
             headers: {

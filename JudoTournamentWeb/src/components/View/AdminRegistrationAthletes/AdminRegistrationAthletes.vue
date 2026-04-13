@@ -122,12 +122,12 @@
               </select>
             </div>
             <div class="field-wrap">
-              <label>Номер лицензии <span class="req">*</span></label>
-              <input v-model="form.license_number" type="text" placeholder="77 25 456789" required />
+              <label>Номер лицензии <!--<span class="req">*</span>--></label>
+              <input v-model="form.license_number" type="text" placeholder="77 25 456789"/> <!--required-->
             </div>
             <div class="field-wrap">
-              <label>Страховой номер <span class="req">*</span></label>
-              <input v-model="form.insurance_number" type="text" placeholder="1234-567-890 1234" required />
+              <label>Страховой номер <!--<span class="req">*</span>--></label>
+              <input v-model="form.insurance_number" type="text" placeholder="1234-567-890 1234"/> <!--required-->
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@ const submitForm = async () => {
     }
 
     successMsg.value = `Участник ${form.value.fullname} успешно зарегистрирован`
-    setTimeout(() => router.back(), 1800)
+    //setTimeout(() => router.back(), 1800)
 
   } catch (err) {
     errorMsg.value = err.message || 'Произошла ошибка при регистрации'

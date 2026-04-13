@@ -1,6 +1,6 @@
 export const GetAdminStatistics = async () => {
     try {
-        const response = await fetch('/api/statistics/live-detailed')
+        const response = await fetch('/api/statistics/live-overview')
 
         if (!response.ok) {
             const err = await response.json()

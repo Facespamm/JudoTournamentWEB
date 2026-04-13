@@ -131,15 +131,15 @@
           <span class="action-text">Управление клубами</span>
         </button>
 
-        <button class="action-btn" @click="navigateToAthletes">
+        <!--<button class="action-btn" @click="navigateToAthletes">
           <span class="action-icon manage-athletes">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2C10.89 2 10 2.89 10 4V6.76L8.41 8.35C7.91 8.85 7.91 9.66 8.41 10.15L10.59 12.33L8.41 14.51C7.91 15 7.91 15.82 8.41 16.31L10 17.9V20C10 21.11 10.89 22 12 22C13.11 22 14 21.11 14 20V17.9L15.59 16.31C16.09 15.82 16.09 15 15.59 14.51L13.41 12.33L15.59 10.15C16.09 9.66 16.09 8.85 15.59 8.35L14 6.76V4C14 2.89 13.11 2 12 2Z" fill="currentColor"/>
               <circle cx="12" cy="12" r="2" fill="currentColor"/>
             </svg>
           </span>
-          <span class="action-text">Управление дзюдоистами</span>
-        </button>
+          <span class="action-text">Звешивание на турнир</span>
+        </button>-->
 
         <button class="action-btn" @click="navigateToReferee">
           <span class="action-icon referee">

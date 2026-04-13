@@ -61,7 +61,7 @@ export const searchAthletes = async (
         if (middleName) params.append('middle_name', middleName);
         if (clubId !== null) params.append('club_id', clubId.toString());
 
-        const url = `api/clubs/search?${params.toString()}`;
+        const url = `/api/clubs/search?${params.toString()}`;
 
         const response = await fetch(url, {
             method: 'GET',
@@ -93,13 +93,14 @@ export const searchAthletes = async (
             athletes: []
         };
     }
-};/**
+};
+/**
  * 3. Получить всех атлетов
  * Использует эндпоинт: GET /athletes/
  */
-export const getAllAthletes = async () => {
+export const getAllAthletesForRegister = async (tournament_id) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/athletes/`, {
+            const response = await fetch(`${API_BASE_URL}athletes/?tournament_id=${tournament_id}`, {
                 headers: {
                     'X-API-Key': API_KEY,
                     'Content-Type': 'application/json'

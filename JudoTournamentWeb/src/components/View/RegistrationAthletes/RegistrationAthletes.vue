@@ -11,8 +11,8 @@
     </transition>
 
     <section class="registration-navigation">
-      <h2>Регистрация участников</h2>
-      <nav class="nav-tabs">
+      <h2>Регистрация звешивания</h2>
+      <!--<nav class="nav-tabs">
         <button
             class="nav-tab"
             :class="{ active: activeTab === 'weighing' }"
@@ -20,7 +20,7 @@
         >
           Взвешивание
         </button>
-      </nav>
+      </nav>-->
     </section>
 
     <section class="registration-content">

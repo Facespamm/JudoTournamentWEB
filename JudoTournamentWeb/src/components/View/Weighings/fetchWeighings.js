@@ -36,13 +36,13 @@ export const updateWeighing = async (weighingId, data) => {
         })
 
         if (!response.ok) {
-            const errorText = await response.text()
-            console.error('Ошибка сервера:', response.status, errorText)
-            return { success: false, error: errorText || 'Неизвестная ошибка' }
+            const errorData = await response.json() // вместо response.text()
+            console.error('Ошибка сервера:', response.status, errorData)
+            return { success: false, error: errorData.message || 'Неизвестная ошибка' }
         }
 
         const result = await response.json()
-        return { success: true, data: result }
+        return { success: true, data: result };
     } catch (err) {
         console.error('Ошибка сети при обновлении взвешивания:', err)
         return { success: false, error: err.message || 'Сеть недоступна' }
@@ -126,6 +126,32 @@ export const fetchRegister = async (tournamentId,categoryId) => {
         const result = await response.json();
         return { success: true, data: result };
 
+    } catch (error) {
+        console.error('Ошибка при загрузке взвешиваний:', error);
+        return {
+            success: false,
+            error: error.message || 'Произошла неизвестная ошибка'
+        };
+    }
+}
+
+export const deleteWeighing = async (weight_id) => {
+    try {
+        const response = await fetch(`/api/weighing/${weight_id}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            },
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return { success: true, data: result };
     } catch (error) {
         console.error('Ошибка при загрузке взвешиваний:', error);
         return {

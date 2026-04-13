@@ -60,7 +60,7 @@
             <small v-if="loadingClubs" class="text-muted">Загрузка клубов...</small>
             <small v-if="clubsError" class="text-error">{{ clubsError }}</small>
 
-            <label for="category-select" class="filter-label mt-1">Категория *</label>
+            <!--<label for="category-select" class="filter-label mt-1">Категория *</label>
             <select id="category-select" v-model="selectedCategoryId" :disabled="categoriesLoading" class="select-input" required>
               <option value="">Выберите категорию</option>
               <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -70,7 +70,7 @@
                 {{ cat.min_weight !== undefined && cat.max_weight !== undefined ? `, ${cat.min_weight}-${cat.max_weight} кг` : '' }}
               </option>
             </select>
-            <small v-if="categoriesLoading" class="text-muted">Загрузка категорий...</small>
+            <small v-if="categoriesLoading" class="text-muted">Загрузка категорий...</small>-->
 
             <button v-if="selectedClubId" @click="registerClub" :disabled="loadingClubs || registeringClub" class="btn btn-primary mt-1">
               {{ registeringClub ? 'Регистрация...' : 'Зарегистрировать клуб' }}
@@ -107,9 +107,9 @@
           <button
               v-if="filteredAthletes.length > 0"
               @click="registerAthletes"
-              :disabled="loadingAthletes || selectedAthletes.length === 0 || !selectedCategoryId || registeringAthletes"
+              :disabled="loadingAthletes || selectedAthletes.length === 0 || registeringAthletes"
               class="btn btn-primary"
-          >
+          > <!--|| !selectedCategoryId -->
             {{ registeringAthletes ? 'Регистрация...' : 'Зарегистрировать выбранных в категорию' }}
           </button>
         </div>
@@ -121,31 +121,51 @@
         </small>
 
         <div class="table-container">
-          <table v-if="filteredAthletes.length" class="athletes-table">
+          <table class="admin-clubs-table" v-if="filteredAthletes.length">
             <thead>
             <tr>
-              <th>Выбрать</th>
+              <th class="admin-col-select">
+                <input type="checkbox" :checked="isAllSelected" @change="toggleAll" />
+              </th>
               <th>#</th>
               <th>ФИО</th>
               <th>Пол</th>
               <th>Возраст</th>
-              <th>Вес</th>
-              <th>Категория</th>
               <th>Клуб</th>
-              <th>Контакт</th>
             </tr>
             </thead>
             <tbody>
-            <tr v-for="(athlete, index) in filteredAthletes" :key="athlete.id">
-              <td><input type="checkbox" v-model="selectedAthletes" :value="athlete.id" /></td>
+            <tr
+                v-for="(athlete, index) in filteredAthletes"
+                :key="athlete.id"
+                class="admin-table-row"
+                :class="{ 'admin-selected-row': selectedAthletes.includes(athlete.id) }"
+                @click.stop="toggleSelect(athlete.id)"
+            >
+              <td class="admin-col-select">
+                <input
+                    type="checkbox"
+                    :checked="selectedAthletes.includes(athlete.id)"
+                />
+              </td>
               <td>{{ index + 1 }}</td>
-              <td class="athlete-name">{{ fullAthleteName(athlete) }}</td>
-              <td>{{ athlete.gender ? (athlete.gender.toLowerCase() === 'male' ? 'М' : 'Ж') : '—' }}</td>
-              <td>{{ athlete.age ?? '—' }}</td>
-              <td>{{ athlete.currentWeight ? athlete.currentWeight + ' кг' : '—' }}</td>
-              <td>{{ athlete.categoryName || '—' }}</td>
-              <td>{{ getClubName(athlete.clubId) }}</td>
-              <td class="contact">{{ athlete.phoneNumber || '—' }}</td>
+              <td data-label="ФИО">
+                <div class="admin-club-name">{{ fullAthleteName(athlete) }}</div>
+              </td>
+              <td data-label="Пол">
+        <span
+            class="admin-athletes-count"
+            :style="athlete.gender?.toLowerCase() === 'male'
+            ? 'background: linear-gradient(135deg,#1e88e5,#42a5f5)'
+            : 'background: linear-gradient(135deg,#d81b60,#f06292)'"
+        >
+          {{ athlete.gender?.toLowerCase() === 'male' ? 'Муж' : 'Жен' }}
+        </span>
+              </td>
+              <td data-label="Возраст">
+                <span class="admin-athletes-count">{{ athlete.age ?? '—' }}</span>
+              </td>
+              <td data-label="Клуб" class="admin-short-name">{{ getClubName(athlete.clubId) || '—' }}</td>
             </tr>
             </tbody>
           </table>
@@ -169,9 +189,8 @@ import { fetchCategories } from '@/components/View/TournamentManagement/fetchTou
 import {
   getClubAthletes,
   searchAthletes,
-  getAllAthletes,
   addClubToTournament,
-  addAthletesToTournament
+  addAthletesToTournament, getAllAthletesForRegister
 } from '@/components/View/RegistrationAthletesTournament/fetchRegistrationAthletesTornament.js'
 
 const route = useRoute()
@@ -281,7 +300,7 @@ const loadAthletes = async () => {
   athletesError.value = null
   selectedAthletes.value = []
   try {
-    const result = await getAllAthletes()
+    const result = await getAllAthletesForRegister(tournamentId.value)
     if (result?.athletes) {
       athletes.value = Object.values(result.athletes).map(mapAthlete)
     } else {
@@ -414,13 +433,20 @@ const registerClub = async () => {
   }
 }
 
+function toggleSelect(id) {
+  const idx = selectedAthletes.value.indexOf(id)
+  console.log(selectedAthletes.value[idx])
+  if (idx === -1) selectedAthletes.value.push(id)
+  else selectedAthletes.value.splice(idx, 1)
+}
+
 // === Регистрация атлетов ===
 const registerAthletes = async () => {
   if (!selectedAthletes.value.length || !tournamentId.value) return
-  if (!selectedCategoryId.value) {
-    athletesRegistrationMessage.value = 'Ошибка: выберите категорию!'
-    return
-  }
+  // if (!selectedCategoryId.value) {
+  //   athletesRegistrationMessage.value = 'Ошибка: выберите категорию!'
+  //   return
+  // }
   registeringAthletes.value = true
   athletesRegistrationMessage.value = null
   try {
@@ -449,6 +475,22 @@ const registerAthletes = async () => {
     athletesRegistrationMessage.value = 'Ошибка при регистрации атлетов'
   } finally {
     registeringAthletes.value = false
+  }
+}
+
+const isAllSelected = computed(() =>
+    filteredAthletes.value.length > 0 &&
+    filteredAthletes.value.every(a => selectedAthletes.value.includes(a.id))
+)
+
+function toggleAll() {
+  if (isAllSelected.value) {
+    const filteredIds = filteredAthletes.value.map(a => a.id)
+    selectedAthletes.value = selectedAthletes.value.filter(id => !filteredIds.includes(id))
+  } else {
+    filteredAthletes.value.forEach(a => {
+      if (!selectedAthletes.value.includes(a.id)) selectedAthletes.value.push(a.id)
+    })
   }
 }
 </script>

@@ -127,6 +127,14 @@
           >
             Редактировать вес
           </button>
+
+          <button
+              class="weighings-btn required"
+              @click="deleteWeight"
+              :disabled="selectedWeighings.length !== 1"
+          >
+            Удалить
+          </button>
         </div>
       </div>
 
@@ -385,7 +393,7 @@ import {
   fetchWeighings,
   updateWeighing,
   fetchCreateWeight,
-  fetchRegister
+  fetchRegister, deleteWeighing
 } from '@/components/View/Weighings/fetchWeighings.js'
 import { fetchCategoriesById } from '@/components/View/TournamentDetails/fetchTournamentDetail.js'
 
@@ -600,6 +608,21 @@ const loadWeighings = async () => {
   }
 }
 
+const deleteWeight = async () => {
+    if (selectedWeighings.value.length !== 1) {
+      showToast('для удаления нужне только одно взвещивание', 'error')
+      return
+    }
+
+    const result = await deleteWeighing(selectedWeighings.value[0])
+    if (result.success) {
+      showToast('Звешивание удаленно', 'success')
+      await loadWeighings()
+    } else {
+      showToast(`Ошибка загрузки взвешиваний ${result.message}`, 'error')
+    }
+}
+
 const refreshCurrentData = async () => {
   if (!selectedTournamentId.value) return
 
@@ -693,12 +716,13 @@ const saveEdit = async () => {
   if (!editingWeighing.value || !editForm.value.weight) return
 
   const res = await updateWeighing(editingWeighing.value.id, { weight: editForm.value.weight })
+  console.log(res)
   if (res.success) {
     editingWeighing.value.weight = editForm.value.weight
     showToast('Вес успешно обновлён')
     closeEditModal()
   } else {
-    showToast('Ошибка обновления веса', 'error')
+    showToast(`Ошибка обновления веса ${res.error}`, 'error')
   }
 }
 
@@ -768,7 +792,7 @@ const saveCreate = async () => {
       closeCreateModal()
       await loadWeighings()
     } else {
-      showToast(res.message || 'Ошибка при создании взвешивания', 'error')
+      showToast(res.error || 'Ошибка при создании взвешивания', 'error')
     }
   } catch (err) {
     console.error('Ошибка создания взвешивания:', err)

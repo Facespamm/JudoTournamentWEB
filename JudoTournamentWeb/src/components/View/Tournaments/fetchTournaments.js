@@ -117,3 +117,20 @@ export async function fetchunassignTournament(tournamentId) {
         data: data.message
     };
 }
+
+export async function getTournamentTatamis(tournamentId) {
+    const uri = `/api/tournaments/${tournamentId}/tatami`;
+    try {
+        const response = await fetch(uri, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': 'mobile_app_2024'
+            },
+        })
+        return await response.json()
+    }catch(error) {
+        console.error('Ошибка смены атлетов:', error)
+        return { success: false, error: error.message }
+    }
+}

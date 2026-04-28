@@ -519,6 +519,7 @@ const getFullName = (ath) => {
   const parts = []
   if (ath.last_name) parts.push(ath.last_name)
   if (ath.first_name) parts.push(ath.first_name)
+  if (ath.middle_name) parts.push(ath.middle_name)
   return parts.join(' ') || `Атлет #${ath.athlete_id || ath.id}`
 }
 

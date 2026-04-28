@@ -1,6 +1,11 @@
 <template>
   <div class="board" @keydown.prevent tabindex="0">
 
+    <!-- ══ МОДАЛКА АКТИВАЦИИ ══ -->
+    <FocusModal
+        :visible="showFocusModal"
+        @activate="onActivate"
+    />
     <!-- ══ ЭКРАН ОТДЫХА ══ -->
     <div v-if="restMode" class="rest-screen">
       <div class="rest-label">ОТДЫХ</div>
@@ -127,6 +132,7 @@
 <script>
 import { endFight, setLifeFight, resetFight } from "@/components/View/FightDetail/fetchFightPannel.js"
 import { fetchGetDetailFight } from "@/components/View/Fight/fetchFights.js"
+import FocusModal from "@/components/View/FightDetail/FocusModal.vue";
 
 // ─── Константы ───────────────────────────────────────────────────────────────
 const OSAEKOMI_MAX = 20
@@ -135,6 +141,7 @@ const REST_DURATION = 15
 
 export default {
   name: 'TimerBoard',
+  components: {FocusModal},
 
   props: {
     tatami: { type: Number, default: 1 },
@@ -145,6 +152,8 @@ export default {
       fightId: null,
       fight: null,
       loading: false,
+      showFocusModal: true,        // ← по умолчанию показываем модалку
+      isLiveActivated: false,
 
       seconds: 240,
       gsSeconds: 0,
@@ -178,6 +187,9 @@ export default {
   },
 
   computed: {
+    canModifyScore() {
+      return !this.showFocusModal && this.isLiveActivated && !this.isFightCompleted
+    },
     whitePoints() {
       return (this.white.ippon || 0) * 100 + (this.white.wazaari || 0) * 10 + (this.white.yuko || 0)
     },
@@ -210,6 +222,8 @@ export default {
         if (!newId) return
         this.fightId = Number(newId) || newId
         this.currentIndex = this.fightIds.indexOf(this.fightId)
+        this.showFocusModal = true;
+        this.isLiveActivated = false;
         await this.loadFight()
       },
       immediate: true
@@ -281,6 +295,79 @@ export default {
         }
       } catch (err) {
         console.error('Ошибка загрузки списка боёв:', err)
+      }
+    },
+
+    canStartFight() {
+      // Проверяем, является ли раунд вторым (или выше)
+      if (this.fight?.status === 'COMPLETED' || this.fight?.status === 'FINISHED') {
+        alert("Этот бой уже завершен. Его нельзя начать снова.");
+        return false;
+      }
+
+      // 2. Проверка участников для раундов 2 и выше
+      const isLaterRound = Number(this.fight?.round_number) >= 2;
+      if (isLaterRound) {
+        const hasWhite = !!this.fight.white_athlete?.id || !!this.fight.white_athlete?.first_name;
+        const hasBlue = !!this.fight.blue_athlete?.id || !!this.fight.blue_athlete?.first_name;
+
+        if (!hasWhite || !hasBlue) {
+          alert("Нельзя начать бой! Во 2-м раунде и далее должны быть заполнены оба атлета.");
+          return false;
+        }
+      }
+
+      return true;
+    },
+
+    async handleTabAction() {
+      console.log('Завершение боя и переход...');
+
+      // 1. Если бой не завершен, определяем победителя и ТИП победы
+      if (!this.isFightCompleted) {
+        let winner = null;
+        let victoryType = 'POINTS'; // По умолчанию
+
+        // Проверка на Hansoku-make (Дисквалификация)
+        if (this.blue.shido >= 3 || this.blue.hansoku) {
+          winner = 'white';
+          victoryType = 'HANSOKU_MAKE';
+        } else if (this.white.shido >= 3 || this.white.hansoku) {
+          winner = 'blue';
+          victoryType = 'HANSOKU_MAKE';
+        }
+        // Проверка на Ippon
+        else if (this.white.ippon > 0 || this.white.wazaari >= 2) {
+          winner = 'white';
+          victoryType = 'IPPON';
+        } else if (this.blue.ippon > 0 || this.blue.wazaari >= 2) {
+          winner = 'blue';
+          victoryType = 'IPPON';
+        }
+        // Победа по Waza-ari или решению (если основное время вышло)
+        else {
+          if (this.whitePoints > this.bluePoints) {
+            winner = 'white';
+            victoryType = 'WAZAARI'; // или 'POINTS'
+          } else if (this.bluePoints > this.whitePoints) {
+            winner = 'blue';
+            victoryType = 'WAZAARI';
+          } else {
+            // Если баллы равны, можно оставить HANTEI (решение судей) или DRAW
+            winner = null;
+            victoryType = 'DRAW';
+          }
+        }
+
+        // Отправляем результат
+        await this.completeFight(winner, victoryType);
+      }
+
+      // 2. Переходим к следующему бою
+      if (this.hasNext) {
+        this.nextFight();
+      } else {
+        console.log('Больше боев нет');
       }
     },
 
@@ -372,10 +459,12 @@ export default {
 
     async setLiveStatus() {
       if (this.fightStatus !== 'SCHEDULED') return
+
       try {
         const result = await setLifeFight(this.fightId, this.fight?.tatami || this.tatami)
         if (result.success) {
           this.fightStatus = 'IN_PROGRESS'
+          console.log('Бой переведён в LIVE')
         }
       } catch (err) {
         console.error('Ошибка перевода в LIVE:', err)
@@ -395,6 +484,7 @@ export default {
 
     // ─── Управление очками ─────────────────────────────────────────────────
     applyScore(color, field, delta = 1) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
 
       const sc = color === 'white' ? this.white : this.blue
@@ -406,18 +496,28 @@ export default {
     },
 
     undoScore(color) {
-      if (this.isFightCompleted) return
+      // Если бой завершен, обычно отмену запрещают, но можно разрешить для исправления ошибок
+      // if (this.isFightCompleted) return
 
       if (color === 'white') {
         if (!this.historyW.length) return
+        // Заменяем текущий объект white последним из истории
         this.white = this.historyW.pop()
       } else {
         if (!this.historyB.length) return
+        // Заменяем текущий объект blue последним из истории
         this.blue = this.historyB.pop()
+      }
+
+      // Если была победа из-за баллов/штрафов, сбрасываем статус при отмене
+      if (this.fightStatus === 'COMPLETED') {
+        this.fightStatus = 'IN_PROGRESS'
+        // Если таймер стоял, его нужно будет запустить вручную (Space)
       }
     },
 
     addWazaari(color) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
 
       const sc = color === 'white' ? this.white : this.blue
@@ -426,32 +526,31 @@ export default {
       sc.wazaari = (sc.wazaari || 0) + 1
       this.triggerFlash(color)
 
-      if (sc.wazaari >= 2) {
-        this.completeFight(color, 'WAZAARI_AWASETE_IPPON')
-      }
-
-      if (this.isGoldenScore) {
-        this.completeFight(color, 'POINTS')
+      if (sc.wazaari >= 2 || this.isGoldenScore) {
+        this.pauseTimer(); // Просто останавливаем время, не закрывая бой в БД
       }
     },
 
     addIppon(color) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
 
       this.applyScore(color, 'ippon')
-      this.completeFight(color, 'IPPON')
+      this.pauseTimer();
     },
 
     addYuko(color) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
 
       this.applyScore(color, 'yuko')
       if (this.isGoldenScore) {
-        this.completeFight(color, 'POINTS')
+        this.pauseTimer();
       }
     },
 
     addShido(color) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
 
       const sc = color === 'white' ? this.white : this.blue
@@ -462,11 +561,12 @@ export default {
 
       if (sc.shido >= 3) {
         const opp = color === 'white' ? 'blue' : 'white'
-        this.completeFight(opp, 'HANSOKU_MAKE')
+        this.pauseTimer();
       }
     },
 
     addHansoku(color) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
 
       const opp = color === 'white' ? 'blue' : 'white'
@@ -475,11 +575,12 @@ export default {
       hist.push(JSON.parse(JSON.stringify(sc)))
       sc.hansoku = true
       this.triggerFlash(opp)
-      this.completeFight(opp, 'HANSOKU_MAKE')
+      this.pauseTimer();
     },
 
     // ─── Осаэкоми ──────────────────────────────────────────────────────────
     startOsa(color) {
+      if (!this.canModifyScore) return
       if (this.isFightCompleted) return
       if (this.osa.active) return
 
@@ -511,29 +612,34 @@ export default {
 
     // ─── Таймер ────────────────────────────────────────────────────────────
     startTimer() {
-      if (this.isFightCompleted) return
+      if (this.isFightCompleted) return;
 
-      if (this.fightStatus === 'SCHEDULED') {
-        this.setLiveStatus()
+      // ПРОВЕРКА ПЕРЕД ЗАПУСКОМ
+      if (!this.canStartFight()) {
+        return; // Прерываем выполнение, если проверка не пройдена
       }
 
-      this.running = true
-      clearInterval(this._timerInterval)
+      if (this.fightStatus === 'SCHEDULED') {
+        this.setLiveStatus();
+      }
+
+      this.running = true;
+      clearInterval(this._timerInterval);
       this._timerInterval = setInterval(() => {
         if (this.isGoldenScore) {
-          this.gsSeconds += 1
+          this.gsSeconds += 1;
         } else {
           if (this.seconds > 0) {
-            this.seconds -= 1
+            this.seconds -= 1;
           }
           if (this.seconds === 0 && !this.isGoldenScore) {
-            clearInterval(this._timerInterval)
-            this.running = false
-            this.isGoldenScore = true
-            this.gsSeconds = 0
+            clearInterval(this._timerInterval);
+            this.running = false;
+            this.isGoldenScore = true;
+            this.gsSeconds = 0;
           }
         }
-      }, 1000)
+      }, 1000);
     },
 
     pauseTimer() {
@@ -608,6 +714,26 @@ export default {
     onKeyDown(e) {
       if (e.repeat) return
 
+      const isNavigationKey = e.key === 'ArrowLeft' || e.code === 'ArrowLeft' ||
+          e.key === 'ArrowRight' || e.code === 'ArrowRight' ||
+          e.key.toLowerCase() === 'b' || e.key.toLowerCase() === 'n';
+
+      if (this.showFocusModal) {
+        const key = e.key.toLowerCase()
+
+        // Если это пробел/enter — активируем
+        if (key === ' ' || key === 'space' || key === 'enter') {
+          e.preventDefault()
+          this.onActivate()
+          return
+        }
+
+        // ЕСЛИ это стрелка (навигация) — НЕ делаем return, а позволяем коду идти ниже
+        if (!isNavigationKey) {
+          return // Блокируем всё остальное (баллы, таймер и т.д.)
+        }
+      }
+
       // Стрелка влево - предыдущий бой
       if (e.key === 'ArrowLeft' || e.code === 'ArrowLeft') {
         e.preventDefault()
@@ -649,9 +775,11 @@ export default {
         e.preventDefault()
         e.stopPropagation()
         console.log('Tab нажат, hasNext:', this.hasNext)
-        this.nextFight()
+        this.handleTabAction();
         return
       }
+
+      if (this.loading) return
 
       const key = e.key.toLowerCase()
       this._keyDownTime[key] = Date.now()
@@ -749,6 +877,59 @@ export default {
         e.preventDefault()
         this.undoScore('blue')
       }
+
+      if (key === 'z') {
+        e.preventDefault()
+        this.undoScore('white')
+      }
+      if (key === 'x') {
+        e.preventDefault()
+        this.undoScore('blue')
+      }
+
+      // Если модалка ещё видна — игнорируем все боевые клавиши
+      if (this.showFocusModal) {
+        // Если модалка открыта, разрешаем ТОЛЬКО стрелки и Пробел (для активации)
+        if (e.code === 'Space') {
+          this.onActivate();
+          return;
+        }
+
+        if (isNavigationKey) {
+          if (e.code === 'ArrowLeft') {
+            this.prevFight();
+          }
+          if (e.code === 'ArrowRight') {
+            this.nextFight();
+          }
+        } else {
+          return;
+        }
+      }
+    },
+
+    async onActivate() {
+      // 1. Закрываем модалку в интерфейсе
+      if (!this.canStartFight()) {
+        alert("Нельзя начать бой! Во 2-м раунде и далее должны быть заполнены оба атлета.");
+        // Важно: НЕ ставим showFocusModal = false,
+        // тогда модалка остается, и пробел/клавиши не работают.
+        return;
+      }
+
+      // Если проверка прошла — активируем управление
+      this.showFocusModal = false;
+      this.isLiveActivated = true;
+
+      // Возвращаем фокус на главный экран для работы клавиатуры
+      this.$nextTick(() => {
+        if (this.$el && this.$el.focus) {
+          this.$el.focus();
+        }
+      });
+
+      // Уведомляем сервер, что бой в эфире
+      await this.setLiveStatus();
     },
 
     onKeyUp(e) {

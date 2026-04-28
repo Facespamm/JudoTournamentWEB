@@ -178,7 +178,8 @@ const filteredAthletes = computed(() => {
 })
 
 function getFullName(a) {
-  return [a.last_name, a.first_name, a.patronymic].filter(Boolean).join(' ')
+  return [a.last_name, a.first_name, a.patronymic].join(' ')
+  // return
 }
 
 function formatBirthDate(date) {
@@ -243,9 +244,9 @@ const athletesError = ref(null)
 
 const mapAthlete = (a, clubId = null) => ({
   id: a.id,
-  lastName: a.last_name?.trim() || '',
-  firstName: a.first_name?.trim() || '',
-  middleName: a.middle_name?.trim() || '',
+  last_name: a.last_name?.trim() || '',
+  first_name: a.first_name?.trim() || '',
+  middle_name: a.middle_name?.trim() || '',
   gender: a.gender,
   age: a.age,
   currentWeight: a.current_weight ?? null,

@@ -47,7 +47,19 @@
         {{ tab.label }}
         <span class="tab-count">{{ tab.count }}</span>
       </button>
+      <button class="bracket-tab" @click="showChangeModal = true">
+        Поменять атлетов в бою
+      </button>
     </div>
+
+    <!-- модалка — перед закрывающим </div> компонента -->
+    <ChangeAthletesModal
+        v-if="showChangeModal"
+        :tournament-id="selectedTournament"
+        :category-id="selectedCategory"
+        @close="showChangeModal = false"
+        @swapped="onSwapped"
+    />
 
     <!-- Основная сетка -->
     <div v-if="activeTab === 'main'" class="tatami-sections">
@@ -84,10 +96,20 @@
                 {{ fight.round_info || '—' }}
               </div>
             </div>
+            <button class="tatami-btn" @click.stop="openTatamiModal(fight)"> 🥋 {{ fight.tatami || '—' }} </button>
           </div>
         </div>
       </div>
     </div>
+
+    <ChangeTatamiModal
+        v-if="showTatamiModal && activeFight?.id && selectedTournament"
+        :tournamentId="selectedTournament"
+        :fightId="activeFight.id"
+        :currentTatami="activeFight.tatami"
+        @close="showTatamiModal = false"
+        @changed="onTatamiChanged"
+    />
 
     <!-- Утешительные бои от полуфиналистов -->
     <div v-if="activeTab === 'semifinalist'" class="tatami-sections">
@@ -136,6 +158,7 @@
                 </div>
               </div>
             </div>
+            <button class="tatami-btn" @click.stop="openTatamiModal(fight)"> 🥋 {{ fight.tatami || '—' }} </button>
           </div>
           <div v-else class="empty-group">Нет боёв в этой ветке</div>
         </div>
@@ -189,6 +212,7 @@
                 </div>
               </div>
             </div>
+            <button class="tatami-btn" @click.stop="openTatamiModal(fight)"> 🥋 {{ fight.tatami || '—' }} </button>
           </div>
           <div v-else class="empty-group">Нет боёв в этой ветке</div>
         </div>
@@ -209,6 +233,8 @@ import { fetchTournaments } from "@/components/View/Tournaments/fetchTournaments
 import { fetchCategories } from '@/components/View/TournamentManagement/fetchTournamentManagement.js'
 import { fetchGetScheduledFight } from "@/components/View/Fight/fetchFights.js"
 import "./Fight.css"
+import ChangeAthletesModal from './ChangeAthletesModal.vue'
+import ChangeTatamiModal from "@/components/View/Fight/ChangeTatamiModal.vue";
 
 const CONSOLATION_TYPES = [
   'SEMIFINALIST_CONSOLATION_GROUP_A',
@@ -219,6 +245,8 @@ const CONSOLATION_TYPES = [
 
 export default {
   name: 'FightsOverview',
+  components: { ChangeAthletesModal , ChangeTatamiModal },  // 👈 сюда, на одном уровне с data/computed/methods
+
   data() {
     return {
       fights: [],
@@ -230,6 +258,9 @@ export default {
       categoriesLoading: false,
       currentCategoryName: '',
       activeTab: 'main',
+      showChangeModal: false,
+      showTatamiModal: false,
+      activeFight: null,
     }
   },
   computed: {
@@ -348,6 +379,21 @@ export default {
           .filter(Boolean)
           .join(' ')
       return { name, club: '' }
+    },
+    openTatamiModal(fight) {
+      if (!fight || !fight.id) {
+        console.error('Попытка открыть модалку смены татами без валидного боя', fight);
+        return;
+      }
+
+      this.activeFight = fight;
+      this.showTatamiModal = true;
+    },
+    onTatamiChanged() {
+      this.loadFights()
+    },
+    onSwapped() {
+      this.loadFights()  // перезагрузить бои после обмена
     },
     async loadTournaments() {
       this.tournamentsLoading = true

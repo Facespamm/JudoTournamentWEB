@@ -94,7 +94,7 @@
                       >
                         <div class="c-name-wrap">
                           <span v-if="getContestant(match.p1)" class="c-first">{{ getContestant(match.p1).first }}</span>
-                          <span class="c-name">{{ getContestant(match.p1)?.last || 'TBD' }}</span>
+                          <span class="c-name">{{ getContestant(match.p1)?.last || getContestant(match.p1)?.middle || 'TBD' }}</span>
                         </div>
                       </div>
                       <div
@@ -108,7 +108,7 @@
                       >
                         <div class="c-name-wrap">
                           <span v-if="getContestant(match.p2)" class="c-first">{{ getContestant(match.p2).first }}</span>
-                          <span class="c-name">{{ getContestant(match.p2)?.last || 'TBD' }}</span>
+                          <span class="c-name">{{ getContestant(match.p2)?.last || getContestant(match.p2)?.middle || 'TBD' }}</span>
                         </div>
                       </div>
                     </div>
@@ -242,6 +242,7 @@ const processBracketData = (fights, resultsMap = new Map()) => {
           id: athlete.id,
           first: athlete.first_name,
           last: athlete.last_name.toUpperCase(),
+          middle: athlete.middle_name?.toUpperCase(),
         })
       }
     })
